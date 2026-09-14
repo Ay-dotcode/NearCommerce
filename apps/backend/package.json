@@ -1,0 +1,20 @@
+{
+  "name": "@nearcommerce/backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --import tsx/esm src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}

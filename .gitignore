@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# Turborepo Cache
+.turbo/
+
+# Build Outputs & Production Artifacts
+dist/
+build/
+.next/
+out/
+expo-export/
+
+# Environment Variables & Local Configs
+.env
+.env.local
+.env.*.local
+e
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor & IDE Directories
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Mobile / Expo Specific
+.expo/
+web-build/
+android/
+ios/
