@@ -1,0 +1,6 @@
+{
+  "json.schema.validate": true,
+  "files.associations": {
+    "turbo.json": "json"
+  }
+}
