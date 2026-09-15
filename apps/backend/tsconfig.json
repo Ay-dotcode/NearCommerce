@@ -8,10 +8,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["jest"]
   },
   "include": ["src/**/*"],
-  "references": [
-    { "path": "../../packages/api/tsconfig.json" }
-  ]
+  "references": [{ "path": "../../packages/api/tsconfig.json" }]
 }
