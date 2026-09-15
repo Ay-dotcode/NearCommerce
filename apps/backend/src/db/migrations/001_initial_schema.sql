@@ -159,7 +159,7 @@ CREATE UNIQUE INDEX idx_favorites_user_product ON favorites(user_id, product_id)
 -- System Admin Audit Logs
 CREATE TABLE admin_audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    admin_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
     action VARCHAR(50) NOT NULL,
     target_id UUID NOT NULL,
     target_type VARCHAR(50) NOT NULL,
