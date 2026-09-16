@@ -11,7 +11,6 @@ describe("Support Integration Tests", () => {
         channels: {
           email: "joseyowolabi@gmail.com",
           phone: "+905338856528",
-          faq_url: "https://nearcommerce.local/faq",
         },
         operating_hours: "24/7",
       });

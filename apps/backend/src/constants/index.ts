@@ -21,4 +21,3 @@ export const DEFAULT_PORT = 4000;
 // Support Channels Constants
 export const SUPPORT_EMAIL = "joseyowolabi@gmail.com";
 export const SUPPORT_PHONE = "+905338856528";
-export const SUPPORT_FAQ_URL = "https://nearcommerce.local/faq";
