@@ -9,6 +9,7 @@ node_modules/
 # Build Outputs & Production Artifacts
 dist/
 build/
+coverage/
 .next/
 out/
 expo-export/
