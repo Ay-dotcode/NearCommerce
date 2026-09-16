@@ -14,15 +14,6 @@ export const LoginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export const ForgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
-});
-
-export const ResetPasswordSchema = z.object({
-  token: z.string().min(1, "Token is required"),
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
-});
-
 // Stores
 export const StoreOpeningHoursSchema = z.record(
   z.enum([

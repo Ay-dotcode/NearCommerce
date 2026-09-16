@@ -1,9 +1,14 @@
 import {
+  forgotPassword,
   registerUser,
   resendVerification,
+  resetPassword,
   verifyEmail,
 } from "@/features/auth/api/auth.controller";
-import { resendVerificationLimiter } from "@/middleware/rateLimiter";
+import {
+  forgotPasswordLimiter,
+  resendVerificationLimiter,
+} from "@/middleware/rateLimiter";
 import { Router } from "express";
 
 const authRouter = Router();
@@ -15,5 +20,7 @@ authRouter.post(
   resendVerificationLimiter,
   resendVerification,
 );
+authRouter.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
+authRouter.post("/reset-password", resetPassword);
 
 export default authRouter;

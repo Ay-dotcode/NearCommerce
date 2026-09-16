@@ -27,3 +27,13 @@ export const resendVerificationLimiter = rateLimit({
     error: "Too many resend requests, please try again later.",
   },
 });
+
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: RATE_LIMIT_MAX_REQUESTS,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many password reset requests, please try again later.",
+  },
+});

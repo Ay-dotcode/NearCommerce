@@ -5,8 +5,10 @@ import {
 } from "@/constants";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import {
+  ForgotPasswordSchema,
   RegisterSchema,
   ResendVerificationSchema,
+  ResetPasswordSchema,
   VerifyEmailSchema,
 } from "@nearcommerce/api";
 import bcrypt from "bcrypt";
@@ -223,6 +225,141 @@ export const resendVerification = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Resend verification error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = ForgotPasswordSchema.parse(req.body);
+
+    const userResult = await db.query(`SELECT id FROM users WHERE email = $1`, [
+      email,
+    ]);
+
+    // Prevent email enumeration
+    if (userResult.rows.length === 0)
+      return res.status(200).json({
+        message: "If that email is registered, a reset link has been sent.",
+      });
+
+    const userId = userResult.rows[0].id;
+    const { rawToken, tokenHash } = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiry
+
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+
+      // Invalidate prior unexpired tokens
+      await client.query(
+        `DELETE FROM password_reset_tokens WHERE user_id = $1`,
+        [userId],
+      );
+
+      // Store new hashed token
+      await client.query(
+        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
+        [userId, tokenHash, expiresAt],
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    console.log(
+      `[EMAIL DISPATCH] Password Reset To: ${email}, Token: ${rawToken}`,
+    );
+    return res.status(200).json({
+      message: "If that email is registered, a reset link has been sent.",
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.issues });
+    }
+    if (error instanceof Error && error.name === "ZodError") {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: JSON.parse(error.message),
+      });
+    }
+    console.error("Forgot password error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, new_password } = ResetPasswordSchema.parse(req.body);
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+
+      // Find valid token
+      const tokenResult = await client.query(
+        `SELECT user_id FROM password_reset_tokens WHERE token_hash = $1 AND expires_at > NOW()`,
+        [tokenHash],
+      );
+
+      if (tokenResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res
+          .status(400)
+          .json({ error: "Invalid or expired reset token" });
+      }
+
+      const userId = tokenResult.rows[0].user_id;
+      const saltRounds = BCRYPT_SALT_ROUNDS;
+      const passwordHash = await bcrypt.hash(new_password, saltRounds);
+
+      // Update password
+      await client.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [
+        passwordHash,
+        userId,
+      ]);
+
+      // Revoke all active user sessions
+      await client.query(`DELETE FROM user_sessions WHERE user_id = $1`, [
+        userId,
+      ]);
+
+      // Delete the used reset token
+      await client.query(
+        `DELETE FROM password_reset_tokens WHERE user_id = $1`,
+        [userId],
+      );
+
+      await client.query("COMMIT");
+      return res
+        .status(200)
+        .json({ message: "Password has been successfully reset." });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.issues });
+    }
+    if (error instanceof Error && error.name === "ZodError") {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: JSON.parse(error.message),
+      });
+    }
+    console.error("Reset password error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
