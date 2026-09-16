@@ -2,6 +2,7 @@ import { db } from "@/config/database";
 import {
   BCRYPT_SALT_ROUNDS,
   EMAIL_VERIFICATION_TOKEN_TTL_MS,
+  PASSWORD_RESET_TOKEN_TTL_MS,
 } from "@/constants";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import {
@@ -245,7 +246,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     const userId = userResult.rows[0].id;
     const { rawToken, tokenHash } = generateVerificationToken();
-    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiry
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
 
     const client = await db.connect();
     try {

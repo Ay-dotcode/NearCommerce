@@ -9,8 +9,8 @@ describe("Support Integration Tests", () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
         channels: {
-          email: "support@nearcommerce.local",
-          phone: "+1-800-NEARCOM",
+          email: "joseyowolabi@gmail.com",
+          phone: "+905338856528",
           faq_url: "https://nearcommerce.local/faq",
         },
         operating_hours: "24/7",
