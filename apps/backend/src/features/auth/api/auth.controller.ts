@@ -1,4 +1,5 @@
 import { db } from "@/config/database";
+import redisClient from "@/config/redis";
 import {
   BCRYPT_SALT_ROUNDS,
   EMAIL_VERIFICATION_TOKEN_TTL_MS,
@@ -7,6 +8,7 @@ import {
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import {
   ForgotPasswordSchema,
+  LoginSchema,
   RegisterSchema,
   ResendVerificationSchema,
   ResetPasswordSchema,
@@ -15,6 +17,7 @@ import {
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
 
 export const registerUser = async (req: Request, res: Response) => {
@@ -361,6 +364,83 @@ export const resetPassword = async (req: Request, res: Response) => {
       });
     }
     console.error("Reset password error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "fallback_secret";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "fallback_refresh";
+
+export const loginUser = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = LoginSchema.parse(req.body);
+
+    const userResult = await db.query(
+      `SELECT id, password_hash, role, is_suspended FROM users WHERE email = $1`,
+      [email],
+    );
+
+    if (userResult.rows.length === 0)
+      return res.status(401).json({ error: "Invalid credentials" });
+    const user = userResult.rows[0];
+
+    // Check if account is suspended right at login
+    if (user.is_suspended)
+      return res.status(403).json({ error: "Account is suspended." });
+
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword)
+      return res.status(401).json({ error: "Invalid credentials" });
+
+    // Generate Tokens
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      JWT_ACCESS_SECRET,
+      { expiresIn: "15m" },
+    );
+
+    // Generate a secure random string for the refresh token, hash it for the DB
+    const rawRefreshToken = crypto.randomBytes(40).toString("hex");
+    const refreshTokenHash = crypto
+      .createHash("sha256")
+      .update(rawRefreshToken)
+      .digest("hex");
+
+    const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    await db.query(
+      `INSERT INTO user_sessions (user_id, refresh_token_hash, expires_at) VALUES ($1, $2, $3)`,
+      [user.id, refreshTokenHash, refreshExpiresAt],
+    );
+
+    // Prime the Redis cache for the middleware suspension check
+    try {
+      if (redisClient.isOpen)
+        await redisClient.set(`suspended:${user.id}`, "false", { EX: 60 * 15 }); // Match access token expiry
+    } catch (redisError) {
+      console.error(
+        "[AUTH] Failed to prime redis suspension cache:",
+        redisError,
+      );
+    }
+
+    return res.status(200).json({
+      access_token: accessToken,
+      refresh_token: rawRefreshToken, // Send raw token to client once, never again
+      user: { id: user.id, role: user.role },
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.issues });
+    }
+    if (error instanceof Error && error.name === "ZodError")
+      return res.status(400).json({
+        error: "Validation failed",
+        details: JSON.parse(error.message),
+      });
+    console.error("Login error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

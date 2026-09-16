@@ -436,4 +436,83 @@ describe("Auth Integration Tests", () => {
       );
     });
   });
+
+  describe("POST /auth/login", () => {
+    it("should return 400 if validation fails", async () => {
+      const response = await request(app)
+        .post("/auth/login")
+        .send({ email: "invalid-email", password: "" });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Validation failed");
+    });
+
+    it("should return 401 if user does not exist", async () => {
+      const response = await request(app)
+        .post("/auth/login")
+        .send({ email: "nonexistent@example.com", password: "password123" });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe("Invalid credentials");
+    });
+
+    it("should return 403 if user is suspended in the database", async () => {
+      const passwordHash = await bcrypt.hash(testUser.password, 12);
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role, is_suspended)
+         VALUES ($1, $2, $3, 'CUSTOMER', true)`,
+        [testUser.email, passwordHash, testUser.full_name],
+      );
+
+      const response = await request(app)
+        .post("/auth/login")
+        .send({ email: testUser.email, password: testUser.password });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error).toBe("Account is suspended.");
+    });
+
+    it("should return 401 if password does not match", async () => {
+      const passwordHash = await bcrypt.hash(testUser.password, 12);
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, 'CUSTOMER')`,
+        [testUser.email, passwordHash, testUser.full_name],
+      );
+
+      const response = await request(app)
+        .post("/auth/login")
+        .send({ email: testUser.email, password: "wrongpassword" });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe("Invalid credentials");
+    });
+
+    it("should login successfully, return tokens, store hashed refresh token in DB, and prime Redis", async () => {
+      const passwordHash = await bcrypt.hash(testUser.password, 12);
+      const userRes = await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, 'CUSTOMER') RETURNING id`,
+        [testUser.email, passwordHash, testUser.full_name],
+      );
+      const userId = userRes.rows[0].id;
+
+      const response = await request(app)
+        .post("/auth/login")
+        .send({ email: testUser.email, password: testUser.password });
+
+      expect(response.status).toBe(200);
+      expect(response.body.access_token).toBeDefined();
+      expect(response.body.refresh_token).toBeDefined();
+      expect(response.body.user).toEqual({ id: userId, role: "CUSTOMER" });
+
+      // Verify user_sessions table has hashed refresh token
+      const sessionResult = await db.query(
+        "SELECT * FROM user_sessions WHERE user_id = $1",
+        [userId],
+      );
+      expect(sessionResult.rows.length).toBe(1);
+      expect(sessionResult.rows[0].refresh_token_hash).toHaveLength(64);
+    });
+  });
 });

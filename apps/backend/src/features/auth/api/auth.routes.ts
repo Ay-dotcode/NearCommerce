@@ -1,5 +1,6 @@
 import {
   forgotPassword,
+  loginUser,
   registerUser,
   resendVerification,
   resetPassword,
@@ -14,6 +15,7 @@ import { Router } from "express";
 const authRouter = Router();
 
 authRouter.post("/register", registerUser);
+authRouter.post("/login", loginUser);
 authRouter.post("/verify-email", verifyEmail);
 authRouter.post(
   "/resend-verification",

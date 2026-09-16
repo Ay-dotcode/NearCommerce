@@ -1,4 +1,5 @@
 import { app } from "@/app";
+import { connectRedis } from "@/config/redis";
 import { initSocketServer } from "@/config/socket";
 import { DEFAULT_PORT, ENV_PATH } from "@/constants";
 import dotenv from "dotenv";
@@ -15,6 +16,7 @@ const PORT = process.env.PORT || DEFAULT_PORT;
 const httpServer = http.createServer(app);
 
 (async () => {
+  await connectRedis();
   await initSocketServer(httpServer);
 
   httpServer.listen(PORT, () => {
