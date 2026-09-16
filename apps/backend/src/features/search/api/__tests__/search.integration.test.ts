@@ -1,11 +1,24 @@
-import request from "supertest";
 import { app } from "@/app";
 import { db } from "@/config/database";
+import request from "supertest";
+
+jest.mock("@/utils/circuitBreaker", () => {
+  const actual = jest.requireActual("@/utils/circuitBreaker");
+  return {
+    ...actual,
+    fetchGeminiEmbedding: jest
+      .fn()
+      .mockRejectedValue(new Error("Simulated AI search failure for testing")),
+  };
+});
 
 describe("GET /search", () => {
   let storeId: string;
+  let warnSpy: jest.SpyInstance;
 
   beforeAll(async () => {
+    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
     // 0. Seed a dedicated owner user for this test suite
     const userRes = await db.query(`
       INSERT INTO users (email, password_hash, full_name, role)
@@ -40,6 +53,7 @@ describe("GET /search", () => {
   });
 
   afterAll(async () => {
+    warnSpy.mockRestore();
     // CASCADE on stores deletes products; then remove the test user
     await db.query("DELETE FROM stores WHERE name = 'Lefke Market'");
     await db.query(
