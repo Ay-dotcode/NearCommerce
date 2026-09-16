@@ -1,5 +1,6 @@
 import { z } from "zod";
 export * from "./schemas/auth";
+export * from "./schemas/search";
 
 // Enums
 export const UserRoleSchema = z.enum([

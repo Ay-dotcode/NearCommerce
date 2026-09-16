@@ -1,5 +1,6 @@
 import { db } from "@/config/database";
 import authRouter from "@/features/auth/api/auth.routes";
+import searchRouter from "@/features/search/api/search.routes";
 import supportRouter from "@/features/support/api/support.routes";
 import { RegisterSchema } from "@nearcommerce/api";
 import cors from "cors";
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/auth", authRouter);
+app.use("/search", searchRouter);
 app.use("/support", supportRouter);
 
 app.get("/test-db", async (_req: Request, res: Response) => {
