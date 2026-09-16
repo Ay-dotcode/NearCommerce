@@ -1,4 +1,5 @@
 import redisClient from "@/config/redis";
+import { JWT_ACCESS_SECRET } from "@/constants";
 import { requireAuth } from "@/middleware/auth.middleware";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
@@ -65,7 +66,7 @@ describe("requireAuth Middleware", () => {
   it("should return 401 if token is expired", async () => {
     const expiredToken = jwt.sign(
       { id: "u-1", role: "CUSTOMER" },
-      process.env.JWT_ACCESS_SECRET || "fallback_secret_do_not_use_in_prod",
+      JWT_ACCESS_SECRET,
       { expiresIn: "-1s" },
     );
     mockReq.headers = { authorization: `Bearer ${expiredToken}` };
@@ -82,7 +83,7 @@ describe("requireAuth Middleware", () => {
   it("should return 403 if user is suspended in Redis", async () => {
     const token = jwt.sign(
       { id: "u-suspended", role: "CUSTOMER" },
-      process.env.JWT_ACCESS_SECRET || "fallback_secret_do_not_use_in_prod",
+      JWT_ACCESS_SECRET,
       { expiresIn: "15m" },
     );
     mockReq.headers = { authorization: `Bearer ${token}` };
@@ -102,7 +103,7 @@ describe("requireAuth Middleware", () => {
   it("should attach user to req and call next if token is valid and not suspended", async () => {
     const token = jwt.sign(
       { id: "u-active", role: "CUSTOMER" },
-      process.env.JWT_ACCESS_SECRET || "fallback_secret_do_not_use_in_prod",
+      JWT_ACCESS_SECRET,
       { expiresIn: "15m" },
     );
     mockReq.headers = { authorization: `Bearer ${token}` };

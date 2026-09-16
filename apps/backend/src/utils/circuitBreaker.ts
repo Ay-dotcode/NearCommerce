@@ -1,3 +1,4 @@
+import { GEMINI_EMBEDDING_MODEL } from "@/constants";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -35,7 +36,7 @@ export const fetchGeminiEmbedding = async (text: string): Promise<number[]> => {
   if (!process.env.GEMINI_API_KEY)
     throw new Error("GEMINI_API_KEY is not configured.");
 
-  const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+  const model = genAI.getGenerativeModel({ model: GEMINI_EMBEDDING_MODEL });
   const result = await model.embedContent(text);
 
   return result.embedding.values;

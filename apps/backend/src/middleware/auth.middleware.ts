@@ -1,9 +1,7 @@
 import redisClient from "@/config/redis";
+import { JWT_ACCESS_SECRET } from "@/constants";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-
-const JWT_ACCESS_SECRET =
-  process.env.JWT_ACCESS_SECRET || "fallback_secret_do_not_use_in_prod";
 
 export const requireAuth = async (
   req: Request,

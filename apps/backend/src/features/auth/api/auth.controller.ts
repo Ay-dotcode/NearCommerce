@@ -3,7 +3,12 @@ import redisClient from "@/config/redis";
 import {
   BCRYPT_SALT_ROUNDS,
   EMAIL_VERIFICATION_TOKEN_TTL_MS,
+  JWT_ACCESS_EXPIRY,
+  JWT_ACCESS_EXPIRY_SECONDS,
+  JWT_ACCESS_SECRET,
   PASSWORD_RESET_TOKEN_TTL_MS,
+  REFRESH_TOKEN_BYTES,
+  USER_SESSION_TTL_MS,
 } from "@/constants";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import {
@@ -368,9 +373,6 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "fallback_secret";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "fallback_refresh";
-
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = LoginSchema.parse(req.body);
@@ -396,17 +398,19 @@ export const loginUser = async (req: Request, res: Response) => {
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
       JWT_ACCESS_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: JWT_ACCESS_EXPIRY },
     );
 
     // Generate a secure random string for the refresh token, hash it for the DB
-    const rawRefreshToken = crypto.randomBytes(40).toString("hex");
+    const rawRefreshToken = crypto
+      .randomBytes(REFRESH_TOKEN_BYTES)
+      .toString("hex");
     const refreshTokenHash = crypto
       .createHash("sha256")
       .update(rawRefreshToken)
       .digest("hex");
 
-    const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const refreshExpiresAt = new Date(Date.now() + USER_SESSION_TTL_MS);
 
     await db.query(
       `INSERT INTO user_sessions (user_id, refresh_token_hash, expires_at) VALUES ($1, $2, $3)`,
@@ -416,7 +420,9 @@ export const loginUser = async (req: Request, res: Response) => {
     // Prime the Redis cache for the middleware suspension check
     try {
       if (redisClient.isOpen)
-        await redisClient.set(`suspended:${user.id}`, "false", { EX: 60 * 15 }); // Match access token expiry
+        await redisClient.set(`suspended:${user.id}`, "false", {
+          EX: JWT_ACCESS_EXPIRY_SECONDS,
+        }); // Match access token expiry
     } catch (redisError) {
       console.error(
         "[AUTH] Failed to prime redis suspension cache:",

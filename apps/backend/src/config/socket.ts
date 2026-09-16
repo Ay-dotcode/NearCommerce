@@ -1,4 +1,10 @@
-import { ENV_PATH } from "@/constants";
+import {
+  ENV_PATH,
+  LIST_ROOM_PREFIX,
+  SOCKET_EVENT_DISCONNECT,
+  SOCKET_EVENT_JOIN_LIST,
+  SOCKET_EVENT_LEAVE_LIST,
+} from "@/constants";
 import { createAdapter } from "@socket.io/redis-adapter";
 import dotenv from "dotenv";
 import { Server as HttpServer } from "http";
@@ -40,16 +46,16 @@ export const initSocketServer = async (
 
     // Clients call this event to subscribe to a specific household list room.
     // Only members who have joined the room will receive real-time updates.
-    socket.on("join_list", (listId: string) => {
-      socket.join(`list:${listId}`);
-      console.log(`[SOCKET] ${socket.id} joined list:${listId}`);
+    socket.on(SOCKET_EVENT_JOIN_LIST, (listId: string) => {
+      socket.join(`${LIST_ROOM_PREFIX}${listId}`);
+      console.log(`[SOCKET] ${socket.id} joined ${LIST_ROOM_PREFIX}${listId}`);
     });
 
-    socket.on("leave_list", (listId: string) => {
-      socket.leave(`list:${listId}`);
+    socket.on(SOCKET_EVENT_LEAVE_LIST, (listId: string) => {
+      socket.leave(`${LIST_ROOM_PREFIX}${listId}`);
     });
 
-    socket.on("disconnect", () => {
+    socket.on(SOCKET_EVENT_DISCONNECT, () => {
       console.log(`[SOCKET] Client disconnected: ${socket.id}`);
     });
   });

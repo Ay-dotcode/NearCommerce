@@ -1,5 +1,6 @@
 import { db } from "@/config/database";
 import { getIO } from "@/config/socket";
+import { LIST_EVENT_ITEM_UPDATED, LIST_ROOM_PREFIX } from "@/constants";
 import { AddListItemSchema } from "@nearcommerce/api";
 import { z } from "zod";
 
@@ -38,7 +39,9 @@ export const addListItem = async (input: AddItemInput) => {
   const item = result.rows[0];
 
   // Notify all connected clients that are subscribed to this list's room.
-  getIO().to(`list:${list_id}`).emit("list_item_updated", item);
+  getIO()
+    .to(`${LIST_ROOM_PREFIX}${list_id}`)
+    .emit(LIST_EVENT_ITEM_UPDATED, item);
 
   return item;
 };
