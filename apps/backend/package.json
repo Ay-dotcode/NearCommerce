@@ -8,6 +8,7 @@
     "test": "jest --runInBand --detectOpenHandles"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@nearcommerce/api": "workspace:*",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",

@@ -1,13 +1,24 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+
 /**
  * Wraps a promise with a timeout. If the promise takes longer than `timeoutMs`,
  * it throws a Timeout Error, triggering our fallback logic.
  */
-export const withCircuitBreaker = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+export const withCircuitBreaker = <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+): Promise<T> => {
   let timeoutHandle: NodeJS.Timeout;
 
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutHandle = setTimeout(() => {
-      reject(new Error(`Circuit breaker triggered: operation exceeded ${timeoutMs}ms`));
+      reject(
+        new Error(
+          `Circuit breaker triggered: operation exceeded ${timeoutMs}ms`,
+        ),
+      );
     }, timeoutMs);
   });
 
@@ -17,11 +28,15 @@ export const withCircuitBreaker = <T>(promise: Promise<T>, timeoutMs: number): P
 };
 
 /**
- * Stub for Gemini 1.5 Flash Embedding generation.
- * (You will inject the actual @google/generative-ai call here later).
+ * Generates a 768-dimensional vector embedding using Google's text-embedding-004 model.
+ * The result is fed into pgvector for semantic similarity search.
  */
-export const fetchGeminiEmbedding = async (_text: string): Promise<number[]> => {
-  // Mocking a failure here so we can test the fallback pipeline immediately.
-  // When ready, replace with actual SDK call returning a 768-dimensional vector.
-  throw new Error("Gemini SDK not yet initialized");
+export const fetchGeminiEmbedding = async (text: string): Promise<number[]> => {
+  if (!process.env.GEMINI_API_KEY)
+    throw new Error("GEMINI_API_KEY is not configured.");
+
+  const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+  const result = await model.embedContent(text);
+
+  return result.embedding.values;
 };
