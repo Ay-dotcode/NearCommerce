@@ -6,4 +6,14 @@ export const RegisterSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters"),
 });
 
+export const VerifyEmailSchema = z.object({
+  token: z.string().min(1, "Verification token is required"),
+});
+
+export const ResendVerificationSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
 export type RegisterInput = z.infer<typeof RegisterSchema>;
+export type VerifyEmailInput = z.infer<typeof VerifyEmailSchema>;
+export type ResendVerificationInput = z.infer<typeof ResendVerificationSchema>;
