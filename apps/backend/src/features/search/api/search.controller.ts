@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { SearchQuerySchema } from "@nearcommerce/api";
-import { db } from "../../../config/database";
-import { withCircuitBreaker, fetchGeminiEmbedding } from "../../../utils/circuitBreaker";
+import { db } from "@/config/database";
+import { GEMINI_CIRCUIT_BREAKER_TIMEOUT_MS } from "@/constants";
+import { withCircuitBreaker, fetchGeminiEmbedding } from "@/utils/circuitBreaker";
 
 export const searchProducts = async (req: Request, res: Response) => {
   try {
@@ -39,7 +40,7 @@ export const searchProducts = async (req: Request, res: Response) => {
 
     // Attempt AI Vector Search with 2000ms circuit breaker
     try {
-      const embedding = await withCircuitBreaker(fetchGeminiEmbedding(q), 2000);
+      const embedding = await withCircuitBreaker(fetchGeminiEmbedding(q), GEMINI_CIRCUIT_BREAKER_TIMEOUT_MS);
       const vectorString = `[${embedding.join(",")}]`;
 
       const aiResult = await db.query(

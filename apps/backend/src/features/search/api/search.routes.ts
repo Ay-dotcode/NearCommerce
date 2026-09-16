@@ -1,5 +1,5 @@
+import { searchProducts } from "@/features/search/api/search.controller";
 import { Router } from "express";
-import { searchProducts } from "./search.controller";
 
 const searchRouter = Router();
 

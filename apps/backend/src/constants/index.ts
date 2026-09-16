@@ -21,3 +21,6 @@ export const DEFAULT_PORT = 4000;
 // Support Channels Constants
 export const SUPPORT_EMAIL = "joseyowolabi@gmail.com";
 export const SUPPORT_PHONE = "+905338856528";
+
+// Search Constants
+export const GEMINI_CIRCUIT_BREAKER_TIMEOUT_MS = 2000; // 2s budget for AI embedding generation before falling back to pg_trgm / tsvector
