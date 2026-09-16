@@ -1,13 +1,13 @@
 import { app } from "@/app";
+import { DEFAULT_PORT, ENV_PATH } from "@/constants";
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
-if (!process.env.DATABASE_URL) {
+dotenv.config({ path: ENV_PATH });
+if (!process.env.DATABASE_URL)
   dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-}
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || DEFAULT_PORT;
 app.listen(PORT, () => {
   console.log(`🚀 NearCommerce Backend running on http://localhost:${PORT}`);
   console.log(`➡️  Test Database: GET http://localhost:${PORT}/test-db`);

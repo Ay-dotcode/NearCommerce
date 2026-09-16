@@ -2,5 +2,11 @@
   "json.schema.validate": true,
   "files.associations": {
     "turbo.json": "json"
+  },
+  "js/ts.tsserver.watchOptions": {
+    "excludeDirectories": ["**/node_modules"]
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true
   }
 }
