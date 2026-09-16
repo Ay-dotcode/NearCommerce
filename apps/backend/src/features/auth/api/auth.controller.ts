@@ -1,4 +1,8 @@
 import { db } from "@/config/database";
+import {
+  BCRYPT_SALT_ROUNDS,
+  EMAIL_VERIFICATION_TOKEN_TTL_MS,
+} from "@/constants";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import { RegisterSchema } from "@nearcommerce/api";
 import bcrypt from "bcrypt";
@@ -28,8 +32,10 @@ export const registerUser = async (req: Request, res: Response) => {
       return res.status(409).json({ error: "Email already in use" });
 
     // 3. Hash password
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(validatedData.password, saltRounds);
+    const passwordHash = await bcrypt.hash(
+      validatedData.password,
+      BCRYPT_SALT_ROUNDS,
+    );
 
     // 4. Start Database Transaction using a dedicated pool client
     const client = await db.connect();
@@ -48,7 +54,7 @@ export const registerUser = async (req: Request, res: Response) => {
         [userId],
       );
       const { rawToken, tokenHash } = generateVerificationToken();
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS);
 
       await client.query(
         `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at) 
