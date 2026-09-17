@@ -3,6 +3,7 @@ import authRouter from "@/features/auth/api/auth.routes";
 import listsRouter from "@/features/lists/api/list.routes";
 import searchRouter from "@/features/search/api/search.routes";
 import supportRouter from "@/features/support/api/support.routes";
+import storeRouter from "@/routes/storeRoutes";
 import { RegisterSchema } from "@nearcommerce/api";
 import cors from "cors";
 import express, { Request, Response } from "express";
@@ -17,6 +18,8 @@ app.use("/auth", authRouter);
 app.use("/search", searchRouter);
 app.use("/support", supportRouter);
 app.use("/lists", listsRouter);
+app.use("/api/stores", storeRouter);
+app.use("/stores", storeRouter);
 
 app.get("/test-db", async (_req: Request, res: Response) => {
   try {
