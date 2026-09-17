@@ -4,6 +4,7 @@ import listsRouter from "@/features/lists/api/list.routes";
 import searchRouter from "@/features/search/api/search.routes";
 import supportRouter from "@/features/support/api/support.routes";
 import productRouter from "@/routes/productRoutes";
+import reviewRouter from "@/routes/reviewRoutes";
 import storeRouter from "@/routes/storeRoutes";
 import { RegisterSchema } from "@nearcommerce/api";
 import cors from "cors";
@@ -23,6 +24,8 @@ app.use("/api/stores", storeRouter);
 app.use("/stores", storeRouter);
 app.use("/api/products", productRouter);
 app.use("/products", productRouter);
+app.use("/api/reviews", reviewRouter);
+app.use("/reviews", reviewRouter);
 
 app.get("/test-db", async (_req: Request, res: Response) => {
   try {
