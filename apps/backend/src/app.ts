@@ -3,6 +3,7 @@ import authRouter from "@/features/auth/api/auth.routes";
 import listsRouter from "@/features/lists/api/list.routes";
 import searchRouter from "@/features/search/api/search.routes";
 import supportRouter from "@/features/support/api/support.routes";
+import adminRouter from "@/routes/adminRoutes";
 import productRouter from "@/routes/productRoutes";
 import reviewRouter from "@/routes/reviewRoutes";
 import storeRouter from "@/routes/storeRoutes";
@@ -26,6 +27,8 @@ app.use("/api/products", productRouter);
 app.use("/products", productRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/reviews", reviewRouter);
+app.use("/api/admin", adminRouter);
+app.use("/admin", adminRouter);
 
 app.get("/test-db", async (_req: Request, res: Response) => {
   try {
