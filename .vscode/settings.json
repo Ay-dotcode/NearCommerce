@@ -8,5 +8,6 @@
   },
   "files.watcherExclude": {
     "**/node_modules/**": true
-  }
+  },
+  "css.lint.unknownAtRules": "ignore"
 }
