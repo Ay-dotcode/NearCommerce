@@ -173,6 +173,9 @@ importers:
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
+      papaparse:
+        specifier: ^5.7.0
+        version: 5.7.0
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -192,6 +195,9 @@ importers:
       '@types/jest':
         specifier: ^29.5.12
         version: 29.5.14
+      '@types/papaparse':
+        specifier: ^5.5.2
+        version: 5.5.2
       '@types/react':
         specifier: ^18.2.55
         version: 18.2.79
@@ -1925,6 +1931,9 @@ packages:
 
   '@types/node@26.5.1':
     resolution: {integrity: sha512-CzNm2FezW4VR/LjG6yUdiEgLE/rAQ9Slj5gCu/C2VrdcW7I0ahNZ8DRbHT7zOZ6r3ONgd/bsQIeSaoDGrd1C6g==}
+
+  '@types/papaparse@5.5.2':
+    resolution: {integrity: sha512-gFnFp/JMzLHCwRf7tQHrNnfhN4eYBVYYI897CGX4MY1tzY9l2aLkVyx2IlKZ/SAqDbB3I1AOZW5gTMGGsqWliA==}
 
   '@types/pg@8.23.1':
     resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
@@ -4549,6 +4558,9 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  papaparse@5.7.0:
+    resolution: {integrity: sha512-qBGxg/7Q3Kl9Wfhrz2Z74UnvnHTXLNG6jmKJFeBvP2+y4lV7So+7SR62+Zd47JvdrCkX+nDcnr0ObPzek/+6RA==}
 
   parse-json@4.0.0:
     resolution: {integrity: sha512-aOIos8bujGN93/8Ox/jPLh7RwVnPEysynVFE+fQZyg6jKELEHwzgKdLRFHUgXJL6kylijVSBC4BvN9OmsB48Rw==}
@@ -7778,6 +7790,10 @@ snapshots:
     dependencies:
       undici-types: 8.9.0
 
+  '@types/papaparse@5.5.2':
+    dependencies:
+      '@types/node': 26.5.1
+
   '@types/pg@8.23.1':
     dependencies:
       '@types/node': 26.5.1
@@ -10964,6 +10980,8 @@ snapshots:
   p-try@2.2.0: {}
 
   package-json-from-dist@1.0.1: {}
+
+  papaparse@5.7.0: {}
 
   parse-json@4.0.0:
     dependencies:

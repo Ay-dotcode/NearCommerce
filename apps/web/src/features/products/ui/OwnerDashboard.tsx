@@ -1,6 +1,7 @@
 import React from "react";
 import { useConfirmStock } from "../api/useConfirmStock";
 import { useProducts } from "../api/useProducts";
+import { CsvImporter } from "./CsvImporter";
 
 export const OwnerDashboard: React.FC = () => {
   const { data: products, isLoading, isError } = useProducts();
@@ -65,6 +66,8 @@ export const OwnerDashboard: React.FC = () => {
           ))
         )}
       </div>
+
+      <CsvImporter />
     </div>
   );
 };
