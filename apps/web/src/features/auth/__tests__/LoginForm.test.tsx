@@ -58,7 +58,7 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
   it("routes to /admin/dashboard for SYSTEM_ADMIN role", async () => {
     (apiClient.post as jest.Mock).mockResolvedValueOnce({
       data: {
-        accessToken: "mock-admin-token",
+        access_token: "mock-admin-token",
         user: { id: "1", role: "SYSTEM_ADMIN" },
       },
     });
@@ -85,8 +85,8 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
   it("routes to /owner/dashboard and sets X-Store-ID for STORE_OWNER role", async () => {
     (apiClient.post as jest.Mock).mockResolvedValueOnce({
       data: {
-        accessToken: "mock-owner-token",
-        user: { id: "2", role: "STORE_OWNER", storeId: "store-123" },
+        access_token: "mock-owner-token",
+        user: { id: "2", role: "STORE_OWNER", store_id: "store-123" },
       },
     });
 

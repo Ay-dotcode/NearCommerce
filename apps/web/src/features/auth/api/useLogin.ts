@@ -9,13 +9,10 @@ interface LoginPayload {
 interface AuthResponse {
   access_token: string;
   refresh_token?: string;
-  // Fallbacks for test mocks that use camelCase
-  accessToken?: string;
   user: {
     id: string;
     role: "STORE_OWNER" | "SYSTEM_ADMIN" | "CUSTOMER";
     store_id?: string;
-    storeId?: string;
   };
 }
 
@@ -34,19 +31,7 @@ export function useLogin() {
         "/auth/login",
         credentials,
       );
-      const data = response.data;
-      const token = data.access_token || data.accessToken || "";
-      const storeId = data.user.store_id || data.user.storeId;
-
-      return {
-        access_token: token,
-        accessToken: token,
-        user: {
-          ...data.user,
-          store_id: storeId,
-          storeId: storeId,
-        },
-      };
+      return response.data;
     },
     onSuccess: (data) => {
       if (data.access_token) {
