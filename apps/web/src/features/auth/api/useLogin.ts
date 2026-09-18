@@ -7,8 +7,16 @@ interface LoginPayload {
 }
 
 interface AuthResponse {
-  accessToken: string;
-  user: { id: string; role: "STORE_OWNER" | "SYSTEM_ADMIN"; storeId?: string };
+  access_token: string;
+  refresh_token?: string;
+  // Fallbacks for test mocks that use camelCase
+  accessToken?: string;
+  user: {
+    id: string;
+    role: "STORE_OWNER" | "SYSTEM_ADMIN" | "CUSTOMER";
+    store_id?: string;
+    storeId?: string;
+  };
 }
 
 /**
@@ -26,15 +34,30 @@ export function useLogin() {
         "/auth/login",
         credentials,
       );
-      return response.data;
+      const data = response.data;
+      const token = data.access_token || data.accessToken || "";
+      const storeId = data.user.store_id || data.user.storeId;
+
+      return {
+        access_token: token,
+        accessToken: token,
+        user: {
+          ...data.user,
+          store_id: storeId,
+          storeId: storeId,
+        },
+      };
     },
     onSuccess: (data) => {
-      apiClient.defaults.headers.common["Authorization"] =
-        `Bearer ${data.accessToken}`;
+      if (data.access_token) {
+        apiClient.defaults.headers.common["Authorization"] =
+          `Bearer ${data.access_token}`;
+      }
 
-      if (data.user.storeId)
+      if (data.user.store_id) {
         // Automatically scope every request to the authenticated store
-        apiClient.defaults.headers.common["X-Store-ID"] = data.user.storeId;
+        apiClient.defaults.headers.common["X-Store-ID"] = data.user.store_id;
+      }
     },
   });
 }

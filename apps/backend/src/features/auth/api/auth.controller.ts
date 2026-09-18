@@ -430,10 +430,23 @@ export const loginUser = async (req: Request, res: Response) => {
       );
     }
 
+    let storeId: string | undefined;
+    if (user.role === "STORE_OWNER") {
+      const storeRes = await db.query(
+        `SELECT id FROM stores WHERE owner_id = $1 LIMIT 1`,
+        [user.id],
+      );
+      if (storeRes.rows.length > 0) storeId = storeRes.rows[0].id;
+    }
+
     return res.status(200).json({
       access_token: accessToken,
-      refresh_token: rawRefreshToken, // Send raw token to client once, never again
-      user: { id: user.id, role: user.role },
+      refresh_token: rawRefreshToken,
+      user: {
+        id: user.id,
+        role: user.role,
+        ...(storeId ? { store_id: storeId } : {}),
+      },
     });
   } catch (error) {
     if (error instanceof ZodError) {
