@@ -2,10 +2,10 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
-  '@parcel/watcher': set this to true or false
-  bcrypt: set this to true or false
+  '@parcel/watcher': true
+  bcrypt: true
   esbuild: true
-  protobufjs: set this to true or false
-  unrs-resolver: set this to true or false
+  protobufjs: true
+  unrs-resolver: true
 
 minimumReleaseAge: 0
