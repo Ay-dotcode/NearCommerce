@@ -27,7 +27,10 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
   const renderWithProviders = (queryClient: QueryClient) => {
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={["/"]}>
+        <MemoryRouter
+          initialEntries={["/"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <Routes>
             <Route path="/" element={<LoginForm />} />
             <Route
