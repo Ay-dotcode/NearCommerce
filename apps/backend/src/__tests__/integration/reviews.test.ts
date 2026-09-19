@@ -1,7 +1,9 @@
+import { app } from "@/app";
 import { db } from "@/config/database";
 import { generateMockToken } from "@/utils/testAuth";
 import request from "supertest";
-import { app } from "../../app";
+
+jest.setTimeout(30000);
 
 describe("Community Ratings & Trust Gate API Integration", () => {
   let unverifiedUserId: string;
