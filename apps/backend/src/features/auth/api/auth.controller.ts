@@ -82,9 +82,10 @@ export const registerUser = async (req: Request, res: Response) => {
 
       // 6. Dispatch Email
       // TODO: Replace mocked console.log with an actual email service implementation (e.g. Resend, SendGrid, AWS SES)
-      console.log(
-        `[EMAIL DISPATCH] To: ${validatedData.email}, Token: ${rawToken}`,
-      );
+      if (process.env.NODE_ENV !== "test")
+        console.log(
+          `[EMAIL DISPATCH] To: ${validatedData.email}, Token: ${rawToken}`,
+        );
 
       // 7. Return success (DO NOT return the raw token in the JSON response)
       return res.status(201).json({
@@ -225,9 +226,10 @@ export const resendVerification = async (req: Request, res: Response) => {
     }
 
     // Dispatch Email (Mocked)
-    console.log(
-      `[EMAIL DISPATCH] Resend To: ${validatedData.email}, Token: ${rawToken}`,
-    );
+    if (process.env.NODE_ENV !== "test")
+      console.log(
+        `[EMAIL DISPATCH] Resend To: ${validatedData.email}, Token: ${rawToken}`,
+      );
 
     return res.status(200).json({
       message: "If your email is registered, a new token has been sent.",
@@ -280,9 +282,10 @@ export const forgotPassword = async (req: Request, res: Response) => {
       client.release();
     }
 
-    console.log(
-      `[EMAIL DISPATCH] Password Reset To: ${email}, Token: ${rawToken}`,
-    );
+    if (process.env.NODE_ENV !== "test")
+      console.log(
+        `[EMAIL DISPATCH] Password Reset To: ${email}, Token: ${rawToken}`,
+      );
     return res.status(200).json({
       message: "If that email is registered, a reset link has been sent.",
     });
