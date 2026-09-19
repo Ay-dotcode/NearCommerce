@@ -1,13 +1,10 @@
 import { act, render, screen } from "@testing-library/react";
-import { EdgeImageCropper, createYoloWorker } from "../ui/EdgeImageCropper";
+import { EdgeImageCropper } from "../ui/EdgeImageCropper";
+import { createYoloWorker } from "../workers/workerFactory";
 
-jest.mock("../ui/EdgeImageCropper", () => {
-  const actual = jest.requireActual("../ui/EdgeImageCropper");
-  return {
-    ...actual,
-    createYoloWorker: jest.fn(),
-  };
-});
+jest.mock("../workers/workerFactory", () => ({
+  createYoloWorker: jest.fn(),
+}));
 
 describe("EdgeImageCropper (Task 4.2.3)", () => {
   let mockWorker: {
@@ -20,7 +17,6 @@ describe("EdgeImageCropper (Task 4.2.3)", () => {
     jest.useFakeTimers();
 
     // Stub Image so that assigning src automatically fires onload via setTimeout(0),
-    // which mirrors real browser behaviour and works with jest fake timers.
     global.Image = class {
       crossOrigin: string = "";
       width: number = 300;
@@ -64,12 +60,10 @@ describe("EdgeImageCropper (Task 4.2.3)", () => {
       <EdgeImageCropper imageUrl="blob:test" onCropComplete={jest.fn()} />,
     );
 
-    // Let the Image onload fire
     await act(async () => {
       jest.advanceTimersByTime(10);
     });
 
-    // Simulate a successful detection response from the worker
     act(() => {
       if (mockWorker.onmessage) {
         mockWorker.onmessage({
@@ -92,15 +86,12 @@ describe("EdgeImageCropper (Task 4.2.3)", () => {
       <EdgeImageCropper imageUrl="blob:test" onCropComplete={jest.fn()} />,
     );
 
-    // Trigger the image load
     await act(async () => {
       jest.advanceTimersByTime(10);
     });
 
-    // Loading overlay should still be visible
     expect(screen.getByText(/running edge ai/i)).toBeInTheDocument();
 
-    // Advance exactly 3 seconds to trigger the hard timeout
     act(() => {
       jest.advanceTimersByTime(3000);
     });

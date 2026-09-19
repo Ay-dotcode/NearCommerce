@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createYoloWorker } from "../workers/workerFactory";
 
 interface BoundingBox {
   x: number;
@@ -11,12 +12,6 @@ interface EdgeImageCropperProps {
   imageUrl: string;
   onCropComplete: (croppedDataUrl: string) => void;
 }
-
-// Extracted so tests can mock it without triggering import.meta.url in Jest.
-export const createYoloWorker = (): Worker =>
-  new Worker(new URL("../workers/yoloWorker.ts", import.meta.url), {
-    type: "module",
-  });
 
 export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
   imageUrl,
@@ -46,7 +41,7 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
 
       const imageData = ctx.getImageData(0, 0, img.width, img.height);
 
-      // Spawn the YOLO Web Worker via factory (kept separate for testability)
+      // Spawn the YOLO Web Worker via the isolated factory
       workerRef.current = createYoloWorker();
 
       // Enforce the strict 3-second fallback rule
