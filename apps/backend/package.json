@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc && tsc-alias",
-    "test": "jest --runInBand --detectOpenHandles"
+    "test": "jest --config jest.config.js --runInBand --detectOpenHandles"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
