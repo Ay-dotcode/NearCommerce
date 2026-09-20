@@ -194,7 +194,8 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
             className="text-sm text-yellow-600 font-medium"
             data-testid="manual-mode-alert"
           >
-            AI detection timed out or failed. Drag on the image to adjust the crop.
+            AI detection timed out or failed. Drag on the image to adjust the
+            crop.
           </p>
         )}
         {!loading && box && (
