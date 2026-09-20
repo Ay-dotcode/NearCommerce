@@ -24,6 +24,7 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerRef = useRef<Worker | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -49,6 +50,12 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
         workerRef.current?.terminate();
         setLoading(false);
         setManualMode(true);
+        setBox({
+          x: img.width * 0.1,
+          y: img.height * 0.1,
+          width: img.width * 0.8,
+          height: img.height * 0.8,
+        });
       }, 3000);
 
       workerRef.current.onmessage = (event) => {
@@ -60,6 +67,12 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
         } else {
           setManualMode(true);
           setLoading(false);
+          setBox({
+            x: img.width * 0.1,
+            y: img.height * 0.1,
+            width: img.width * 0.8,
+            height: img.height * 0.8,
+          });
         }
       };
 
@@ -76,6 +89,44 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
       workerRef.current?.terminate();
     };
   }, [imageUrl]);
+
+  const getCanvasPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const bounds = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - bounds.left) / bounds.width) * canvas.width,
+      y: ((event.clientY - bounds.top) / bounds.height) * canvas.height,
+    };
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!manualMode) return;
+    const point = getCanvasPoint(event);
+    if (!point) return;
+    dragStartRef.current = point;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setBox({ x: point.x, y: point.y, width: 1, height: 1 });
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!manualMode || !dragStartRef.current) return;
+    const point = getCanvasPoint(event);
+    if (!point || !canvasRef.current) return;
+    const start = dragStartRef.current;
+    const x = Math.min(start.x, point.x);
+    const y = Math.min(start.y, point.y);
+    setBox({
+      x,
+      y,
+      width: Math.max(1, Math.abs(point.x - start.x)),
+      height: Math.max(1, Math.abs(point.y - start.y)),
+    });
+  };
+
+  const handlePointerUp = () => {
+    dragStartRef.current = null;
+  };
 
   const handleConfirmCrop = () => {
     if (!canvasRef.current || !box) return;
@@ -104,6 +155,10 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
         <canvas
           ref={canvasRef}
           className="max-w-full h-auto border shadow-sm"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          style={{ cursor: manualMode ? "crosshair" : "default" }}
         />
 
         {loading && (
@@ -115,16 +170,20 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
         )}
 
         {/* Overlay the AI-detected bounding box */}
-        {!loading && box && !manualMode && (
+        {!loading && box && (
           <div
-            className="absolute border-4 border-green-500 bg-green-500 bg-opacity-20 pointer-events-none"
+            className={`absolute border-4 bg-opacity-20 pointer-events-none ${
+              manualMode
+                ? "border-yellow-500 bg-yellow-500"
+                : "border-green-500 bg-green-500"
+            }`}
             style={{
-              left: box.x,
-              top: box.y,
-              width: box.width,
-              height: box.height,
+              left: `${(box.x / (canvasRef.current?.width || 1)) * 100}%`,
+              top: `${(box.y / (canvasRef.current?.height || 1)) * 100}%`,
+              width: `${(box.width / (canvasRef.current?.width || 1)) * 100}%`,
+              height: `${(box.height / (canvasRef.current?.height || 1)) * 100}%`,
             }}
-            data-testid="ai-crop-box"
+            data-testid={manualMode ? "manual-crop-box" : "ai-crop-box"}
           />
         )}
       </div>
@@ -135,7 +194,7 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
             className="text-sm text-yellow-600 font-medium"
             data-testid="manual-mode-alert"
           >
-            AI detection timed out or failed. Manual mode activated.
+            AI detection timed out or failed. Drag on the image to adjust the crop.
           </p>
         )}
         {!loading && box && (

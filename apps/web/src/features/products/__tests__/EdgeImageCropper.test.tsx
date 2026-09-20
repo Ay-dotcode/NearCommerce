@@ -97,6 +97,26 @@ describe("EdgeImageCropper (Task 4.2.3)", () => {
     });
 
     expect(screen.getByTestId("manual-mode-alert")).toBeInTheDocument();
+    expect(screen.getByTestId("manual-crop-box")).toBeInTheDocument();
     expect(mockWorker.terminate).toHaveBeenCalled();
+  });
+
+  it("falls back to manual mode when the worker reports an error", async () => {
+    render(
+      <EdgeImageCropper imageUrl="blob:test" onCropComplete={jest.fn()} />,
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(10);
+    });
+
+    act(() => {
+      mockWorker.onmessage?.({
+        data: { success: false, error: "model unavailable" },
+      } as MessageEvent);
+    });
+
+    expect(screen.getByTestId("manual-mode-alert")).toBeInTheDocument();
+    expect(screen.getByTestId("manual-crop-box")).toBeInTheDocument();
   });
 });
