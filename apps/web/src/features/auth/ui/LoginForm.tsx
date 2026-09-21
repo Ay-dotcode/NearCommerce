@@ -1,4 +1,5 @@
 import { useLogin } from "@/features/auth/api/useLogin";
+import { getUserRole } from "@/features/auth/session";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import React from "react";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +17,13 @@ import { useNavigate } from "react-router-dom";
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const loginMutation = useLogin();
+
+  React.useEffect(() => {
+    const role = getUserRole();
+    if (role === "SYSTEM_ADMIN")
+      navigate("/admin/dashboard", { replace: true });
+    if (role === "STORE_OWNER") navigate("/owner/dashboard", { replace: true });
+  }, [navigate]);
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-md">

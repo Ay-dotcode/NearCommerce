@@ -1,3 +1,4 @@
+import { clearSession } from "@/features/auth/session";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    clearSession();
     // Reset any headers set during a previous test
     (apiClient.defaults.headers.common as Record<string, string | undefined>)[
       "X-Store-ID"

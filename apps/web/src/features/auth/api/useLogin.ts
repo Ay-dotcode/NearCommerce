@@ -1,3 +1,4 @@
+import { persistSession } from "@/features/auth/session";
 import { apiClient } from "@nearcommerce/api";
 import { useMutation } from "@tanstack/react-query";
 
@@ -34,15 +35,11 @@ export function useLogin() {
       return response.data;
     },
     onSuccess: (data) => {
-      if (data.access_token) {
-        apiClient.defaults.headers.common["Authorization"] =
-          `Bearer ${data.access_token}`;
-      }
-
-      if (data.user.store_id) {
-        // Automatically scope every request to the authenticated store
-        apiClient.defaults.headers.common["X-Store-ID"] = data.user.store_id;
-      }
+      if (
+        data.access_token &&
+        (data.user.role === "SYSTEM_ADMIN" || data.user.role === "STORE_OWNER")
+      )
+        persistSession(data.access_token, data.user.role, data.user.store_id);
     },
   });
 }
