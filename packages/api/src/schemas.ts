@@ -1,18 +1,14 @@
-import { StoreOpeningHoursSchema } from "@/schemas/store";
 import { z } from "zod";
-export * from "@/schemas/admin";
-export * from "@/schemas/auth";
-export * from "@/schemas/lists";
-export * from "@/schemas/product";
-export * from "@/schemas/search";
-export * from "@/schemas/store";
+import { StoreOpeningHoursSchema } from "./schemas/store";
+import { UserRole } from "./types/roles";
+export * from "./schemas/admin";
+export * from "./schemas/auth";
+export * from "./schemas/lists";
+export * from "./schemas/product";
+export * from "./schemas/search";
+export * from "./schemas/store";
 
-// Enums
-export const UserRoleSchema = z.enum([
-  "CUSTOMER",
-  "STORE_OWNER",
-  "SYSTEM_ADMIN",
-]);
+export const UserRoleSchema = z.nativeEnum(UserRole);
 export const MemberRoleSchema = z.enum(["OWNER", "MEMBER"]);
 
 export const LoginSchema = z.object({

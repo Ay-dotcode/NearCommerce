@@ -3,6 +3,7 @@ import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
 import { OwnerDashboard } from "@/features/products/ui/OwnerDashboard";
+import { UserRole } from "@nearcommerce/api";
 import {
   createBrowserRouter,
   Navigate,
@@ -22,7 +23,7 @@ const router = createBrowserRouter(
     },
     { path: "/", element: <Navigate to="/login" replace /> },
     {
-      element: <ProtectedRoute role="SYSTEM_ADMIN" />,
+      element: <ProtectedRoute role={UserRole.SYSTEM_ADMIN} />,
       children: [
         {
           element: (
@@ -35,7 +36,7 @@ const router = createBrowserRouter(
       ],
     },
     {
-      element: <ProtectedRoute role="STORE_OWNER" />,
+      element: <ProtectedRoute role={UserRole.STORE_OWNER} />,
       children: [
         {
           element: (

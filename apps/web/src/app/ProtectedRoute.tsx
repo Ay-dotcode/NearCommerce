@@ -1,8 +1,5 @@
-import {
-  getAccessToken,
-  getUserRole,
-  PortalRole,
-} from "@/features/auth/session";
+import { getAccessToken, getUserRole } from "@/features/auth/session";
+import { PortalRole } from "@nearcommerce/api";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 export function ProtectedRoute({ role }: { role: PortalRole }) {

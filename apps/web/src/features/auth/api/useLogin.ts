@@ -1,5 +1,5 @@
 import { persistSession } from "@/features/auth/session";
-import { apiClient } from "@nearcommerce/api";
+import { apiClient, UserRole } from "@nearcommerce/api";
 import { useMutation } from "@tanstack/react-query";
 
 interface LoginPayload {
@@ -12,7 +12,7 @@ interface AuthResponse {
   refresh_token?: string;
   user: {
     id: string;
-    role: "STORE_OWNER" | "SYSTEM_ADMIN" | "CUSTOMER";
+    role: UserRole;
     store_id?: string;
   };
 }
@@ -37,7 +37,8 @@ export function useLogin() {
     onSuccess: (data) => {
       if (
         data.access_token &&
-        (data.user.role === "SYSTEM_ADMIN" || data.user.role === "STORE_OWNER")
+        (data.user.role === UserRole.SYSTEM_ADMIN ||
+          data.user.role === UserRole.STORE_OWNER)
       )
         persistSession(data.access_token, data.user.role, data.user.store_id);
     },

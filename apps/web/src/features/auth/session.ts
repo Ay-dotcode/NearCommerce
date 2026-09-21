@@ -1,6 +1,6 @@
-import { apiClient } from "@nearcommerce/api";
-
-export type PortalRole = "STORE_OWNER" | "SYSTEM_ADMIN";
+import { apiClient, PortalRole, UserRole } from "@nearcommerce/api";
+export { UserRole } from "@nearcommerce/api";
+export type { PortalRole } from "@nearcommerce/api";
 
 const readCookie = (name: string) =>
   document.cookie
@@ -14,7 +14,7 @@ const writeCookie = (name: string, value: string) => {
 };
 
 export const getAccessToken = () => readCookie("access_token");
-export const getUserRole = () => readCookie("user_role");
+export const getUserRole = () => readCookie("user_role") as UserRole;
 
 export const persistSession = (
   token: string,

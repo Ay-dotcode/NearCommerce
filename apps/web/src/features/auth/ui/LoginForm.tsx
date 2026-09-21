@@ -1,5 +1,6 @@
 import { useLogin } from "@/features/auth/api/useLogin";
 import { getUserRole } from "@/features/auth/session";
+import { UserRole } from "@nearcommerce/api";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import React from "react";
 import { useNavigate } from "react-router-dom";
@@ -20,9 +21,10 @@ export const LoginForm: React.FC = () => {
 
   React.useEffect(() => {
     const role = getUserRole();
-    if (role === "SYSTEM_ADMIN")
+    if (role === UserRole.SYSTEM_ADMIN)
       navigate("/admin/dashboard", { replace: true });
-    if (role === "STORE_OWNER") navigate("/owner/dashboard", { replace: true });
+    if (role === UserRole.STORE_OWNER)
+      navigate("/owner/dashboard", { replace: true });
   }, [navigate]);
 
   return (
@@ -40,9 +42,9 @@ export const LoginForm: React.FC = () => {
           loginMutation.mutate(values, {
             onSuccess: (data) => {
               // RBAC-aware routing
-              if (data.user.role === "SYSTEM_ADMIN") {
+              if (data.user.role === UserRole.SYSTEM_ADMIN) {
                 navigate("/admin/dashboard");
-              } else if (data.user.role === "STORE_OWNER") {
+              } else if (data.user.role === UserRole.STORE_OWNER) {
                 navigate("/owner/dashboard");
               } else {
                 setStatus("Unauthorized role for web portal.");
