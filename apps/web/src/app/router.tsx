@@ -1,6 +1,7 @@
 import { AdminLayout } from "@/app/layouts/AdminLayout";
 import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
+import { AppRoutes } from "@/constants/routes";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
 import { OwnerDashboard } from "@/features/products/ui/OwnerDashboard";
 import { UserRole } from "@nearcommerce/api";
@@ -18,10 +19,13 @@ const AdminDashboard = () => <div>Master Oversight Portal</div>;
 const router = createBrowserRouter(
   [
     {
-      path: "/login",
+      path: AppRoutes.login,
       element: <LoginForm />,
     },
-    { path: "/", element: <Navigate to="/login" replace /> },
+    {
+      path: AppRoutes.home,
+      element: <Navigate to={AppRoutes.login} replace />,
+    },
     {
       element: <ProtectedRoute role={UserRole.SYSTEM_ADMIN} />,
       children: [
@@ -31,7 +35,7 @@ const router = createBrowserRouter(
               <AdminDashboard />
             </AdminLayout>
           ),
-          path: "/admin/dashboard",
+          path: AppRoutes.adminDashboard,
         },
       ],
     },
@@ -44,7 +48,7 @@ const router = createBrowserRouter(
               <OwnerDashboard />
             </StoreOwnerLayout>
           ),
-          path: "/owner/dashboard",
+          path: AppRoutes.storeOwnerDashboard,
         },
       ],
     },

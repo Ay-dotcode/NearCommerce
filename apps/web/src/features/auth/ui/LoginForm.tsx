@@ -1,3 +1,4 @@
+import { AppRoutes } from "@/constants/routes";
 import { useLogin } from "@/features/auth/api/useLogin";
 import { getUserRole } from "@/features/auth/session";
 import { UserRole } from "@nearcommerce/api";
@@ -22,9 +23,9 @@ export const LoginForm: React.FC = () => {
   React.useEffect(() => {
     const role = getUserRole();
     if (role === UserRole.SYSTEM_ADMIN)
-      navigate("/admin/dashboard", { replace: true });
+      navigate(AppRoutes.adminDashboard, { replace: true });
     if (role === UserRole.STORE_OWNER)
-      navigate("/owner/dashboard", { replace: true });
+      navigate(AppRoutes.storeOwnerDashboard, { replace: true });
   }, [navigate]);
 
   return (
@@ -43,9 +44,9 @@ export const LoginForm: React.FC = () => {
             onSuccess: (data) => {
               // RBAC-aware routing
               if (data.user.role === UserRole.SYSTEM_ADMIN) {
-                navigate("/admin/dashboard");
+                navigate(AppRoutes.adminDashboard);
               } else if (data.user.role === UserRole.STORE_OWNER) {
-                navigate("/owner/dashboard");
+                navigate(AppRoutes.storeOwnerDashboard);
               } else {
                 setStatus("Unauthorized role for web portal.");
                 setSubmitting(false);

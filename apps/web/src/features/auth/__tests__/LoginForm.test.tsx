@@ -1,3 +1,4 @@
+import { AppRoutes } from "@/constants/routes";
 import { clearSession } from "@/features/auth/session";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
 import { apiClient } from "@nearcommerce/api";
@@ -38,13 +39,13 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
           future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
         >
           <Routes>
-            <Route path="/" element={<LoginForm />} />
+            <Route path={AppRoutes.home} element={<LoginForm />} />
             <Route
-              path="/admin/dashboard"
+              path={AppRoutes.adminDashboard}
               element={<div data-testid="admin-dash">Admin Dashboard</div>}
             />
             <Route
-              path="/owner/dashboard"
+              path={AppRoutes.storeOwnerDashboard}
               element={<div data-testid="owner-dash">Owner Dashboard</div>}
             />
           </Routes>

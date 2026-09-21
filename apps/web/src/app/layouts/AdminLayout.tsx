@@ -1,3 +1,4 @@
+import { AppRoutes } from "@/constants/routes";
 import { clearSession } from "@/features/auth/session";
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +8,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   const signOut = () => {
     clearSession();
-    navigate("/login", { replace: true });
+    navigate(AppRoutes.login, { replace: true });
   };
 
   return (
