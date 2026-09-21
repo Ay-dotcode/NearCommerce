@@ -1,4 +1,5 @@
 import { db } from "@/config/database";
+import { generateMockToken } from "@/utils/testAuth";
 import request from "supertest";
 import { app } from "../../app";
 
@@ -6,6 +7,7 @@ describe("Product Freshness API Integration", () => {
   let storeId: string;
   let productId: string;
   let otherStoreId: string;
+  let ownerToken: string;
 
   beforeAll(async () => {
     // 1. Setup mock user
@@ -14,6 +16,7 @@ describe("Product Freshness API Integration", () => {
        VALUES ('owner@test.com', 'hash', 'Test Owner', 'STORE_OWNER') RETURNING id`,
     );
     const userId = userRes.rows[0].id;
+    ownerToken = generateMockToken({ id: userId, role: "STORE_OWNER" });
 
     // 2. Setup mock stores
     const storeRes = await db.query(
@@ -45,7 +48,9 @@ describe("Product Freshness API Integration", () => {
   });
 
   it("should return 400 if X-Store-ID is missing", async () => {
-    const res = await request(app).patch(`/api/products/${productId}/verify`);
+    const res = await request(app)
+      .patch(`/api/products/${productId}/verify`)
+      .set("Authorization", `Bearer ${ownerToken}`);
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/Missing X-Store-ID header/);
   });
@@ -53,6 +58,7 @@ describe("Product Freshness API Integration", () => {
   it("should return 404 if X-Store-ID does not match the product store", async () => {
     const res = await request(app)
       .patch(`/api/products/${productId}/verify`)
+      .set("Authorization", `Bearer ${ownerToken}`)
       .set("X-Store-ID", otherStoreId);
 
     expect(res.status).toBe(404);
@@ -61,6 +67,7 @@ describe("Product Freshness API Integration", () => {
   it("should update last_verified_at and return 200 when successful", async () => {
     const res = await request(app)
       .patch(`/api/products/${productId}/verify`)
+      .set("Authorization", `Bearer ${ownerToken}`)
       .set("X-Store-ID", storeId);
 
     expect(res.status).toBe(200);

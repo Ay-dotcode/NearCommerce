@@ -2,6 +2,7 @@ import { z } from "zod";
 import { StoreOpeningHoursSchema } from "./schemas/store";
 export * from "./schemas/auth";
 export * from "./schemas/lists";
+export * from "./schemas/product";
 export * from "./schemas/search";
 export * from "./schemas/store";
 

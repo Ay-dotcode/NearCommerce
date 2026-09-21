@@ -11,5 +11,9 @@ export function isProductStale(
     typeof lastVerifiedAt === "string"
       ? new Date(lastVerifiedAt)
       : lastVerifiedAt;
-  return differenceInDays(targetDate, parsedDate) > PRODUCT_FRESHNESS_THRESHOLD_DAYS;
+  if (Number.isNaN(parsedDate.getTime())) return true;
+
+  return (
+    differenceInDays(targetDate, parsedDate) > PRODUCT_FRESHNESS_THRESHOLD_DAYS
+  );
 }
