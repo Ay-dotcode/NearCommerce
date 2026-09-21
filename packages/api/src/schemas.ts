@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { StoreOpeningHoursSchema } from "./schemas/store";
 export * from "./schemas/auth";
-export * from "./schemas/search";
 export * from "./schemas/lists";
+export * from "./schemas/search";
+export * from "./schemas/store";
 
 // Enums
 export const UserRoleSchema = z.enum([
@@ -15,24 +17,6 @@ export const LoginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
-
-// Stores
-export const StoreOpeningHoursSchema = z.record(
-  z.enum([
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-  ]),
-  z.object({
-    open: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Format HH:MM"),
-    close: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Format HH:MM"),
-    closed: z.boolean().default(false),
-  }),
-);
 
 export const CreateStoreSchema = z.object({
   name: z.string().min(2, "Store name is required").max(255),
