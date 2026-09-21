@@ -4,7 +4,7 @@
     65,
     [
       80,
-      86
+      87
     ]
   ],
   "packageJsons": [
@@ -98,6 +98,7 @@
     "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/external.d.cts",
     "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/index.d.cts",
     "./src/schemas/store.ts",
+    "./src/schemas/admin.ts",
     "./src/schemas/auth.ts",
     "./src/schemas/lists.ts",
     "./src/schemas/product.ts",
@@ -403,6 +404,11 @@
       "impliedNodeFormat": 1
     },
     {
+      "version": "8f9951644fc54d7b03c1c4085df8e8e1",
+      "signature": "99daaef6e161a9b74899ead792eded01",
+      "impliedNodeFormat": 1
+    },
+    {
       "version": "f1bf101af1a2820ca2584d6c6ae815e2",
       "signature": "c7e8011aa023a528028939645d0baf5c",
       "impliedNodeFormat": 1
@@ -423,8 +429,8 @@
       "impliedNodeFormat": 1
     },
     {
-      "version": "f53f2655d191e7abd9a513ea3a12a2c6",
-      "signature": "5b7457fd15cd9d48729d580dbb30b16f",
+      "version": "38b45e5fa8b0cebe9d137c156d30f0ef",
+      "signature": "4b56c2a7121a16afcd8240b22412f1be",
       "impliedNodeFormat": 1
     },
     "697fd4d6119b830c365ab5854d1ede78"
@@ -476,7 +482,7 @@
     [
       65,
       79,
-      85
+      86
     ],
     [
       79,
@@ -484,7 +490,8 @@
       81,
       82,
       83,
-      84
+      84,
+      85
     ],
     [
       79
@@ -542,11 +549,11 @@
       9
     ],
     [
-      86,
+      87,
       10
     ],
     [
-      85,
+      86,
       11
     ],
     [
@@ -563,6 +570,10 @@
     ],
     [
       84,
+      12
+    ],
+    [
+      85,
       12
     ],
     [

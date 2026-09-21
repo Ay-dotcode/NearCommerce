@@ -3,7 +3,7 @@ import authRouter from "@/features/auth/api/auth.routes";
 import listsRouter from "@/features/lists/api/list.routes";
 import searchRouter from "@/features/search/api/search.routes";
 import supportRouter from "@/features/support/api/support.routes";
-import adminRouter from "@/routes/adminRoutes";
+import adminRouter from "@/routes/admin.routes";
 import productRouter from "@/routes/productRoutes";
 import reviewRouter from "@/routes/reviewRoutes";
 import storeRouter from "@/routes/storeRoutes";
@@ -16,7 +16,7 @@ export const app = express();
 
 app.use(
   cors({
-    origin: true, // Echo request origin to allow credentials from web client
+    origin: true,
     credentials: true,
   }),
 );
