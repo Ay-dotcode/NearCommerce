@@ -1,7 +1,7 @@
+import { CsvImporter } from "@/features/products/ui/CsvImporter";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { CsvImporter } from "../ui/CsvImporter";
 
 jest.mock("@nearcommerce/api", () => ({
   apiClient: {

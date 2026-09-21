@@ -1,6 +1,6 @@
+import { LoginForm } from "@/features/auth/ui/LoginForm";
+import { OwnerDashboard } from "@/features/products/ui/OwnerDashboard";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { LoginForm } from "../features/auth/ui/LoginForm";
-import { OwnerDashboard } from "../features/products/ui/OwnerDashboard";
 
 // ---------------------------------------------------------------------------
 // Placeholder dashboard components — AdminDashboard will be replaced in Task 4.3

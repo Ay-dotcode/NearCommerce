@@ -1,5 +1,5 @@
+import { createYoloWorker } from "@/features/products/workers/workerFactory";
 import React, { useEffect, useRef, useState } from "react";
-import { createYoloWorker } from "../workers/workerFactory";
 
 interface BoundingBox {
   x: number;

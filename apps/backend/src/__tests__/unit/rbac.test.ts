@@ -1,4 +1,4 @@
-import { requireRole } from "../../middleware/rbac";
+import { requireRole } from "@/middleware/rbac";
 
 describe("RBAC Middleware (Task 3.2.6)", () => {
   let req: any;

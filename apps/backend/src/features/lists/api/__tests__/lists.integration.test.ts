@@ -6,12 +6,13 @@ jest.mock("@/config/socket", () => ({
   }),
 }));
 
-import request from "supertest";
+import { app } from "@/app";
+import { db } from "@/config/database";
 import jwt from "jsonwebtoken";
-import { app } from "../../../../app";
-import { db } from "../../../../config/database";
+import request from "supertest";
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "fallback_secret_do_not_use_in_prod";
+const JWT_ACCESS_SECRET =
+  process.env.JWT_ACCESS_SECRET || "fallback_secret_do_not_use_in_prod";
 
 describe("Lists API Integration Tests", () => {
   let ownerToken: string;
@@ -22,42 +23,58 @@ describe("Lists API Integration Tests", () => {
   beforeAll(async () => {
     // 1. Create Test Users
     const ownerRes = await db.query(
-      `INSERT INTO users (email, password_hash, full_name) VALUES ('owner@lists.local', 'hash', 'Owner') RETURNING id`
+      `INSERT INTO users (email, password_hash, full_name) VALUES ('owner@lists.local', 'hash', 'Owner') RETURNING id`,
     );
     const memberRes = await db.query(
-      `INSERT INTO users (email, password_hash, full_name) VALUES ('member@lists.local', 'hash', 'Member') RETURNING id`
+      `INSERT INTO users (email, password_hash, full_name) VALUES ('member@lists.local', 'hash', 'Member') RETURNING id`,
     );
     const ownerId = ownerRes.rows[0].id;
     const memberId = memberRes.rows[0].id;
 
     // 2. Generate JWTs for auth middleware
-    ownerToken = jwt.sign({ id: ownerId, role: "CUSTOMER" }, JWT_ACCESS_SECRET, { expiresIn: "15m" });
-    memberToken = jwt.sign({ id: memberId, role: "CUSTOMER" }, JWT_ACCESS_SECRET, { expiresIn: "15m" });
+    ownerToken = jwt.sign(
+      { id: ownerId, role: "CUSTOMER" },
+      JWT_ACCESS_SECRET,
+      { expiresIn: "15m" },
+    );
+    memberToken = jwt.sign(
+      { id: memberId, role: "CUSTOMER" },
+      JWT_ACCESS_SECRET,
+      { expiresIn: "15m" },
+    );
 
     // 3. Create a Store and Product for the UPSERT test
     const storeRes = await db.query(
       `INSERT INTO stores (owner_id, name, address, latitude, longitude, opening_hours) VALUES ($1, 'List Store', 'Address', 0, 0, '{}') RETURNING id`,
-      [ownerId]
+      [ownerId],
     );
     const productRes = await db.query(
       `INSERT INTO products (store_id, name, price, quantity) VALUES ($1, 'Test Product', 10.00, 100) RETURNING id`,
-      [storeRes.rows[0].id]
+      [storeRes.rows[0].id],
     );
     productId = productRes.rows[0].id;
 
     // 4. Create Household List and assign roles
     const listRes = await db.query(
-      `INSERT INTO household_lists (name, invite_code) VALUES ('My House', 'TESTCODE') RETURNING id`
+      `INSERT INTO household_lists (name, invite_code) VALUES ('My House', 'TESTCODE') RETURNING id`,
     );
     listId = listRes.rows[0].id;
 
-    await db.query(`INSERT INTO household_list_members (list_id, user_id, role) VALUES ($1, $2, 'OWNER')`, [listId, ownerId]);
-    await db.query(`INSERT INTO household_list_members (list_id, user_id, role) VALUES ($1, $2, 'MEMBER')`, [listId, memberId]);
+    await db.query(
+      `INSERT INTO household_list_members (list_id, user_id, role) VALUES ($1, $2, 'OWNER')`,
+      [listId, ownerId],
+    );
+    await db.query(
+      `INSERT INTO household_list_members (list_id, user_id, role) VALUES ($1, $2, 'MEMBER')`,
+      [listId, memberId],
+    );
   });
 
   afterAll(async () => {
     // Teardown cascade deletes will handle most of this, but it's good practice to clean root entities
-    await db.query(`DELETE FROM users WHERE email IN ('owner@lists.local', 'member@lists.local')`);
+    await db.query(
+      `DELETE FROM users WHERE email IN ('owner@lists.local', 'member@lists.local')`,
+    );
     await db.end();
   });
 
@@ -123,8 +140,9 @@ describe("Lists API Integration Tests", () => {
     });
 
     it("should reject unauthenticated requests with 401", async () => {
-      const response = await request(app)
-        .post(`/lists/${listId}/regenerate-invite`);
+      const response = await request(app).post(
+        `/lists/${listId}/regenerate-invite`,
+      );
 
       expect(response.status).toBe(401);
     });
@@ -139,4 +157,3 @@ describe("Lists API Integration Tests", () => {
     });
   });
 });
-

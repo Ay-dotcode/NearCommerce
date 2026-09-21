@@ -1,6 +1,6 @@
+import { app } from "@/app";
 import { db } from "@/config/database";
 import request from "supertest";
-import { app } from "../../app";
 
 describe("Store Detail API Integration", () => {
   let activeStoreId: string;

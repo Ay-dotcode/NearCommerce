@@ -1,6 +1,6 @@
+import { EdgeImageCropper } from "@/features/products/ui/EdgeImageCropper";
+import { createYoloWorker } from "@/features/products/workers/workerFactory";
 import { act, render, screen } from "@testing-library/react";
-import { EdgeImageCropper } from "../ui/EdgeImageCropper";
-import { createYoloWorker } from "../workers/workerFactory";
 
 jest.mock("../workers/workerFactory", () => ({
   createYoloWorker: jest.fn(),

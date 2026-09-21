@@ -1,5 +1,5 @@
 import { db } from "@/config/database";
-import { requireVerifiedEmail } from "../../middleware/trustGate";
+import { requireVerifiedEmail } from "@/middleware/trustGate";
 
 jest.mock("@/config/database", () => ({
   db: {

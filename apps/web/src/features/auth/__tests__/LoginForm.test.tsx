@@ -1,8 +1,8 @@
+import { LoginForm } from "@/features/auth/ui/LoginForm";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { LoginForm } from "../ui/LoginForm";
 
 // ---------------------------------------------------------------------------
 // Mock the shared Axios client so tests never hit the real network

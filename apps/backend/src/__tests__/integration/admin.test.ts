@@ -1,8 +1,8 @@
+import { app } from "@/app";
 import { db } from "@/config/database";
 import redisClient from "@/config/redis";
 import { generateMockToken, generateMockUserWithRole } from "@/utils/testAuth";
 import request from "supertest";
-import { app } from "../../app";
 
 jest.mock("@/config/redis", () => ({
   __esModule: true,

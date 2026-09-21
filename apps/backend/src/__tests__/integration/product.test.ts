@@ -1,7 +1,7 @@
+import { app } from "@/app";
 import { db } from "@/config/database";
 import { generateMockToken } from "@/utils/testAuth";
 import request from "supertest";
-import { app } from "../../app";
 
 describe("Product Freshness API Integration", () => {
   let storeId: string;

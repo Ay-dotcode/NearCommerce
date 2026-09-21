@@ -1,7 +1,7 @@
-import React from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
-import { useNavigate } from 'react-router-dom';
-import { useLogin } from '../api/useLogin';
+import { useLogin } from "@/features/auth/api/useLogin";
+import { ErrorMessage, Field, Form, Formik } from "formik";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
 /**
  * LoginForm
@@ -21,28 +21,28 @@ export const LoginForm: React.FC = () => {
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
       <h2 className="text-2xl font-bold mb-4">NearCommerce Portal</h2>
       <Formik
-        initialValues={{ email: '', password: '' }}
+        initialValues={{ email: "", password: "" }}
         validate={(values) => {
           const errors: Partial<typeof values> = {};
-          if (!values.email) errors.email = 'Required';
-          if (!values.password) errors.password = 'Required';
+          if (!values.email) errors.email = "Required";
+          if (!values.password) errors.password = "Required";
           return errors;
         }}
         onSubmit={(values, { setSubmitting, setStatus }) => {
           loginMutation.mutate(values, {
             onSuccess: (data) => {
               // RBAC-aware routing
-              if (data.user.role === 'SYSTEM_ADMIN') {
-                navigate('/admin/dashboard');
-              } else if (data.user.role === 'STORE_OWNER') {
-                navigate('/owner/dashboard');
+              if (data.user.role === "SYSTEM_ADMIN") {
+                navigate("/admin/dashboard");
+              } else if (data.user.role === "STORE_OWNER") {
+                navigate("/owner/dashboard");
               } else {
-                setStatus('Unauthorized role for web portal.');
+                setStatus("Unauthorized role for web portal.");
                 setSubmitting(false);
               }
             },
             onError: () => {
-              setStatus('Invalid email or password.');
+              setStatus("Invalid email or password.");
               setSubmitting(false);
             },
           });
@@ -96,8 +96,8 @@ export const LoginForm: React.FC = () => {
               className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:opacity-50"
             >
               {isSubmitting || loginMutation.isPending
-                ? 'Logging in...'
-                : 'Login'}
+                ? "Logging in..."
+                : "Login"}
             </button>
           </Form>
         )}

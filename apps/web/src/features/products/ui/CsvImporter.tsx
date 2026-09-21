@@ -1,6 +1,9 @@
+import {
+  ParsedProduct,
+  useImportCsv,
+} from "@/features/products/api/useImportCsv";
 import Papa from "papaparse";
 import React, { useState } from "react";
-import { ParsedProduct, useImportCsv } from "../api/useImportCsv";
 
 export const CsvImporter: React.FC = () => {
   const [error, setError] = useState<string | null>(null);

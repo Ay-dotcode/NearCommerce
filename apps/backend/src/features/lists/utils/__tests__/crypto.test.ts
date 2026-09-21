@@ -1,4 +1,4 @@
-import { generateShortCode } from "../crypto";
+import { generateShortCode } from "@/features/lists/utils/crypto";
 
 describe("Lists Crypto Utils", () => {
   it("should generate an 8-character hex string in uppercase", () => {

@@ -1,4 +1,4 @@
-import { withCircuitBreaker } from "../circuitBreaker";
+import { withCircuitBreaker } from "@/utils/circuitBreaker";
 
 describe("Circuit Breaker Utility", () => {
   it("should resolve if promise completes before timeout", async () => {
