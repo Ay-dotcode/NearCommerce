@@ -7,10 +7,16 @@
     "android": "expo start --android",
     "ios": "expo start --ios"
   },
+  "main": "expo-router/entry",
   "dependencies": {
+    "@nearcommerce/api": "workspace:*",
+    "@tanstack/react-query": "^5.66.8",
     "expo": "~57.0.22",
+    "expo-location": "~19.0.7",
+    "expo-router": "~6.0.15",
     "react": "19.2.3",
-    "react-native": "0.86.3"
+    "react-native": "0.86.3",
+    "@expo/vector-icons": "^15.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
