@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import * as Location from "expo-location";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -14,29 +13,32 @@ import {
   View,
 } from "react-native";
 import { searchProducts } from "@/api/client";
-
-const FALLBACK_LOCATION = { latitude: 0, longitude: 0 };
+import { getSessionLocation } from "@/utils/location";
 
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ category?: string }>();
   const [searchQuery, setSearchQuery] = useState(params.category ?? "");
-  const [location, setLocation] = useState(FALLBACK_LOCATION);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [isVisionAvailable] = useState(false);
 
   useEffect(() => {
-    Location.requestForegroundPermissionsAsync().then(({ status }) => {
-      if (status !== Location.PermissionStatus.GRANTED) return;
-      Location.getCurrentPositionAsync({}).then(({ coords }) => {
-        setLocation({ latitude: coords.latitude, longitude: coords.longitude });
-      });
+    getSessionLocation().then((coords) => {
+      setLocation({ latitude: coords.latitude, longitude: coords.longitude });
     });
   }, []);
 
   const query = useQuery({
     queryKey: ["search", searchQuery, location],
     queryFn: () =>
-      searchProducts(searchQuery.trim(), location.latitude, location.longitude),
-    enabled: searchQuery.trim().length > 2,
+      searchProducts(
+        searchQuery.trim(),
+        location!.latitude,
+        location!.longitude,
+      ),
+    enabled: searchQuery.trim().length > 2 && location !== null,
   });
 
   const results = query.data?.data ?? [];
