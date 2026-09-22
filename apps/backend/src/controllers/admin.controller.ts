@@ -88,12 +88,21 @@ export async function listStores(req: Request, res: Response) {
 }
 
 export async function getGlobalMetrics(_req: Request, res: Response) {
-  const [stores, registrations, flaggedItems, suspendedUsers] = await Promise.all([
-    db.query("SELECT COUNT(*)::int AS count FROM stores WHERE is_suspended = false"),
-    db.query("SELECT COUNT(*)::int AS count FROM users WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'"),
-    db.query("SELECT COUNT(*)::int AS count FROM products WHERE last_verified_at < CURRENT_TIMESTAMP - INTERVAL '30 days'"),
-    db.query("SELECT COUNT(*)::int AS count FROM users WHERE is_suspended = true"),
-  ]);
+  const [stores, registrations, flaggedItems, suspendedUsers] =
+    await Promise.all([
+      db.query(
+        "SELECT COUNT(*)::int AS count FROM stores WHERE is_suspended = false",
+      ),
+      db.query(
+        "SELECT COUNT(*)::int AS count FROM users WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'",
+      ),
+      db.query(
+        "SELECT COUNT(*)::int AS count FROM products WHERE last_verified_at < CURRENT_TIMESTAMP - INTERVAL '30 days'",
+      ),
+      db.query(
+        "SELECT COUNT(*)::int AS count FROM users WHERE is_suspended = true",
+      ),
+    ]);
 
   return res.json({
     totalActiveStores: stores.rows[0].count,
@@ -113,7 +122,9 @@ export async function listAuditLogs(req: Request, res: Response) {
      FROM admin_audit_logs ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
     [pagination.limit, offset],
   );
-  const count = await db.query("SELECT COUNT(*)::int AS count FROM admin_audit_logs");
+  const count = await db.query(
+    "SELECT COUNT(*)::int AS count FROM admin_audit_logs",
+  );
   return res.json({
     data: result.rows,
     pagination: {
@@ -134,7 +145,14 @@ export async function listReviews(req: Request, res: Response) {
     [pagination.limit, offset],
   );
   const count = await db.query("SELECT COUNT(*)::int AS count FROM reviews");
-  return res.json({ data: result.rows, pagination: { page: pagination.page, limit: pagination.limit, total: count.rows[0].count } });
+  return res.json({
+    data: result.rows,
+    pagination: {
+      page: pagination.page,
+      limit: pagination.limit,
+      total: count.rows[0].count,
+    },
+  });
 }
 
 export async function deleteReview(req: Request, res: Response) {
@@ -143,18 +161,35 @@ export async function deleteReview(req: Request, res: Response) {
   const client = await db.connect();
   try {
     await client.query("BEGIN");
-    const review = await client.query("SELECT * FROM reviews WHERE id = $1 FOR UPDATE", [req.params.reviewId]);
-    if (!review.rows.length) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Review not found." }); }
+    const review = await client.query(
+      "SELECT * FROM reviews WHERE id = $1 FOR UPDATE",
+      [req.params.reviewId],
+    );
+    if (!review.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Review not found." });
+    }
     await client.query(
       `INSERT INTO admin_audit_logs (admin_id, action, target_id, target_type, reason, snapshot)
        VALUES ($1, 'DELETE_REVIEW', $2, 'REVIEW', $3, $4)`,
-      [req.user!.id, req.params.reviewId, parsed.data.reason, JSON.stringify(review.rows[0])],
+      [
+        req.user!.id,
+        req.params.reviewId,
+        parsed.data.reason,
+        JSON.stringify(review.rows[0]),
+      ],
     );
-    await client.query("DELETE FROM reviews WHERE id = $1", [req.params.reviewId]);
+    await client.query("DELETE FROM reviews WHERE id = $1", [
+      req.params.reviewId,
+    ]);
     await client.query("COMMIT");
     return res.json({ message: "Review deleted and audited successfully." });
-  } catch (error) { await client.query("ROLLBACK"); return res.status(500).json({ error: "Internal Server Error" }); }
-  finally { client.release(); }
+  } catch (error) {
+    await client.query("ROLLBACK");
+    return res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
 }
 
 export async function toggleUserSuspension(req: Request, res: Response) {

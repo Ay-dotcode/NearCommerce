@@ -1,10 +1,10 @@
 import {
+  deleteReview,
   deleteStore,
   deleteUser,
   getGlobalMetrics,
-  deleteReview,
-  listReviews,
   listAuditLogs,
+  listReviews,
   listStores,
   listUsers,
   toggleStoreSuspension,
