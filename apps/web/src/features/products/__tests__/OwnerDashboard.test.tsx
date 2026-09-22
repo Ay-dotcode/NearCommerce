@@ -1,4 +1,4 @@
-import { OwnerDashboard } from "@/features/products/ui/OwnerDashboard";
+import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -14,6 +14,7 @@ describe("OwnerDashboard (Task 4.2.1)", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    localStorage.setItem("X-Store-ID", "store-123");
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -23,7 +24,7 @@ describe("OwnerDashboard (Task 4.2.1)", () => {
   const renderDashboard = () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <OwnerDashboard />
+        <StoreOwnerDashboard />
       </QueryClientProvider>,
     );
   };

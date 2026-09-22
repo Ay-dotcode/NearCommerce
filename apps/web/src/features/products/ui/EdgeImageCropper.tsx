@@ -1,4 +1,4 @@
-import { createYoloWorker } from "@/features/products/workers/workerFactory";
+import { createYoloWorker } from "@/workers/workerFactory";
 import React, { useEffect, useRef, useState } from "react";
 
 interface BoundingBox {

@@ -29,9 +29,7 @@ export async function getStoreProducts() {
 }
 
 export async function confirmProductStock(productId: string) {
-  const response = await apiClient.patch(
-    `/api/products/${productId}/confirm-stock`,
-  );
+  const response = await apiClient.patch(`/api/products/${productId}/verify`);
   return response.data;
 }
 

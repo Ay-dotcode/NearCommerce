@@ -17,14 +17,16 @@ const toProduct = (row: Record<string, string>): ProductImportRow => {
       "Each row needs a name, numeric price, and integer quantity.",
     );
 
-  return {
+  const product: ProductImportRow = {
     name: row.name.trim(),
-    description: row.description?.trim() || "",
     price,
     quantity,
     image_url: imageUrl,
     is_published: Boolean(imageUrl),
   };
+
+  if (row.description?.trim()) product.description = row.description.trim();
+  return product;
 };
 
 export default function CsvImporter() {
@@ -73,6 +75,7 @@ export default function CsvImporter() {
         disabled={importMutation.isPending}
         className="sr-only"
         id="store-owner-csv"
+        data-testid="csv-input"
       />
       <label
         htmlFor="store-owner-csv"
@@ -82,7 +85,9 @@ export default function CsvImporter() {
       </label>
       {error && <span className="text-sm text-red-600">{error}</span>}
       {importMutation.isError && (
-        <span className="text-sm text-red-600">Import failed.</span>
+        <span className="text-sm text-red-600">
+          Server error during import.
+        </span>
       )}
       {importMutation.isSuccess && (
         <span className="text-sm text-emerald-700">Imported.</span>

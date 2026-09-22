@@ -1,4 +1,4 @@
-import { CsvImporter } from "@/features/products/ui/CsvImporter";
+import CsvImporter from "@/components/store-owner/CsvImporter";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
