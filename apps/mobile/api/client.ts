@@ -1,5 +1,5 @@
 import { apiClient as sharedApiClient } from "@nearcommerce/api";
-import type { SearchResponse } from "@/types/search";
+import type { SearchResponse } from "@/types";
 
 export const apiClient = sharedApiClient;
 

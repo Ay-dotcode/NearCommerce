@@ -1,26 +1,11 @@
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import Toast from "react-native-toast-message";
-import type { HouseholdListItem } from "@/types/lists";
-
-type ListServerEvents = {
-  list_item_updated: (item: HouseholdListItem) => void;
-};
-
-type ListClientEvents = {
-  join_list: (listId: string) => void;
-  leave_list: (listId: string) => void;
-  add_item: (payload: {
-    listId: string;
-    productId: string;
-    quantity: number;
-  }) => void;
-  toggle_item: (payload: {
-    listId: string;
-    productId: string;
-    isChecked: boolean;
-  }) => void;
-};
+import type {
+  HouseholdListItem,
+  ListClientEvents,
+  ListServerEvents,
+} from "@/types";
 
 const SOCKET_URL =
   (globalThis as { process?: { env?: Record<string, string | undefined> } })

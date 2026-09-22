@@ -1,14 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-type StoreProps = {
-  id: string;
-  name: string;
-  isOpen: boolean;
-  rating: number;
-  distance?: number;
-};
+import type { StoreProps } from "@/types";
 
 export default function StoreCard({
   id,
