@@ -3,7 +3,7 @@ import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { AppRoutes } from "@/constants/routes";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
-import { OwnerDashboard } from "@/features/products/ui/OwnerDashboard";
+import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
 import { UserRole } from "@nearcommerce/api";
 import {
   createBrowserRouter,
@@ -45,7 +45,7 @@ const router = createBrowserRouter(
         {
           element: (
             <StoreOwnerLayout>
-              <OwnerDashboard />
+              <StoreOwnerDashboard />
             </StoreOwnerLayout>
           ),
           path: AppRoutes.storeOwnerDashboard,
