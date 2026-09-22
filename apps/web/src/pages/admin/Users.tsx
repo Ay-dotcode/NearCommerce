@@ -1,4 +1,4 @@
-import { AdminUser, getUsers, toggleUserSuspension } from "@/api/admin";
+import { getUsers, toggleUserSuspension } from "@/api/admin";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { AdminUser } from "@/types/admin";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createColumnHelper,

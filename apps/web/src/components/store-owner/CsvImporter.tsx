@@ -1,4 +1,5 @@
-import { ProductImportRow, importProducts } from "@/api/products";
+import { importProducts } from "@/api/products";
+import type { ProductImportRow } from "@/types/products";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Papa from "papaparse";
 import { ChangeEvent, useRef, useState } from "react";

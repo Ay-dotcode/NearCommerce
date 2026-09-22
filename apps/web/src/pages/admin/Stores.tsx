@@ -1,4 +1,4 @@
-import { AdminStore, getStores, toggleStoreSuspension } from "@/api/admin";
+import { getStores, toggleStoreSuspension } from "@/api/admin";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { AdminStore } from "@/types/admin";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function AdminStores() {

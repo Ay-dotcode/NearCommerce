@@ -1,9 +1,6 @@
-import {
-  confirmProductStock,
-  getStoreProducts,
-  StoreProduct,
-} from "@/api/products";
+import { confirmProductStock, getStoreProducts } from "@/api/products";
 import CsvImporter from "@/components/store-owner/CsvImporter";
+import type { StoreProduct } from "@/types/products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const isStale = (date: string) =>
