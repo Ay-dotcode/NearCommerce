@@ -3,6 +3,11 @@ import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { AppRoutes } from "@/constants/routes";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
+import AdminAuditLogs from "@/pages/admin/AuditLogs";
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminReviews from "@/pages/admin/Reviews";
+import AdminStores from "@/pages/admin/Stores";
+import AdminUsers from "@/pages/admin/Users";
 import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
 import { UserRole } from "@nearcommerce/api";
 import {
@@ -10,11 +15,6 @@ import {
   Navigate,
   RouterProvider,
 } from "react-router-dom";
-
-// ---------------------------------------------------------------------------
-// Placeholder dashboard components — AdminDashboard will be replaced in Task 4.3
-// ---------------------------------------------------------------------------
-const AdminDashboard = () => <div>Master Oversight Portal</div>;
 
 const router = createBrowserRouter(
   [
@@ -36,6 +36,38 @@ const router = createBrowserRouter(
             </AdminLayout>
           ),
           path: AppRoutes.adminDashboard,
+        },
+        {
+          element: (
+            <AdminLayout>
+              <AdminUsers />
+            </AdminLayout>
+          ),
+          path: AppRoutes.adminUsers,
+        },
+        {
+          element: (
+            <AdminLayout>
+              <AdminStores />
+            </AdminLayout>
+          ),
+          path: AppRoutes.adminStores,
+        },
+        {
+          element: (
+            <AdminLayout>
+              <AdminReviews />
+            </AdminLayout>
+          ),
+          path: AppRoutes.adminReviews,
+        },
+        {
+          element: (
+            <AdminLayout>
+              <AdminAuditLogs />
+            </AdminLayout>
+          ),
+          path: AppRoutes.adminAuditLogs,
         },
       ],
     },

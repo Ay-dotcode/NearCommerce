@@ -1,6 +1,10 @@
 import {
   deleteStore,
   deleteUser,
+  getGlobalMetrics,
+  deleteReview,
+  listReviews,
+  listAuditLogs,
   listStores,
   listUsers,
   toggleStoreSuspension,
@@ -13,7 +17,11 @@ import { Router } from "express";
 const router = Router();
 
 router.use(requireAuth, requireRole("SYSTEM_ADMIN"));
+router.get("/metrics", getGlobalMetrics);
 router.get("/users", listUsers);
+router.get("/audit-logs", listAuditLogs);
+router.get("/reviews", listReviews);
+router.delete("/reviews/:reviewId", deleteReview);
 router.get("/stores", listStores);
 router.patch("/users/:userId/suspend", toggleUserSuspension);
 router.patch("/stores/:storeId/suspension", toggleStoreSuspension);
