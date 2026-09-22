@@ -12,7 +12,7 @@ import {
 import Toast from "react-native-toast-message";
 import { apiClient } from "@/api/client";
 import { useHouseholdList } from "@/hooks/useHouseholdList";
-import type { HouseholdListMeta } from "@/types";
+import type { HouseholdListMeta } from "@/types/lists";
 
 const accessToken =
   (globalThis as { process?: { env?: Record<string, string | undefined> } })

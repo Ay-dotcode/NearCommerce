@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import Toast from "react-native-toast-message";
-import type {
-  HouseholdListItem,
-  ListClientEvents,
-  ListServerEvents,
-} from "@/types";
+import type { HouseholdListItem } from "@/types/lists";
+import type { ListClientEvents, ListServerEvents } from "@/types/socket";
 
 const SOCKET_URL =
   (globalThis as { process?: { env?: Record<string, string | undefined> } })

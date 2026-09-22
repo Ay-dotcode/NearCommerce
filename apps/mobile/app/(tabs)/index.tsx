@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import StoreCard from "@/components/StoreCard";
-import type { Store } from "@/types";
+import type { Store } from "@/types/store";
 
 const categories = [
   { label: "Groceries", icon: "basket-outline" as const },
