@@ -21,8 +21,6 @@ const httpServer = http.createServer(app);
 
   httpServer.listen(PORT, () => {
     console.log(`🚀 NearCommerce Backend running on http://localhost:${PORT}`);
-    console.log(`➡️Test Database:GEThttp://localhost:${PORT}/test-db`);
-    console.log(`➡️Test Schema:POST http://localhost:${PORT}/test-valid`);
     console.log(`➡️Register: POST http://localhost:${PORT}/auth/register`);
     console.log(
       `➡️Add List Item:POST http://localhost:${PORT}/lists/:list_id/items`,
