@@ -4,7 +4,8 @@
     "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "types": ["jest"]
   },
   "extends": "expo/tsconfig.base"
 }

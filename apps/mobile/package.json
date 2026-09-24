@@ -5,7 +5,8 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
-    "ios": "expo start --ios"
+    "ios": "expo start --ios",
+    "test": "jest"
   },
   "main": "expo-router/entry",
   "dependencies": {
@@ -23,7 +24,13 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^12.9.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.18",
+    "babel-preset-expo": "^57.0.13",
+    "jest": "^30.5.2",
+    "jest-expo": "^57.0.5",
     "typescript": "^6.0.3"
   }
 }
