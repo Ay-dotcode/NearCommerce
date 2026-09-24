@@ -22,8 +22,9 @@ This repository is organized as a `pnpm` workspace managed by Turborepo:
 ```text
 .
 ├── apps/
-│   ├── admin/       # React/Vite administration portal
-│   └── backend/     # Express, Socket.IO, and TypeScript API server
+│   ├── backend/     # Express, Socket.IO, and TypeScript API server
+│   ├── mobile/      # React Native / Expo shopper mobile application
+│   └── web/         # React/Vite unified portal for Store Owners & System Admins
 ├── packages/        # Shared libraries and configuration
 ├── .env.example     # Environment variable template
 ├── Implementation.md
@@ -104,12 +105,13 @@ pnpm --filter @nearcommerce/backend build
 pnpm --filter @nearcommerce/backend test
 ```
 
-To run the admin portal only:
+To run the web portal (Store Owner & System Admin):
 
 ```bash
-pnpm --filter @nearcommerce/admin dev
-pnpm --filter @nearcommerce/admin build
-pnpm --filter @nearcommerce/admin lint
+pnpm --filter @nearcommerce/web dev
+pnpm --filter @nearcommerce/web build
+pnpm --filter @nearcommerce/web lint
+pnpm --filter @nearcommerce/web test
 ```
 
 ## Documentation
