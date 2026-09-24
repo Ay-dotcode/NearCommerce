@@ -1,13 +1,14 @@
 import { getAuditLogs } from "@/api/admin";
 import { useQuery } from "@tanstack/react-query";
 
-export default function AdminAuditLogs() {
+export default function AuditLogs() {
   const query = useQuery({
     queryKey: ["admin-audit-logs"],
     queryFn: () => getAuditLogs(),
   });
+
   if (query.isLoading)
-    return <p className="text-slate-400">Loading audit ledger...</p>;
+    return <p className="text-slate-400">Loading audit ledger…</p>;
   if (query.isError)
     return <p className="text-red-400">Unable to load audit logs.</p>;
 

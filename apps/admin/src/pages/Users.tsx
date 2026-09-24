@@ -21,7 +21,7 @@ import { useState } from "react";
 
 const columnHelper = createColumnHelper<AdminUser>();
 
-export default function AdminUsers() {
+export default function Users() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState("");
   const queryClient = useQueryClient();
@@ -88,6 +88,7 @@ export default function AdminUsers() {
       },
     }),
   ];
+
   const table = useReactTable({
     data: query.data?.data ?? [],
     columns,
@@ -97,8 +98,7 @@ export default function AdminUsers() {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  if (query.isLoading)
-    return <p className="text-slate-400">Loading users...</p>;
+  if (query.isLoading) return <p className="text-slate-400">Loading users…</p>;
   if (query.isError)
     return <p className="text-red-400">Unable to load users.</p>;
 
@@ -109,6 +109,7 @@ export default function AdminUsers() {
         (query.data?.pagination.limit ?? 20),
     ),
   );
+
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -120,7 +121,7 @@ export default function AdminUsers() {
         </div>
         <input
           value={filter}
-          onChange={(event) => setFilter(event.target.value)}
+          onChange={(e) => setFilter(e.target.value)}
           placeholder="Search users"
           className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
         />
@@ -176,14 +177,14 @@ export default function AdminUsers() {
           <Button
             type="button"
             disabled={page === 1}
-            onClick={() => setPage((current) => current - 1)}
+            onClick={() => setPage((p) => p - 1)}
           >
             Previous
           </Button>
           <Button
             type="button"
             disabled={page >= totalPages}
-            onClick={() => setPage((current) => current + 1)}
+            onClick={() => setPage((p) => p + 1)}
           >
             Next
           </Button>

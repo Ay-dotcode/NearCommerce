@@ -9,14 +9,14 @@ const metricCards = [
   ["Suspended users", "suspendedUsers"],
 ] as const;
 
-export default function AdminDashboard() {
+export default function Dashboard() {
   const query = useQuery({
     queryKey: ["admin-metrics"],
     queryFn: getGlobalMetrics,
   });
 
   if (query.isLoading)
-    return <p className="text-slate-400">Loading platform metrics...</p>;
+    return <p className="text-slate-400">Loading platform metrics…</p>;
   if (query.isError)
     return <p className="text-red-400">Unable to load platform metrics.</p>;
 

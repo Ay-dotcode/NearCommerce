@@ -11,7 +11,7 @@ import {
 } from "@nearcommerce/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export default function AdminStores() {
+export default function Stores() {
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["admin-stores"],
@@ -23,10 +23,11 @@ export default function AdminStores() {
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["admin-stores"] }),
   });
-  if (query.isLoading)
-    return <p className="text-slate-400">Loading stores...</p>;
+
+  if (query.isLoading) return <p className="text-slate-400">Loading stores…</p>;
   if (query.isError)
     return <p className="text-red-400">Unable to load stores.</p>;
+
   return (
     <section>
       <div className="mb-6">

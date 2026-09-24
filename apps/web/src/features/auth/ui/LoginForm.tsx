@@ -22,15 +22,13 @@ export const LoginForm: React.FC = () => {
 
   React.useEffect(() => {
     const role = getUserRole();
-    if (role === UserRole.SYSTEM_ADMIN)
-      navigate(AppRoutes.adminDashboard, { replace: true });
     if (role === UserRole.STORE_OWNER)
       navigate(AppRoutes.storeOwnerDashboard, { replace: true });
   }, [navigate]);
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
-      <h2 className="text-2xl font-bold mb-4">NearCommerce Portal</h2>
+      <h2 className="text-2xl font-bold mb-4">NearCommerce Store Portal</h2>
       <Formik
         initialValues={{ email: "", password: "" }}
         validate={(values) => {
@@ -42,13 +40,10 @@ export const LoginForm: React.FC = () => {
         onSubmit={(values, { setSubmitting, setStatus }) => {
           loginMutation.mutate(values, {
             onSuccess: (data) => {
-              // RBAC-aware routing
-              if (data.user.role === UserRole.SYSTEM_ADMIN) {
-                navigate(AppRoutes.adminDashboard);
-              } else if (data.user.role === UserRole.STORE_OWNER) {
+              if (data.user.role === UserRole.STORE_OWNER) {
                 navigate(AppRoutes.storeOwnerDashboard);
               } else {
-                setStatus("Unauthorized role for web portal.");
+                setStatus("Unauthorized role for store portal.");
                 setSubmitting(false);
               }
             },

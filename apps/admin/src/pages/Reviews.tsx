@@ -2,7 +2,7 @@ import { deleteReview, getReviews } from "@/api/admin";
 import { Button } from "@nearcommerce/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export default function AdminReviews() {
+export default function Reviews() {
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["admin-reviews"],
@@ -16,10 +16,12 @@ export default function AdminReviews() {
         queryKey: ["admin-reviews", "admin-audit-logs"],
       }),
   });
+
   if (query.isLoading)
-    return <p className="text-slate-400">Loading reviews...</p>;
+    return <p className="text-slate-400">Loading reviews…</p>;
   if (query.isError)
     return <p className="text-red-400">Unable to load reviews.</p>;
+
   return (
     <section>
       <div className="mb-6">

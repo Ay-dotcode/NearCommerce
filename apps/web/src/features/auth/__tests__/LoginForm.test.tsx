@@ -21,8 +21,7 @@ jest.mock("@nearcommerce/api", () => ({
   },
 }));
 
-describe("LoginForm & RBAC Routing (Task 4.1)", () => {
-  // Create a fresh QueryClient per test suite to avoid cross-test cache bleed
+describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
   const makeQueryClient = () =>
     new QueryClient({
       defaultOptions: {
@@ -41,10 +40,6 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
           <Routes>
             <Route path={AppRoutes.home} element={<LoginForm />} />
             <Route
-              path={AppRoutes.adminDashboard}
-              element={<div data-testid="admin-dash">Admin Dashboard</div>}
-            />
-            <Route
               path={AppRoutes.storeOwnerDashboard}
               element={<div data-testid="owner-dash">Owner Dashboard</div>}
             />
@@ -57,42 +52,11 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     clearSession();
-    // Reset any headers set during a previous test
     (apiClient.defaults.headers.common as Record<string, string | undefined>)[
       "X-Store-ID"
     ] = undefined;
   });
 
-  // ---------------------------------------------------------------------------
-  // Test 1: SYSTEM_ADMIN is routed to /admin/dashboard
-  // ---------------------------------------------------------------------------
-  it("routes to /admin/dashboard for SYSTEM_ADMIN role", async () => {
-    (apiClient.post as jest.Mock).mockResolvedValueOnce({
-      data: {
-        access_token: "mock-admin-token",
-        user: { id: "1", role: "SYSTEM_ADMIN" },
-      },
-    });
-
-    const queryClient = makeQueryClient();
-    renderWithProviders(queryClient);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "admin@test.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /login/i }));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("admin-dash")).toBeInTheDocument();
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // Test 2: STORE_OWNER is routed to /owner/dashboard and X-Store-ID is set
-  // ---------------------------------------------------------------------------
   it("routes to /owner/dashboard and sets X-Store-ID for STORE_OWNER role", async () => {
     (apiClient.post as jest.Mock).mockResolvedValueOnce({
       data: {
@@ -116,7 +80,6 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
       expect(screen.getByTestId("owner-dash")).toBeInTheDocument();
     });
 
-    // Verify the store-scoping header was attached by the mutation's onSuccess
     expect(
       (apiClient.defaults.headers.common as Record<string, string>)[
         "X-Store-ID"
@@ -124,9 +87,32 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
     ).toBe("store-123");
   });
 
-  // ---------------------------------------------------------------------------
-  // Test 3: Failed login shows an error message inline
-  // ---------------------------------------------------------------------------
+  it("rejects unauthorized role for store portal", async () => {
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({
+      data: {
+        access_token: "mock-admin-token",
+        user: { id: "1", role: "CUSTOMER" },
+      },
+    });
+
+    const queryClient = makeQueryClient();
+    renderWithProviders(queryClient);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "customer@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/unauthorized role for store portal/i),
+      ).toBeInTheDocument();
+    });
+  });
+
   it("shows an error message when credentials are rejected", async () => {
     (apiClient.post as jest.Mock).mockRejectedValueOnce(
       new Error("Unauthorized"),
@@ -150,9 +136,6 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // Test 4: Validation blocks submission with empty fields
-  // ---------------------------------------------------------------------------
   it("shows required validation errors when fields are empty", async () => {
     const queryClient = makeQueryClient();
     renderWithProviders(queryClient);
@@ -163,7 +146,6 @@ describe("LoginForm & RBAC Routing (Task 4.1)", () => {
       expect(screen.getAllByText(/required/i)).toHaveLength(2);
     });
 
-    // The API should never be called if validation fails
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 });
