@@ -1,14 +1,14 @@
 import { getStores, toggleStoreSuspension } from "@/api/admin";
-import { Button } from "@/components/ui/button";
+import type { AdminStore } from "@/types/admin";
 import {
+  Button,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import type { AdminStore } from "@/types/admin";
+} from "@nearcommerce/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function AdminStores() {

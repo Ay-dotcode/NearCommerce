@@ -1,5 +1,5 @@
 import { getGlobalMetrics } from "@/api/admin";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@nearcommerce/ui";
 import { useQuery } from "@tanstack/react-query";
 
 const metricCards = [

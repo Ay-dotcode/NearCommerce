@@ -1,5 +1,5 @@
 import { deleteReview, getReviews } from "@/api/admin";
-import { Button } from "@/components/ui/button";
+import { Button } from "@nearcommerce/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function AdminReviews() {

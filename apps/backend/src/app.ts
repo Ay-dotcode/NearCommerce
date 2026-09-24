@@ -6,6 +6,7 @@ import adminRouter from "@/routes/admin.routes";
 import productRouter from "@/routes/productRoutes";
 import reviewRouter from "@/routes/reviewRoutes";
 import storeRouter from "@/routes/storeRoutes";
+import userRouter from "@/routes/user.routes";
 import cors from "cors";
 import express from "express";
 
@@ -23,6 +24,8 @@ app.use("/auth", authRouter);
 app.use("/search", searchRouter);
 app.use("/support", supportRouter);
 app.use("/lists", listsRouter);
+app.use("/api/users", userRouter);
+app.use("/users", userRouter);
 app.use("/api/stores", storeRouter);
 app.use("/stores", storeRouter);
 app.use("/api/products", productRouter);
