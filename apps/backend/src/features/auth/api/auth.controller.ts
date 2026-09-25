@@ -11,6 +11,7 @@ import {
   USER_SESSION_TTL_MS,
 } from "@/constants";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
+import { sendPasswordResetEmail, sendVerificationEmail } from "@/utils/email";
 import {
   ForgotPasswordSchema,
   LoginSchema,
@@ -81,7 +82,15 @@ export const registerUser = async (req: Request, res: Response) => {
       await client.query("COMMIT");
 
       // 6. Dispatch Email
-      // TODO: Replace mocked console.log with an actual email service implementation (e.g. Resend, SendGrid, AWS SES)
+      await sendVerificationEmail(validatedData.email, rawToken).catch(
+        (err) => {
+          console.error(
+            "[EMAIL DISPATCH ERROR] Registration email failed:",
+            err,
+          );
+        },
+      );
+
       if (process.env.NODE_ENV !== "test")
         console.log(
           `[EMAIL DISPATCH] To: ${validatedData.email}, Token: ${rawToken}`,
@@ -225,7 +234,14 @@ export const resendVerification = async (req: Request, res: Response) => {
       client.release();
     }
 
-    // Dispatch Email (Mocked)
+    // Dispatch Email
+    await sendVerificationEmail(validatedData.email, rawToken).catch((err) => {
+      console.error(
+        "[EMAIL DISPATCH ERROR] Resend verification email failed:",
+        err,
+      );
+    });
+
     if (process.env.NODE_ENV !== "test")
       console.log(
         `[EMAIL DISPATCH] Resend To: ${validatedData.email}, Token: ${rawToken}`,
@@ -281,6 +297,10 @@ export const forgotPassword = async (req: Request, res: Response) => {
     } finally {
       client.release();
     }
+
+    await sendPasswordResetEmail(email, rawToken).catch((err) => {
+      console.error("[EMAIL DISPATCH ERROR] Password reset email failed:", err);
+    });
 
     if (process.env.NODE_ENV !== "test")
       console.log(

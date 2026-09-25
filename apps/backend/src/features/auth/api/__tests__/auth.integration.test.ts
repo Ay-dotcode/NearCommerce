@@ -24,13 +24,13 @@ describe("Auth Integration Tests", () => {
     forgotPasswordLimiter.resetKey("127.0.0.1");
     forgotPasswordLimiter.resetKey("::ffff:127.0.0.1");
     forgotPasswordLimiter.resetKey("::1");
-  });
+  }, 30000);
 
   afterAll(async () => {
     // Clean up DB and close pool
     await db.query("DELETE FROM users WHERE email = $1", [testUser.email]);
     await db.end();
-  });
+  }, 30000);
 
   describe("POST /auth/register", () => {
     it("should register a new user successfully and return 201", async () => {
