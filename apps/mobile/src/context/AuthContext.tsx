@@ -23,15 +23,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Restore persisted token on first mount
   useEffect(() => {
+    let isMounted = true;
     AsyncStorage.getItem(TOKEN_KEY)
       .then((stored) => {
-        if (stored) {
+        if (isMounted && stored) {
           setToken(stored);
           apiClient.defaults.headers.common["Authorization"] =
             `Bearer ${stored}`;
         }
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = async (newToken: string) => {

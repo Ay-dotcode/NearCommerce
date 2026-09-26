@@ -474,7 +474,7 @@ importers:
         version: 0.32.0
       formik:
         specifier: ^2.4.6
-        version: 2.4.9(@types/react@19.3.0)(react@18.3.1)
+        version: 2.4.9(@types/react@18.3.31)(react@18.3.1)
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
@@ -502,7 +502,7 @@ importers:
         version: 6.10.0(@testing-library/dom@10.4.2)
       '@testing-library/react':
         specifier: ^14.2.1
-        version: 14.3.1(@types/react@19.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.3.1(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/jest':
         specifier: ^29.5.12
         version: 29.5.14
@@ -510,11 +510,11 @@ importers:
         specifier: ^5.5.2
         version: 5.5.2
       '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
+        specifier: ^18.3.0
+        version: 18.3.31
       '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.31)
       '@vitejs/plugin-react':
         specifier: ^4.2.1
         version: 4.7.0(supports-color@8.1.1)(vite@5.4.21(@types/node@26.5.1)(lightningcss@1.33.0)(terser@5.51.2))
@@ -2712,9 +2712,6 @@ packages:
 
   '@types/react@19.2.18':
     resolution: {integrity: sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w==}
-
-  '@types/react@19.3.0':
-    resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
 
   '@types/send@0.17.6':
     resolution: {integrity: sha512-Uqt8rPBE8SY0RK8JB1EzVOIZ32uqy8HwdxCnoCOsYrvnswqmFZ/k+9Ikidlk/ImhsdvBsloHbAlewb2IEBV/Og==}
@@ -9278,16 +9275,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
-  '@testing-library/react@14.3.1(@types/react@19.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@babel/runtime': 7.29.7
-      '@testing-library/dom': 9.3.4
-      '@types/react-dom': 18.3.7(@types/react@19.3.0)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-    transitivePeerDependencies:
-      - '@types/react'
-
   '@tootallnate/once@2.0.1': {}
 
   '@turbo/darwin-64@2.10.13':
@@ -9382,9 +9369,9 @@ snapshots:
     dependencies:
       '@types/node': 26.5.1
 
-  '@types/hoist-non-react-statics@3.3.7(@types/react@19.3.0)':
+  '@types/hoist-non-react-statics@3.3.7(@types/react@18.3.31)':
     dependencies:
-      '@types/react': 19.3.0
+      '@types/react': 18.3.31
       hoist-non-react-statics: 3.3.2
 
   '@types/http-errors@2.0.5': {}
@@ -9454,18 +9441,10 @@ snapshots:
     dependencies:
       '@types/react': 18.3.31
 
-  '@types/react-dom@18.3.7(@types/react@19.3.0)':
-    dependencies:
-      '@types/react': 19.3.0
-
   '@types/react-dom@19.3.0(@types/react@19.2.18)':
     dependencies:
       '@types/react': 19.2.18
     optional: true
-
-  '@types/react-dom@19.3.0(@types/react@19.3.0)':
-    dependencies:
-      '@types/react': 19.3.0
 
   '@types/react@18.3.31':
     dependencies:
@@ -9473,10 +9452,6 @@ snapshots:
       csstype: 3.2.3
 
   '@types/react@19.2.18':
-    dependencies:
-      csstype: 3.2.3
-
-  '@types/react@19.3.0':
     dependencies:
       csstype: 3.2.3
 
@@ -11145,9 +11120,9 @@ snapshots:
       dezalgo: 1.0.4
       once: 1.4.0
 
-  formik@2.4.9(@types/react@19.3.0)(react@18.3.1):
+  formik@2.4.9(@types/react@18.3.31)(react@18.3.1):
     dependencies:
-      '@types/hoist-non-react-statics': 3.3.7(@types/react@19.3.0)
+      '@types/hoist-non-react-statics': 3.3.7(@types/react@18.3.31)
       deepmerge: 2.2.1
       hoist-non-react-statics: 3.3.2
       lodash: 4.18.1

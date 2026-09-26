@@ -39,15 +39,17 @@ describe("LoginScreen", () => {
     getApiClient().defaults.headers.common = {};
   });
 
-  it("renders email, password fields and sign-in button", () => {
+  it("renders email, password fields and sign-in button", async () => {
     const { getByTestId, getByText } = render(
       <AuthProvider>
         <LoginScreen />
       </AuthProvider>,
     );
-    expect(getByTestId("email-input")).toBeTruthy();
-    expect(getByTestId("password-input")).toBeTruthy();
-    expect(getByText("Sign in")).toBeTruthy();
+    await waitFor(() => {
+      expect(getByTestId("email-input")).toBeTruthy();
+      expect(getByTestId("password-input")).toBeTruthy();
+      expect(getByText("Sign in")).toBeTruthy();
+    });
   });
 
   it("calls /auth/login and stores the token on success", async () => {

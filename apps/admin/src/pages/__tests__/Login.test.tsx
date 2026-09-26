@@ -21,8 +21,8 @@ describe("Admin LoginPage & Routing", () => {
   const makeQueryClient = () =>
     new QueryClient({
       defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
+        queries: { retry: false, gcTime: 0 },
+        mutations: { retry: false, gcTime: 0 },
       },
     });
 
@@ -30,7 +30,10 @@ describe("Admin LoginPage & Routing", () => {
     const queryClient = makeQueryClient();
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={["/login"]}>
+        <MemoryRouter
+          initialEntries={["/login"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route

@@ -25,6 +25,7 @@ const invalidateSuspensionCache = async (
   suspended?: boolean,
 ) => {
   try {
+    if (!redisClient.isOpen) return;
     if (suspended) await redisClient.setEx(`suspended:${userId}`, 3600, "true");
     else await redisClient.del(`suspended:${userId}`);
   } catch (error) {

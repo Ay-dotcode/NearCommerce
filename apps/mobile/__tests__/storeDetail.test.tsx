@@ -25,7 +25,7 @@ jest.mock("@nearcommerce/api", () => ({
 }));
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
+  defaultOptions: { queries: { retry: false, gcTime: 0 } },
 });
 
 describe("StoreDetailScreen", () => {
