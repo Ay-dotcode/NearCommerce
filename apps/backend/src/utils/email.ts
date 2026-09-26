@@ -22,8 +22,11 @@ export async function sendVerificationEmail(
 ): Promise<void> {
   if (process.env.NODE_ENV === "test") return;
 
-  const baseUrl = process.env.VITE_API_URL || "http://localhost:4000";
-  const verificationUrl = `${baseUrl}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
+  const frontendUrl =
+    process.env.FRONTEND_URL ||
+    process.env.WEB_APP_URL ||
+    "http://localhost:3001";
+  const verificationUrl = `${frontendUrl}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || "noreply@nearcommerce.local",

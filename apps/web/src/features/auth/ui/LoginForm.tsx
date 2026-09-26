@@ -4,7 +4,7 @@ import { getUserRole } from "@/features/auth/session";
 import { UserRole } from "@nearcommerce/api";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 /**
  * LoginForm
@@ -105,6 +105,13 @@ export const LoginForm: React.FC = () => {
                 ? "Logging in..."
                 : "Login"}
             </button>
+
+            <div className="text-center text-sm text-gray-600 mt-2">
+              Don't have an account?{" "}
+              <Link to={AppRoutes.register} className="text-blue-600 font-medium hover:underline">
+                Create one
+              </Link>
+            </div>
           </Form>
         )}
       </Formik>

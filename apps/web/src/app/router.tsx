@@ -2,6 +2,8 @@ import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { AppRoutes } from "@/constants/routes";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
+import { RegisterForm } from "@/features/auth/ui/RegisterForm";
+import { VerifyEmailPage } from "@/features/auth/ui/VerifyEmailPage";
 import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
 import { UserRole } from "@nearcommerce/api";
 import {
@@ -15,6 +17,14 @@ const router = createBrowserRouter(
     {
       path: AppRoutes.login,
       element: <LoginForm />,
+    },
+    {
+      path: AppRoutes.register,
+      element: <RegisterForm />,
+    },
+    {
+      path: AppRoutes.verifyEmail,
+      element: <VerifyEmailPage />,
     },
     {
       path: AppRoutes.home,
