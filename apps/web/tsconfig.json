@@ -17,5 +17,5 @@
     "esModuleInterop": true,
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src"]
+  "include": ["src", "__tests__"]
 }

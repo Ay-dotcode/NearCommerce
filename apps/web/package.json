@@ -14,13 +14,15 @@
     "@nearcommerce/ui": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.21.3",
+    "@types/yup": "^0.32.0",
     "formik": "^2.4.6",
     "jwt-decode": "^4.0.0",
     "onnxruntime-web": "^1.30.0",
     "papaparse": "^5.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.22.0"
+    "react-router-dom": "^6.22.0",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.2",
