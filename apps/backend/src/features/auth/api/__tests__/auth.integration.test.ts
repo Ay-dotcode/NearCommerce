@@ -1,5 +1,6 @@
 import { app } from "@/app";
 import { db } from "@/config/database";
+import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import {
   forgotPasswordLimiter,
   resendVerificationLimiter,

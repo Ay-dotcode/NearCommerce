@@ -3,6 +3,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react-native";
 import StoreDetailScreen from "../app/store/[id]";
 
+// Mock vector icons
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: "Ionicons",
+}));
+
+// Mock safe area context
+jest.mock("react-native-safe-area-context", () => ({
+  SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 // Mock expo-router
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ id: "store-123" }),
