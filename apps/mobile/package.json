@@ -19,6 +19,7 @@
     "expo-router": "~6.0.15",
     "react": "19.2.3",
     "react-native": "0.86.3",
+    "react-native-safe-area-context": "^5.10.0",
     "react-native-toast-message": "^2.5.2",
     "socket.io-client": "^4.8.3"
   },

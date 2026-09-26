@@ -1,29 +1,51 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
+import { AuthProvider, useAuth } from "../src/context/AuthContext";
 import { useLocationFetcher } from "../src/hooks/useLocationFetcher";
 
 const queryClient = new QueryClient();
 
-export default function RootLayout() {
-  const { isFetching } = useLocationFetcher();
+//  Inner layout — rendered inside AuthProvider so it can read auth state.
+//  Redirects unauthenticated users to the login screen.
+function AppShell() {
+  const { token, isLoading } = useAuth();
+  const { isFetching: isFetchingLocation } = useLocationFetcher();
+
+  // Blank screen while AsyncStorage is being read on first mount
+  if (isLoading) return null;
 
   return (
+    <View style={{ flex: 1 }}>
+      {/* Dynamic-island style location banner */}
+      {isFetchingLocation && (
+        <View style={styles.dynamicIslandFallback}>
+          <Text style={styles.notificationText}>
+            📍 Fetching precise location...
+          </Text>
+        </View>
+      )}
+
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      </Stack>
+
+      {/* Redirect based on auth state */}
+      {!token && <Redirect href="/(auth)/login" />}
+
+      <Toast />
+    </View>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <QueryClientProvider client={queryClient}>
-      <View style={{ flex: 1 }}>
-        {isFetching && (
-          <View style={styles.dynamicIslandFallback}>
-            <Text style={styles.notificationText}>
-              📍 Fetching precise location...
-            </Text>
-          </View>
-        )}
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-        <Toast />
-      </View>
+      <AuthProvider>
+        <AppShell />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -6,12 +6,12 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { searchProducts } from "@/api/client";
 import { getSessionLocation } from "@/utils/location";
 

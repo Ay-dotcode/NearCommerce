@@ -1,15 +1,18 @@
+import StoreCard from "@/components/StoreCard";
 import { Ionicons } from "@expo/vector-icons";
+import { apiClient } from "@nearcommerce/api";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import {
+  ActivityIndicator,
   FlatList,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import StoreCard from "@/components/StoreCard";
-import type { Store } from "@/types/store";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocationFetcher } from "../../src/hooks/useLocationFetcher";
 
 const categories = [
   { label: "Groceries", icon: "basket-outline" as const },
@@ -18,32 +21,55 @@ const categories = [
   { label: "Household", icon: "home-outline" as const },
 ];
 
-const nearbyStores: Store[] = [
-  {
-    id: "nearby-market",
-    name: "Nearby Market",
-    isOpen: true,
-    rating: 4.8,
-    distance: 0.6,
-  },
-  {
-    id: "corner-pharmacy",
-    name: "Corner Pharmacy",
-    isOpen: false,
-    rating: 4.5,
-    distance: 1.2,
-  },
-];
+interface NearbyStore {
+  id: string;
+  name: string;
+  is_open: boolean;
+  rating: number;
+  distance_meters: number;
+}
+
+async function fetchNearbyStores(lat: number, lng: number) {
+  const res = await apiClient.get<{ stores: NearbyStore[] }>("/search/stores", {
+    params: { lat, lng },
+  });
+  return res.data.stores;
+}
 
 export default function HomeScreen() {
+  const { location, isFetching: isFetchingLocation } = useLocationFetcher();
+
+  const lat = location?.coords.latitude;
+  const lng = location?.coords.longitude;
+
+  const {
+    data: stores = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["nearby-stores", lat, lng],
+    queryFn: () => fetchNearbyStores(lat!, lng!),
+    enabled: lat !== undefined && lng !== undefined,
+  });
+
+  // Map API response to the shape StoreCard expects
+  const storeCards = stores.map((s) => ({
+    id: s.id,
+    name: s.name,
+    isOpen: s.is_open,
+    rating: s.rating,
+    distance: s.distance_meters / 1000, // convert to km
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
         contentContainerStyle={styles.content}
-        data={nearbyStores}
+        data={storeCards}
         keyExtractor={(store) => store.id}
         ListHeaderComponent={
           <View>
+            {/* Header row */}
             <View style={styles.header}>
               <View>
                 <Text style={styles.eyebrow}>NEARCOMMERCE</Text>
@@ -59,6 +85,7 @@ export default function HomeScreen() {
               </Link>
             </View>
 
+            {/* Category grid */}
             <Text style={styles.sectionTitle}>Browse categories</Text>
             <View style={styles.categoryGrid}>
               {categories.map((category) => (
@@ -78,6 +105,7 @@ export default function HomeScreen() {
               ))}
             </View>
 
+            {/* Section heading */}
             <View style={styles.sectionHeading}>
               <Text style={styles.sectionTitle}>Stores near you</Text>
               <Text style={styles.caption}>Updated with local hours</Text>
@@ -86,6 +114,17 @@ export default function HomeScreen() {
         }
         renderItem={({ item }) => <StoreCard {...item} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
+          isFetchingLocation || isLoading ? (
+            <ActivityIndicator color="#2563eb" style={styles.loader} />
+          ) : isError ? (
+            <Text style={styles.emptyText}>
+              Couldn't load nearby stores. Check your connection.
+            </Text>
+          ) : (
+            <Text style={styles.emptyText}>No stores found nearby.</Text>
+          )
+        }
       />
     </SafeAreaView>
   );
@@ -113,7 +152,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
     maxWidth: 280,
   },
-  searchButton: { backgroundColor: "#dbeafe", borderRadius: 14, padding: 12 },
+  searchButton: {
+    backgroundColor: "#dbeafe",
+    borderRadius: 14,
+    padding: 12,
+  },
   sectionTitle: {
     color: "#123047",
     fontSize: 18,
@@ -140,7 +183,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
+    marginBottom: 4,
   },
   caption: { color: "#718096", fontSize: 12 },
   separator: { height: 10 },
+  loader: { marginTop: 24 },
+  emptyText: {
+    color: "#718096",
+    textAlign: "center",
+    marginTop: 24,
+    fontSize: 14,
+  },
 });
