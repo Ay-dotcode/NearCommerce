@@ -31,19 +31,13 @@ describe("Trust Gate Middleware (Task 3.2.5)", () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it("should return 403 if email_verified_at is null", async () => {
+  it("should call next() for MVP even if email_verified_at is null", async () => {
     (db.query as jest.Mock).mockResolvedValueOnce({
       rows: [{ email_verified_at: null }],
     });
 
     await requireVerifiedEmail(req, res, next);
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        error: expect.stringMatching(/Email verification is required/),
-      }),
-    );
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
   });
 
   it("should return 401 if req.user is undefined", async () => {
@@ -52,13 +46,12 @@ describe("Trust Gate Middleware (Task 3.2.5)", () => {
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
-  it("should return 403 if user is not found in database", async () => {
+  it("should call next() for MVP even if user is not found in database", async () => {
     (db.query as jest.Mock).mockResolvedValueOnce({
       rows: [],
     });
 
     await requireVerifiedEmail(req, res, next);
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
   });
 });

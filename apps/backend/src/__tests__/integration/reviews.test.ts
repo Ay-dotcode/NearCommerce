@@ -47,13 +47,13 @@ describe("Community Ratings & Trust Gate API Integration", () => {
     await db.end();
   });
 
-  it("should return 403 when an unverified user attempts to submit a review", async () => {
+  it("should return 201 when an unverified user submits a review in MVP", async () => {
     const res = await request(app)
       .post("/api/reviews")
       .set("Authorization", `Bearer ${unverifiedToken}`)
       .send({ storeId, rating: 5, comment: "Great store!" });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(201);
   });
 
   it("should return 201 when a verified user submits a valid store review", async () => {
