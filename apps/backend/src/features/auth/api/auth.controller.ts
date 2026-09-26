@@ -11,14 +11,12 @@ import {
   USER_SESSION_TTL_MS,
 } from "@/constants";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
-import { sendPasswordResetEmail, sendVerificationEmail } from "@/utils/email";
+import { sendPasswordResetEmail } from "@/utils/email";
 import {
   ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
-  ResendVerificationSchema,
   ResetPasswordSchema,
-  VerifyEmailSchema,
 } from "@nearcommerce/api";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -81,25 +79,16 @@ export const registerUser = async (req: Request, res: Response) => {
 
       await client.query("COMMIT");
 
-      // 6. Dispatch Email
-      await sendVerificationEmail(validatedData.email, rawToken).catch(
-        (err) => {
-          console.error(
-            "[EMAIL DISPATCH ERROR] Registration email failed:",
-            err,
-          );
-        },
+      // 6. Mark email as verified immediately (MVP without verification)
+      await client.query(
+        `UPDATE users SET email_verified_at = NOW() WHERE id = $1`,
+        [userId],
       );
 
-      if (process.env.NODE_ENV !== "test")
-        console.log(
-          `[EMAIL DISPATCH] To: ${validatedData.email}, Token: ${rawToken}`,
-        );
-
-      // 7. Return success (DO NOT return the raw token in the JSON response)
+      // 7. Return success – account is ready to use immediately
       return res.status(201).json({
         message:
-          "User registered successfully. Please check your email to verify your account.",
+          "User registered successfully. Email verification is disabled in the MVP.",
       });
     } catch (txError) {
       await client.query("ROLLBACK");
@@ -121,139 +110,18 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 };
 
-export const verifyEmail = async (req: Request, res: Response) => {
-  let validatedData;
-  try {
-    validatedData = VerifyEmailSchema.parse(req.body);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res
-        .status(400)
-        .json({ error: "Validation failed", details: error.issues });
-    }
-    return res.status(400).json({ error: "Validation failed" });
-  }
-
-  try {
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(validatedData.token)
-      .digest("hex");
-
-    const client = await db.connect();
-    try {
-      await client.query("BEGIN");
-
-      const tokenResult = await client.query(
-        `SELECT user_id FROM email_verification_tokens 
-         WHERE token_hash = $1 AND expires_at > NOW()`,
-        [tokenHash],
-      );
-
-      if (tokenResult.rows.length === 0) {
-        await client.query("ROLLBACK");
-        return res
-          .status(400)
-          .json({ error: "Invalid or expired verification token" });
-      }
-
-      const userId = tokenResult.rows[0].user_id;
-
-      await client.query(
-        `UPDATE users SET email_verified_at = NOW() WHERE id = $1`,
-        [userId],
-      );
-
-      await client.query(
-        `DELETE FROM email_verification_tokens WHERE user_id = $1`,
-        [userId],
-      );
-
-      await client.query("COMMIT");
-      return res.status(200).json({ message: "Email verified successfully" });
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error("Verification error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+export const verifyEmail = async (_req: Request, res: Response) => {
+  // Email verification is disabled for MVP — always returns success
+  return res
+    .status(200)
+    .json({ message: "Email verification is disabled in the MVP." });
 };
 
-export const resendVerification = async (req: Request, res: Response) => {
-  let validatedData;
-  try {
-    validatedData = ResendVerificationSchema.parse(req.body);
-  } catch (error) {
-    if (error instanceof ZodError)
-      return res
-        .status(400)
-        .json({ error: "Validation failed", details: error.issues });
-    return res.status(400).json({ error: "Validation failed" });
-  }
-
-  try {
-    const userResult = await db.query(
-      `SELECT id, email_verified_at FROM users WHERE email = $1`,
-      [validatedData.email],
-    );
-
-    if (userResult.rows.length === 0)
-      // Return 200 to prevent email enumeration attacks
-      return res.status(200).json({
-        message: "If your email is registered, a new token has been sent.",
-      });
-
-    const user = userResult.rows[0];
-
-    if (user.email_verified_at)
-      return res.status(400).json({ error: "Email is already verified" });
-
-    const { rawToken, tokenHash } = generateVerificationToken();
-    const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS);
-
-    const client = await db.connect();
-    try {
-      await client.query("BEGIN");
-      await client.query(
-        `DELETE FROM email_verification_tokens WHERE user_id = $1`,
-        [user.id],
-      );
-      await client.query(
-        `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
-        [user.id, tokenHash, expiresAt],
-      );
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-
-    // Dispatch Email
-    await sendVerificationEmail(validatedData.email, rawToken).catch((err) => {
-      console.error(
-        "[EMAIL DISPATCH ERROR] Resend verification email failed:",
-        err,
-      );
-    });
-
-    if (process.env.NODE_ENV !== "test")
-      console.log(
-        `[EMAIL DISPATCH] Resend To: ${validatedData.email}, Token: ${rawToken}`,
-      );
-
-    return res.status(200).json({
-      message: "If your email is registered, a new token has been sent.",
-    });
-  } catch (error) {
-    console.error("Resend verification error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+export const resendVerification = async (_req: Request, res: Response) => {
+  // Email verification is disabled for MVP — always returns success
+  return res
+    .status(200)
+    .json({ message: "Email verification is disabled in the MVP." });
 };
 
 export const forgotPassword = async (req: Request, res: Response) => {

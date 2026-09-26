@@ -12,18 +12,23 @@ export const RegisterForm: React.FC = () => {
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
       <h2 className="text-2xl font-bold mb-2">Create an Account</h2>
       <p className="text-sm text-gray-600 mb-6">
-        Sign up to test email verification and get started.
+        Create your account and get started immediately.
       </p>
 
       {successMessage ? (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-md">
-          <h3 className="font-semibold text-emerald-900 mb-1">Check your email!</h3>
+          <h3 className="font-semibold text-emerald-900 mb-1">
+            🎉 Account Created!
+          </h3>
           <p className="text-sm mb-3">{successMessage}</p>
+          <p className="text-sm text-emerald-700 mb-3">
+            Your account is ready — no email verification required.
+          </p>
           <Link
             to={AppRoutes.login}
             className="inline-block text-sm font-medium text-emerald-700 underline hover:text-emerald-900"
           >
-            Return to Login
+            Go to Login
           </Link>
         </div>
       ) : (
@@ -36,7 +41,9 @@ export const RegisterForm: React.FC = () => {
               errors.full_name = "Full name must be at least 2 characters";
 
             if (!values.email) errors.email = "Email is required";
-            else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email))
+            else if (
+              !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
+            )
               errors.email = "Invalid email address";
 
             if (!values.password) errors.password = "Password is required";
@@ -65,7 +72,10 @@ export const RegisterForm: React.FC = () => {
           {({ isSubmitting, status }) => (
             <Form className="flex flex-col gap-4">
               <div>
-                <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="full_name"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Full Name
                 </label>
                 <Field
@@ -83,7 +93,10 @@ export const RegisterForm: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email
                 </label>
                 <Field
@@ -101,7 +114,10 @@ export const RegisterForm: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Password
                 </label>
                 <Field
@@ -119,7 +135,10 @@ export const RegisterForm: React.FC = () => {
               </div>
 
               {status && (
-                <div role="alert" className="text-red-600 bg-red-50 p-2 rounded border border-red-200 text-sm">
+                <div
+                  role="alert"
+                  className="text-red-600 bg-red-50 p-2 rounded border border-red-200 text-sm"
+                >
                   {status}
                 </div>
               )}
@@ -136,7 +155,10 @@ export const RegisterForm: React.FC = () => {
 
               <div className="text-center text-sm text-gray-600 mt-2">
                 Already have an account?{" "}
-                <Link to={AppRoutes.login} className="text-blue-600 font-medium hover:underline">
+                <Link
+                  to={AppRoutes.login}
+                  className="text-blue-600 font-medium hover:underline"
+                >
                   Log in
                 </Link>
               </div>

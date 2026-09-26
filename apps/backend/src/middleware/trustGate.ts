@@ -16,10 +16,7 @@ export async function requireVerifiedEmail(
       [userId],
     );
 
-    if (result.rows.length === 0 || result.rows[0].email_verified_at === null)
-      return res.status(403).json({
-        error: "Email verification is required to perform this action.",
-      });
+    // Verification disabled for MVP
     next();
   } catch (error) {
     console.error("[TRUST GATE] Error verifying email status:", error);

@@ -28,13 +28,18 @@ Every new feature or service built from this point forward must include:
 
 ### Phase 3: Backend API & Micro-Services (Current Phase)
 
-#### Task 3.1: Core Auth & Email Verification
+#### Task 3.1: Core Auth (MVP — Email Verification Disabled)
 
-- **3.1.1 Registration (`/auth/register`):** Accept `RegisterSchema`, hash passwords with `bcrypt`, generate a secure random token, store its SHA-256 hash in `email_verification_tokens` (24h expiry), and dispatch verification email. Ensure prior unexpired tokens are invalidated.
-- **3.1.2 Email Verification (`/auth/verify-email`):** Validate SHA-256 token hash, update `users.email_verified_at`. Add rate-limited `/auth/resend-verification`.
-- **3.1.3 Support Endpoint (`/support`):** Standardized route providing official support channels.
-- **3.1.4 Password Reset:** Implement `/auth/forgot-password` (1h expiry, hashed token) and `/auth/reset-password` (validates token, updates `password_hash`, and revokes all active `user_sessions`).
-- _Testing:_ Unit test token hashing logic; integration test registration, verification flow, and progressive rate-limiting.
+- **3.1.1 Registration (`/auth/register`):** Accept `RegisterSchema`, hash passwords with `bcrypt`, insert user, and immediately set `email_verified_at = NOW()`. No verification email is sent. Users can log in right after registering.
+- **3.1.2 Email Verification (`/auth/verify-email`):** **Disabled for MVP.** Endpoint is a stub that always returns `200`. No token validation or DB writes occur.
+- **3.1.3 Resend Verification (`/auth/resend-verification`):** **Disabled for MVP.** Endpoint is a stub that always returns `200`.
+- **3.1.4 Support Endpoint (`/support`):** Standardized route providing official support channels.
+- **3.1.5 Password Reset:** Implement `/auth/forgot-password` (1h expiry, hashed token) and `/auth/reset-password` (validates token, updates `password_hash`, and revokes all active `user_sessions`).
+- **3.1.6 Trust Gate (`requireVerifiedEmail` middleware):** **Bypassed for MVP.** Middleware calls `next()` unconditionally. Re-enable once a custom Resend domain is configured.
+- _Testing:_ Integration tests cover registration (auto-verification), stub endpoints, password reset, and login.
+
+> **To re-enable verification:** (1) Configure a domain at resend.com/domains, (2) revert `trustGate.ts` to enforce the `email_verified_at` check, (3) restore the full `verifyEmail`/`resendVerification` controller logic, and (4) re-add the `VerifyEmailPage` route in the frontend router.
+
 
 #### Task 3.2: Domain Micro-Services
 
