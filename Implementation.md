@@ -16,59 +16,76 @@
 
 ## 2. Testing Strategy & Workflow
 
-Every new feature or service built from this point forward must include:
+Every new feature or service built must include:
 
 1. **Unit Tests:** For business logic, validation helpers, token hashing, and utility functions.
 2. **Integration / API Tests:** Using `Supertest` against Express route handlers to verify HTTP status codes, Zod request validation, and database interactions.
-3. **Running Tests:** Executed via Turborepo filters: `pnpm test --filter @nearcommerce/backend`.
+3. **Running Tests:** Executed via Turborepo filters: `pnpm test`.
 
 ---
 
-## 3. Remaining Execution Plan (Phase by Phase)
+## 3. Implementation Plan & Missing Flow Backlog
 
-### Phase 3: Backend API & Micro-Services (Current Phase)
+### Phase 3: Backend API & Micro-Services
 
 #### Task 3.1: Core Auth (MVP — Email Verification Disabled)
 
-- **3.1.1 Registration (`/auth/register`):** Accept `RegisterSchema`, hash passwords with `bcrypt`, insert user, and immediately set `email_verified_at = NOW()`. No verification email is sent. Users can log in right after registering.
-- **3.1.2 Email Verification (`/auth/verify-email`):** **Disabled for MVP.** Endpoint is a stub that always returns `200`. No token validation or DB writes occur.
-- **3.1.3 Resend Verification (`/auth/resend-verification`):** **Disabled for MVP.** Endpoint is a stub that always returns `200`.
-- **3.1.4 Support Endpoint (`/support`):** Standardized route providing official support channels.
-- **3.1.5 Password Reset:** Implement `/auth/forgot-password` (1h expiry, hashed token) and `/auth/reset-password` (validates token, updates `password_hash`, and revokes all active `user_sessions`).
-- **3.1.6 Trust Gate (`requireVerifiedEmail` middleware):** **Bypassed for MVP.** Middleware calls `next()` unconditionally. Re-enable once a custom Resend domain is configured.
-- _Testing:_ Integration tests cover registration (auto-verification), stub endpoints, password reset, and login.
+- **3.1.1 Registration (`/auth/register`):** Accept `RegisterSchema` (strictly `CUSTOMER` or `STORE_OWNER`, blocking `SYSTEM_ADMIN` escalation), hash passwords with `bcrypt`, insert user, and immediately set `email_verified_at = NOW()`. No verification email is sent. Rate-limit registration per IP/email.
+- **3.1.2 Email Verification (`/auth/verify-email`):** **Disabled for MVP.** Stub returning `200 OK`.
+- **3.1.3 Resend Verification (`/auth/resend-verification`):** **Disabled for MVP.** Stub returning `200 OK`.
+- **3.1.4 Support Endpoint (`/support`):** Standardized route providing official support channels for users and store owners.
+- **3.1.5 Password Reset Flow:** Implement `/auth/forgot-password` (1h expiry, hashed token in DB) and `/auth/reset-password` (validates token, updates `password_hash`, and revokes all active `user_sessions`). Includes password reset UI screens in web and mobile apps.
+- **3.1.6 Trust Gate (`requireVerifiedEmail` middleware):** **Bypassed for MVP.** Calls `next()` unconditionally.
 
-> **To re-enable verification:** (1) Configure a domain at resend.com/domains, (2) revert `trustGate.ts` to enforce the `email_verified_at` check, (3) restore the full `verifyEmail`/`resendVerification` controller logic, and (4) re-add the `VerifyEmailPage` route in the frontend router.
+#### Task 3.2: Domain Micro-Services & Schema Refinements
 
-
-#### Task 3.2: Domain Micro-Services
-
-- **3.2.1 Resilient Search & Detail Service:** Vector search route utilizing `earthdistance` for <50ms proximity filtering with a 2000ms Gemini circuit breaker fallback to `tsvector`/`pg_trgm`. **Crucial rule:** Must explicitly filter `WHERE is_published = true AND quantity > 0 AND stores.is_suspended = false`.
-- **3.2.2 Real-Time Household List Service:** Socket.io server with Redis pub/sub. List item additions use PostgreSQL `ON CONFLICT (list_id, product_id) DO UPDATE SET quantity = household_list_items.quantity + EXCLUDED.quantity, is_checked = false`.
-- **3.2.3 Store Timezones:** Evaluate store operating hours against the store's explicit IANA timezone column.
-- **3.2.4 Product Freshness Engine:** Flag products unverified for >30 days (`last_verified_at`). Expose "Confirm In-Stock" endpoint.
-- **3.2.5 Community Ratings & Trust Gate:** Middleware enforcing `email_verified_at IS NOT NULL` to submit reviews or create stores.
-- **3.2.6 System Admin Operations:** Restricted endpoints for pagination, toggling `is_suspended` (instantly busting Redis cache), and hard deletions with pre-deletion row serialization into `admin_audit_logs.snapshot`.
+- **3.2.1 Resilient Search & Detail Service:** Vector search route utilizing `earthdistance` for <50ms proximity filtering with 2000ms Gemini circuit breaker fallback (`pg_trgm` & `tsvector`). **Filter Enforcement:** Explicitly filter `WHERE p.is_published = true AND p.quantity > 0 AND s.is_suspended = false AND u.is_suspended = false` by joining `users u` on `s.owner_id = u.id` so suspending a user hides all owned stores and products.
+- **3.2.2 Product Embeddings Pipeline:** Automatically invoke Gemini `text-embedding-004` (768 dimensions) to update `products.embedding` on product creation, update, and CSV import.
+- **3.2.3 Real-Time Household List Operations:** Socket.io server with Redis pub/sub.
+  - Implement custom item addition (`custom_item_name`), item deletion, list renaming, list deletion, member removal, and owner invite code regeneration (`regenerate-invite-code`).
+  - **Orphan Item Prevention:** When adding a product to a list, copy `product.name` into `custom_item_name` so deletion of a product preserves item visibility.
+- **3.2.4 Store Timezones & Freshness Engine:** Evaluate operating hours against explicit store IANA timezone. Automatically reset `last_verified_at = NOW()` whenever price or quantity is edited.
+- **3.2.5 Community Ratings & Review Management:** Endpoints for store/product reviews (1-5), per-target listing, and shopper review edit/delete endpoints.
+- **3.2.6 System Admin Operations:** Admin endpoints for user/store suspension, hard deletion with `admin_audit_logs.snapshot` pre-deletion serialization, and an **Admin Demotion Endpoint** (demoting `SYSTEM_ADMIN` to `CUSTOMER` to satisfy the audit log ON DELETE RESTRICT safeguard).
+- **3.2.7 Search Database Indexes:** Add GIN trigram indexes (`CREATE INDEX idx_products_name_trgm ON products USING gist (name pg_trgm_ops)`) and HNSW vector index for performance targets.
 
 ---
 
 ### Phase 4: Web Portals (Store Owners & System Admins)
 
-- **Task 4.1 RBAC Routing:** Login screen routing Store Owners to inventory dashboard (passing `X-Store-ID`) and System Admins to master oversight.
-- **Task 4.2 Store Owner Dashboard:** Product CRUD forms, dual-mode CSV importer (auto-drafts if image URL missing), and Edge-AI image cropper running ONNX YOLO in a Web Worker (with 3s fallback).
-- **Task 4.3 System Admin Dashboard:** Global metrics hub, user/store moderation grids, review management, and read-only audit log ledger with pre-deletion snapshots.
+- **Task 4.1 RBAC Routing & Customer Guidance:**
+  - Login screen routing Store Owners to inventory dashboard (passing `X-Store-ID`) and System Admins to master oversight.
+  - Render helpful guidance and redirect links when a `CUSTOMER` role attempts to log into the Store Owner portal.
+- **Task 4.2 Store Owner Dashboard & Operations:**
+  - Product CRUD forms with automatic freshness verification on edit.
+  - Store creation onboarding modal for new store owners with zero stores, plus a multi-store switcher component.
+  - Dual-mode CSV importer (auto-drafts if image URL missing) and Edge-AI image cropper running ONNX YOLO in a Web Worker (with 3s fallback).
+  - Add explicit Logout, Store Deletion, and Support buttons to the dashboard layout.
+- **Task 4.3 System Admin Dashboard:**
+  - Global metrics hub, user/store moderation grids (with User Demote button), review moderation grid, and read-only audit log ledger with pre-deletion snapshots.
+  - Category & Subcategory CRUD administration panel.
 
 ---
 
 ### Phase 5: Mobile App (Shoppers)
 
-- **Task 5.1 & 5.2 Navigation & Search:** Expo Router layout, Category Browse, unified search bar with visual fallback, and store cards displaying "Open Now/Closed" status and freshness badges.
-- **Task 5.3 & 5.4 Real-Time Lists & Hardware:** Household list synchronization via Socket.io with toast notifications for duplicate additions, location privacy handling, and native map handoff (`geo:` or `maps://`).
+- **Task 5.1 & 5.2 Navigation, Search & Favorites:**
+  - Expo Router layout, Category & Subcategory drill-down browse screen.
+  - Unified text search with graceful AI fallback.
+  - Favorite Heart/Bookmark toggle on Store Detail and Product Detail screens to manage saved items.
+  - Manual location/ZIP code fallback modal when location permission is denied.
+- **Task 5.3 Real-Time Household Lists:**
+  - Household list UI supporting item deletion, custom items, list rename/delete, leave list, and member management.
+- **Task 5.4 Shopper Reviews & Settings:**
+  - Product review submission and review listing UI on product/store detail screens.
+  - Shopper review edit/delete controls.
+  - Account deletion confirmation flow calling `/users/me` delete endpoint.
+  - Password Reset screen (`/(auth)/forgot-password`).
 
 ---
 
 ## 4. How to Resume in a New Chat
 
-When starting your next chat session, simply copy and paste this message:
+When starting your next chat session, copy and paste this message:
 
-> _"We are building NearCommerce, a modular local commerce platform using a pnpm/Turborepo monorepo, Node.js/Express, Neon PostgreSQL, and Upstash Redis. Our architecture rules, Zod schemas in `@nearcommerce/api`, and initial database schema are already established and tested. We are currently at **Phase 3, Task 3.1: User Registration & Email Verification**, and we adhere to writing unit and integration tests alongside every feature. Let's start building Task 3.1 with its corresponding tests!"_
+> _"We are building NearCommerce, a modular local commerce platform using a pnpm/Turborepo monorepo, Node.js/Express, Neon PostgreSQL, and Upstash Redis. Our SRS and Implementation Blueprint have been reconciled for our MVP plan (auto-verified registration, bypassed email sending). All test suites across the monorepo pass cleanly. Let me know where we should begin on our remaining backlog!"_

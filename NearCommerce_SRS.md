@@ -62,21 +62,23 @@
 
 ### Phase 3: Backend API & Micro-Services
 
-**Task 3.1: Core API, Auth, & Email Verification**
+**Task 3.1: Core API, Auth, & Email Verification (MVP Alignment)**
 
-- _Sub-task 3.1.1:_ Build user registration. Upon signup, generate a verification token, store its SHA-256 hash in `email_verification_tokens` (24h expiry), and dispatch an email. Issuing a new token invalidates (deletes) any prior unexpired tokens for that user.
-- _Sub-task 3.1.2:_ Build verification endpoint (`/auth/verify-email`) to validate token hashes and set `email_verified_at`. Add a rate-limited `/auth/resend-verification` endpoint.
-- _Sub-task 3.1.3:_ Expose a standardized `/support` endpoint providing users and store owners direct access to official support channels.
-- _Sub-task 3.1.4 (Password Reset):_ Build `/auth/forgot-password` (issues a hashed token in `password_reset_tokens`, 1h expiry, invalidating any prior unexpired token for that user) and `/auth/reset-password` (validates the token, updates `password_hash`, and revokes all of that user's active `user_sessions` so existing refresh tokens stop working).
+- _Sub-task 3.1.1 (Registration):_ Accept `RegisterSchema`, hash passwords with bcrypt, insert user, and immediately set `email_verified_at = CURRENT_TIMESTAMP` for MVP mode. No verification email is sent. Users can log in immediately after registration.
+- _Sub-task 3.1.2 (Email Verification Endpoint - Disabled for MVP):_ Endpoint (`/auth/verify-email`) is a stub returning 200 OK. Restored when custom email domain is configured.
+- _Sub-task 3.1.3 (Resend Verification Endpoint - Disabled for MVP):_ Endpoint (`/auth/resend-verification`) is a stub returning 200 OK.
+- _Sub-task 3.1.4 (Support Endpoint):_ Expose a standardized `/support` endpoint providing users and store owners direct access to official support channels.
+- _Sub-task 3.1.5 (Password Reset):_ Build `/auth/forgot-password` (issues a hashed token in `password_reset_tokens`, 1h expiry, invalidating any prior unexpired token for that user) and `/auth/reset-password` (validates the token, updates `password_hash`, and revokes all of that user's active `user_sessions`).
+- _Sub-task 3.1.6 (Trust Gate Middleware - Bypassed for MVP):_ `requireVerifiedEmail` calls `next()` unconditionally for MVP since users are auto-verified upon registration.
 
 **Task 3.2: Domain Micro-Services**
 
-- _Sub-task 3.2.1 (Resilient Search & Detail Service):_ Build vector search route utilizing `earthdistance` for <50ms proximity filtering. Implement 2000ms circuit breaker. **Crucial:** Search queries MUST join to `stores` and explicitly filter `WHERE is_published = true AND quantity > 0 AND stores.is_suspended = false`. The same filter applies to direct store/product detail lookups (not just search) — a suspended store or unpublished product returns 404 even when fetched by direct ID/deep link.
-- _Sub-task 3.2.2 (Real-Time Household List Service):_ Implement Socket.io server with Redis pub/sub. List item additions use PostgreSQL `ON CONFLICT (list_id, product_id) DO UPDATE SET quantity = household_list_items.quantity + EXCLUDED.quantity, is_checked = false` to seamlessly bump quantities and reset completion status. List owners may call a `regenerate-invite-code` endpoint that overwrites `invite_code` with a new unique value, immediately invalidating the old one.
+- _Sub-task 3.2.1 (Resilient Search & Detail Service):_ Build vector search route utilizing `earthdistance` for <50ms proximity filtering. Implement 2000ms circuit breaker. **Crucial:** Search queries MUST join to `stores` and `users` to explicitly filter `WHERE is_published = true AND quantity > 0 AND stores.is_suspended = false AND users.is_suspended = false`. The same filter applies to direct store/product detail lookups. Automatically generate vector embeddings via Gemini `text-embedding-004` on product creation, edit, and CSV import.
+- _Sub-task 3.2.2 (Real-Time Household List Service):_ Implement Socket.io server with Redis pub/sub. List item additions use PostgreSQL `ON CONFLICT (list_id, product_id) DO UPDATE SET quantity = household_list_items.quantity + EXCLUDED.quantity, is_checked = false`. Supports custom items, member removal, list renaming/deletion, and list owner invite code regeneration (`regenerate-invite-code`).
 - _Sub-task 3.2.3 (Store Operating Hours & Timezone Service):_ Store operating hours evaluate against the store's explicit IANA timezone column.
-- _Sub-task 3.2.4 (Product Freshness Engine):_ Automatically flag products unverified for > 30 days (`last_verified_at`). Expose a "Confirm In-Stock" endpoint for store owners.
-- _Sub-task 3.2.5 (Community Ratings Service & Gating):_ Build endpoints for submitting store/product ratings (1-5). **Trust Gate:** Middleware enforces that `email_verified_at IS NOT NULL` to submit a review or create a store. Browsing, searching, and shared lists remain fully accessible without verification.
-- _Sub-task 3.2.6 (System Admin Operations):_ Build heavily guarded endpoints restricted to `SYSTEM_ADMIN`. Endpoints include fetching paginated lists of all users/stores/reviews, toggling `is_suspended` statuses (which immediately busts the Redis suspension cache — see 1.3.2), forcing hard deletions, and logging every action to `admin_audit_logs`. **Before any deletion**, the affected row(s) are serialized into `admin_audit_logs.snapshot` so disputed moderation actions remain auditable even after the underlying data is gone.
+- _Sub-task 3.2.4 (Product Freshness Engine):_ Automatically flag products unverified for > 30 days (`last_verified_at`). Expose a "Confirm In-Stock" endpoint for store owners; price/quantity edits automatically refresh `last_verified_at`.
+- _Sub-task 3.2.5 (Community Ratings Service & Gating):_ Build endpoints for submitting store/product ratings (1-5), listing reviews per target, and shopper review management (edit/delete).
+- _Sub-task 3.2.6 (System Admin Operations):_ Restricted endpoints for pagination, toggling `is_suspended` for users and stores (instantly busting Redis cache and cascading store visibility), admin demotion to `CUSTOMER`, review deletion, and logging pre-deletion snapshots to `admin_audit_logs`.
 
 ### Phase 4: Web Portals (Store Owners & System Admins)
 
