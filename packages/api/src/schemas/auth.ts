@@ -1,10 +1,13 @@
 import { z } from "zod";
 
-export const RegisterSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  full_name: z.string().min(2, "Full name must be at least 2 characters"),
-});
+export const RegisterSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    full_name: z.string().min(2, "Full name must be at least 2 characters"),
+    role: z.enum(["CUSTOMER", "STORE_OWNER"]).default("CUSTOMER"),
+  })
+  .strict();
 
 export const VerifyEmailSchema = z.object({
   token: z.string().min(1, "Verification token is required"),

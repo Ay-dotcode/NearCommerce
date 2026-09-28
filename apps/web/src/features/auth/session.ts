@@ -1,49 +1,44 @@
+import { STORE_KEY } from "@/constants/routes";
 import { apiClient, PortalRole, UserRole } from "@nearcommerce/api";
 export { UserRole } from "@nearcommerce/api";
 export type { PortalRole } from "@nearcommerce/api";
 
-const readCookie = (name: string) =>
-  document.cookie
-    .split("; ")
-    .find((cookie) => cookie.startsWith(`${name}=`))
-    ?.split("=")[1];
+const ACCESS_TOKEN_KEY = "access_token";
+const USER_ROLE_KEY = "user_role";
 
-const writeCookie = (name: string, value: string) => {
-  const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Strict${secure}`;
-};
-
-export const getAccessToken = () => readCookie("access_token");
-export const getUserRole = () => readCookie("user_role") as UserRole;
+export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
+export const getUserRole = () =>
+  localStorage.getItem(USER_ROLE_KEY) as UserRole | null;
 
 export const persistSession = (
   token: string,
   role: PortalRole,
   storeId?: string,
 ) => {
-  writeCookie("access_token", token);
-  writeCookie("user_role", role);
+  localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  localStorage.setItem(USER_ROLE_KEY, role);
   apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
 
   if (storeId) {
-    localStorage.setItem("X-Store-ID", storeId);
-    apiClient.defaults.headers.common["X-Store-ID"] = storeId;
+    localStorage.setItem(STORE_KEY, storeId);
+    apiClient.defaults.headers.common[STORE_KEY] = storeId;
+    apiClient.defaults.headers.common[STORE_KEY] = storeId;
   }
 };
 
 export const restoreSession = () => {
   const token = getAccessToken();
-  const storeId = localStorage.getItem("X-Store-ID");
+  const storeId = localStorage.getItem(STORE_KEY);
 
   if (token)
     apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
-  if (storeId) apiClient.defaults.headers.common["X-Store-ID"] = storeId;
+  if (storeId) apiClient.defaults.headers.common[STORE_KEY] = storeId;
 };
 
 export const clearSession = () => {
-  document.cookie = "access_token=; Path=/; Max-Age=0";
-  document.cookie = "user_role=; Path=/; Max-Age=0";
-  localStorage.removeItem("X-Store-ID");
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(USER_ROLE_KEY);
+  localStorage.removeItem(STORE_KEY);
   delete apiClient.defaults.headers.common.Authorization;
-  delete apiClient.defaults.headers.common["X-Store-ID"];
+  delete apiClient.defaults.headers.common[STORE_KEY];
 };

@@ -1,5 +1,6 @@
 import { confirmProductStock, getStoreProducts } from "@/api/products";
 import CsvImporter from "@/components/store-owner/CsvImporter";
+import { STORE_KEY } from "@/constants/routes";
 import type { StoreProduct } from "@/types/products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -8,7 +9,7 @@ const isStale = (date: string) =>
 
 export default function StoreOwnerDashboard() {
   const queryClient = useQueryClient();
-  const storeId = localStorage.getItem("X-Store-ID");
+  const storeId = localStorage.getItem(STORE_KEY);
   const productsQuery = useQuery({
     queryKey: ["store-products", storeId],
     queryFn: getStoreProducts,
