@@ -1,3 +1,4 @@
+import { useAuth } from "@/src/context/AuthContext";
 import { apiClient } from "@nearcommerce/api";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -11,7 +12,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../../src/context/AuthContext";
 
 interface LoginResponse {
   access_token: string;

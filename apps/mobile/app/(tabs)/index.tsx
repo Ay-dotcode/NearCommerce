@@ -1,4 +1,5 @@
 import StoreCard from "@/components/StoreCard";
+import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import { Ionicons } from "@expo/vector-icons";
 import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
@@ -12,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocationFetcher } from "../../src/hooks/useLocationFetcher";
 
 const categories = [
   { label: "Groceries", icon: "basket-outline" as const },
