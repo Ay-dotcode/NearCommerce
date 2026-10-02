@@ -18,7 +18,7 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
 app.use("/auth", authRouter);
 app.use("/search", searchRouter);
