@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { StoreOpeningHoursSchema } from "./schemas/store";
 import { UserRole } from "./types/roles";
 export * from "./schemas/admin";
 export * from "./schemas/auth";
@@ -15,40 +14,6 @@ export const LoginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
-
-export const CreateStoreSchema = z.object({
-  name: z.string().min(2, "Store name is required").max(255),
-  description: z.string().optional(),
-  address: z.string().min(5, "Full address is required"),
-  latitude: z.number().min(-90, "Invalid latitude").max(90, "Invalid latitude"),
-  longitude: z
-    .number()
-    .min(-180, "Invalid longitude")
-    .max(180, "Invalid longitude"),
-  timezone: z.string().default("UTC"),
-  openingHours: StoreOpeningHoursSchema,
-});
-
-// Products & Inventory
-export const CreateProductSchema = z
-  .object({
-    subcategoryId: z.string().uuid().optional(),
-    name: z.string().min(2, "Product name is required").max(255),
-    description: z.string().optional(),
-    price: z.number().positive("Price must be greater than zero"),
-    quantity: z
-      .number()
-      .int()
-      .nonnegative("Quantity cannot be negative")
-      .default(0),
-    imageUrl: z.string().url("Invalid image URL").max(512).optional(),
-    isPublished: z.boolean().default(false),
-  })
-  // Enforces the publish_image_check constraint from the database
-  .refine((data) => !data.isPublished || data.imageUrl, {
-    message: "Product cannot be published without an uploaded image",
-    path: ["isPublished"],
-  });
 
 // Shared Household Lists
 export const CreateHouseholdListSchema = z.object({
@@ -95,8 +60,6 @@ export const CreateReviewSchema = z
 
 // Type Exports for Frontend & Backend
 export type LoginInput = z.infer<typeof LoginSchema>;
-export type CreateStoreInput = z.infer<typeof CreateStoreSchema>;
-export type CreateProductInput = z.infer<typeof CreateProductSchema>;
 export type AddHouseholdListItemInput = z.infer<
   typeof AddHouseholdListItemSchema
 >;

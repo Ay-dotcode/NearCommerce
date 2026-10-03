@@ -19,8 +19,8 @@ export const addListItem = async (input: AddItemInput) => {
   // The ON CONFLICT target only covers (list_id, product_id) for catalogue
   // products. Custom items always insert as new rows (no conflict path).
   const query = `
-    INSERT INTO household_list_items (list_id, product_id, custom_item_name, quantity, added_by)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO household_list_items (list_id, product_id, custom_item_name, item_name, quantity, added_by)
+    VALUES ($1, $2, $3, COALESCE($3, (SELECT name FROM products WHERE id = $2), 'Item'), $4, $5)
     ON CONFLICT (list_id, product_id)
     DO UPDATE SET
       quantity   = household_list_items.quantity + EXCLUDED.quantity,

@@ -1,3 +1,4 @@
+import { STORE_KEY } from "@/constants/routes";
 import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ describe("OwnerDashboard (Task 4.2.1)", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
-    localStorage.setItem("X-Store-ID", "store-123");
+    localStorage.setItem(STORE_KEY, "store-123");
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });

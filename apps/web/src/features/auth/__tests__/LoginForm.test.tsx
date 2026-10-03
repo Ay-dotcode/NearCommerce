@@ -53,7 +53,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     jest.clearAllMocks();
     clearSession();
     (apiClient.defaults.headers.common as Record<string, string | undefined>)[
-      "X-Store-ID"
+      "x-store-id"
     ] = undefined;
   });
 
@@ -82,7 +82,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
 
     expect(
       (apiClient.defaults.headers.common as Record<string, string>)[
-        "X-Store-ID"
+        "x-store-id"
       ],
     ).toBe("store-123");
   });

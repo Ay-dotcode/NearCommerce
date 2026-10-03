@@ -7,5 +7,11 @@ declare namespace Express {
       email?: string;
       role: string;
     };
+    // Set by requireStoreAccess once ownership of the targeted store is verified.
+    store?: {
+      id: string;
+      ownerId: string;
+      isSuspended: boolean;
+    };
   }
 }
