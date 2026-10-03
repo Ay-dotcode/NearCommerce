@@ -1,9 +1,7 @@
-import { AppRoutes } from "@/constants/routes";
+import { AppRoutes, STORE_KEY } from "@/constants/routes";
 import { CreateStoreSchema, httpClient } from "@nearcommerce/api";
 import { FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const STORE_KEY = "x-store-id";
 
 const DEFAULT_OPENING_HOURS = {
   monday: { open: "09:00", close: "18:00", closed: false },

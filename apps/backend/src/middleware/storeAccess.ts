@@ -1,4 +1,5 @@
 import { db } from "@/config/database";
+import { STORE_KEY } from "@/constants";
 import { isUuid } from "@/utils/http";
 import { NextFunction, Request, Response } from "express";
 
@@ -7,7 +8,7 @@ export function requireStoreAccess(source: "header" | "param" = "header") {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
     const raw =
-      source === "param" ? req.params.storeId : req.headers["x-store-id"];
+      source === "param" ? req.params.storeId : req.headers[STORE_KEY];
     const storeId = Array.isArray(raw) ? raw[0] : raw;
 
     if (!storeId)

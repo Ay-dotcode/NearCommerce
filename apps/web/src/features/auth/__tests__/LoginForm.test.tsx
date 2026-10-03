@@ -15,6 +15,7 @@ jest.mock("@nearcommerce/api", () => ({
     STORE_OWNER: "STORE_OWNER",
     SYSTEM_ADMIN: "SYSTEM_ADMIN",
   },
+  STORE_KEY: "x-store-id",
   apiClient: {
     post: jest.fn(),
     defaults: { headers: { common: {} } },

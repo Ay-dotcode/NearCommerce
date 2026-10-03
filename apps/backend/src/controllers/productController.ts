@@ -1,4 +1,5 @@
 import { db } from "@/config/database";
+import { STORE_KEY } from "@/constants";
 import { scheduleProductEmbeddings } from "@/services/embedding.service";
 import {
   createProduct,
@@ -30,7 +31,7 @@ const MAX_REPORTED_ROW_ERRORS = 50;
 
 export async function verifyProductStock(req: Request, res: Response) {
   const { productId } = req.params;
-  const storeId = req.headers["x-store-id"];
+  const storeId = req.headers[STORE_KEY];
 
   if (!storeId || Array.isArray(storeId))
     return res.status(400).json({ error: "Missing X-Store-ID header" });
