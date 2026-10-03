@@ -6,16 +6,14 @@ import { ErrorMessage, Field, Form, Formik } from "formik";
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-/**
- * LoginForm
- *
- * Renders the NearCommerce Portal login screen.  On submission it calls the
- * `/auth/login` mutation and performs RBAC-aware routing:
- *   - SYSTEM_ADMIN  → /admin/dashboard (master oversight portal)
- *   - STORE_OWNER   → /owner/dashboard  (inventory management, X-Store-ID set)
- *
- * Any unrecognised role produces an inline error rather than a silent redirect.
- */
+// LoginForm
+//
+// Renders the NearCommerce Portal login screen. On submission it calls the
+// `/auth/login` mutation and performs RBAC-aware routing:
+//   - SYSTEM_ADMIN  → /admin/dashboard (master oversight portal)
+//   - STORE_OWNER   → /owner/dashboard  (inventory management, X-Store-ID set)
+//
+// Any unrecognised role produces an inline error rather than a silent redirect.
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const loginMutation = useLogin();

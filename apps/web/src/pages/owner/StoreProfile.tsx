@@ -1,128 +1,96 @@
-import { apiClient } from "@nearcommerce/api";
-import { Button } from "@nearcommerce/ui";
-import { ErrorMessage, Field, Form, Formik } from "formik";
-import { useEffect, useState } from "react";
-import * as Yup from "yup";
+import { parseApiError } from "@/api/errors";
+import { MY_STORES_KEY, deleteStore, getStore, updateStore } from "@/api/stores";
+import { Button, ConfirmDialog, useToast } from "@/components/ui";
+import { AppRoutes, STORE_KEY } from "@/constants/routes";
+import { StoreForm } from "@/features/stores/ui/StoreForm";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const StoreSchema = Yup.object().shape({
-  name: Yup.string().required("Store name is required"),
-  address: Yup.string().required("Physical address is required"),
-  timezone: Yup.string().required("IANA timezone is required"),
-});
+export const StoreProfile = ({ storeId: storeIdProp }: { storeId?: string }) => {
+  const storeId = storeIdProp ?? localStorage.getItem(STORE_KEY) ?? "";
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-export const StoreProfile = ({ storeId }: { storeId?: string }) => {
-  const [initialValues, setInitialValues] = useState({
-    name: "",
-    address: "",
-    timezone: "UTC",
+  const storeQuery = useQuery({ queryKey: ["store", storeId], queryFn: () => getStore(storeId), enabled: Boolean(storeId) });
+
+  const removeStore = useMutation({
+    mutationFn: () => deleteStore(storeId),
+    onSuccess: async () => {
+      localStorage.removeItem(STORE_KEY);
+      queryClient.removeQueries({ queryKey: ["store", storeId] });
+      await queryClient.invalidateQueries({ queryKey: MY_STORES_KEY });
+      toast.success("Store deleted.");
+      setConfirmingDelete(false);
+      navigate(AppRoutes.storeOwnerDashboard, { replace: true });
+    },
+    onError: (err) => {
+      toast.error(parseApiError(err, "We couldn't delete the store.").message);
+      setConfirmingDelete(false);
+    },
   });
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (storeId) {
-      apiClient.get(`/stores/${storeId}`).then((res) => {
-        setInitialValues({
-          name: res.data.name,
-          address: res.data.address,
-          timezone: res.data.timezone,
-        });
-        setLoading(false);
-      });
-    } else {
-      setLoading(false);
-    }
-  }, [storeId]);
+  if (!storeId) return <p className="text-sm text-red-700">No store is selected.</p>;
+  if (storeQuery.isLoading) return <p className="text-sm text-slate-500">Loading store settings…</p>;
+  if (storeQuery.isError || !storeQuery.data)
+    return (
+      <div role="alert" className="max-w-xl rounded-lg border border-red-200 bg-white p-5">
+        <p className="font-medium text-red-800">We couldn&apos;t load this store.</p>
+        <Button className="mt-3" variant="secondary" size="sm" onClick={() => storeQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
 
-  if (loading)
-    return <div className="p-6 text-gray-500">Loading profile data...</div>;
+  const store = storeQuery.data;
 
   return (
-    <div className="max-w-2xl bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900">Store Profile</h2>
-      <Formik
-        initialValues={initialValues}
-        enableReinitialize
-        validationSchema={StoreSchema}
-        onSubmit={async (values, { setSubmitting }) => {
-          try {
-            if (storeId) {
-              await apiClient.put(`/stores/${storeId}`, values);
-            } else {
-              await apiClient.post(`/stores`, values);
-            }
-            alert("Store profile updated successfully.");
-          } catch (error) {
-            console.error("Failed to update store:", error);
-          } finally {
-            setSubmitting(false);
-          }
-        }}
-      >
-        {({ isSubmitting }) => (
-          <Form className="flex flex-col gap-5">
-            <div>
-              <label
-                htmlFor="store-name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Store Name
-              </label>
-              <Field
-                id="store-name"
-                name="name"
-                className="border border-gray-300 p-2 w-full rounded focus:ring-blue-500 focus:border-blue-500"
-              />
-              <ErrorMessage
-                name="name"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="store-address"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Physical Address
-              </label>
-              <Field
-                id="store-address"
-                name="address"
-                className="border border-gray-300 p-2 w-full rounded focus:ring-blue-500 focus:border-blue-500"
-              />
-              <ErrorMessage
-                name="address"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="store-timezone"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Timezone (IANA Format)
-              </label>
-              <Field
-                id="store-timezone"
-                name="timezone"
-                placeholder="e.g., Europe/Istanbul"
-                className="border border-gray-300 p-2 w-full rounded focus:ring-blue-500 focus:border-blue-500"
-              />
-              <ErrorMessage
-                name="timezone"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
-            <div className="pt-4 border-t border-gray-100">
-              <Button type="submit" disabled={isSubmitting} variant="primary">
-                {isSubmitting ? "Saving Profile..." : "Save Profile Changes"}
-              </Button>
-            </div>
-          </Form>
-        )}
-      </Formik>
+    <div className="max-w-3xl space-y-8">
+      <div>
+        <h2 className="text-2xl font-semibold text-slate-900">Store settings</h2>
+        <p className="mt-1 text-sm text-slate-600">Update how {store.name} appears to shoppers.</p>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-card sm:p-6">
+        <StoreForm
+          key={`${store.id}:${store.updated_at ?? ""}`}
+          initial={store}
+          submitLabel="Save changes"
+          onSubmit={async (payload) => {
+            await updateStore(storeId, payload);
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: MY_STORES_KEY }),
+              queryClient.invalidateQueries({ queryKey: ["store", storeId] }),
+            ]);
+            toast.success("Store settings saved.");
+          }}
+        />
+      </div>
+
+      <section aria-labelledby="danger-zone-heading" className="rounded-xl border border-red-200 bg-white p-5 sm:p-6">
+        <h3 id="danger-zone-heading" className="text-base font-semibold text-red-800">
+          Delete store
+        </h3>
+        <p className="mt-1 max-w-xl text-sm text-slate-600">
+          Permanently removes this store and all of its products, along with shoppers&apos; favorites and reviews of it. This can&apos;t be undone.
+        </p>
+        <Button className="mt-4" variant="danger" onClick={() => setConfirmingDelete(true)}>
+          Delete store
+        </Button>
+      </section>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title={`Delete ${store.name}?`}
+        description="All products in this store will be deleted permanently."
+        confirmLabel="Delete store"
+        requireText={store.name}
+        loading={removeStore.isPending}
+        onConfirm={() => removeStore.mutate()}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </div>
   );
 };

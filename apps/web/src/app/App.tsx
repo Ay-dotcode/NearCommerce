@@ -1,4 +1,5 @@
 import { AppRouter } from "@/app/router";
+import { ToastProvider } from "@/components/ui";
 import { restoreSession } from "@/features/auth/session";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -9,7 +10,9 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppRouter />
+      <ToastProvider>
+        <AppRouter />
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

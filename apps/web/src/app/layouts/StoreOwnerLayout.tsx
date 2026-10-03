@@ -1,66 +1,56 @@
+import { parseApiError } from "@/api/errors";
+import { MY_STORES_KEY, listMyStores } from "@/api/stores";
+import { Button } from "@/components/ui";
 import { AppRoutes, STORE_KEY } from "@/constants/routes";
-import { clearSession } from "@/features/auth/session";
-import { httpClient } from "@nearcommerce/api";
-import { useCallback, useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { clearSession, setActiveStoreId } from "@/features/auth/session";
+import { cn } from "@/lib/cn";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
-type Store = { id: string; name: string; is_suspended: boolean };
-type Status = "loading" | "ready" | "error";
+const navItems = [
+  { to: AppRoutes.storeOwnerDashboard, label: "Inventory" },
+  { to: AppRoutes.storeProfile, label: "Store settings" },
+];
 
 export function StoreOwnerLayout() {
   const navigate = useNavigate();
-  const [stores, setStores] = useState<Store[]>([]);
-  const [selectedStoreId, setSelectedStoreId] = useState("");
-  const [status, setStatus] = useState<Status>("loading");
-  const [errorMessage, setErrorMessage] = useState(
-    "Couldn't load your stores.",
+  const [selectedStoreId, setSelectedStoreId] = useState(
+    () => localStorage.getItem(STORE_KEY) ?? "",
   );
 
-  const load = useCallback(() => {
-    let cancelled = false;
-    setStatus("loading");
-    httpClient
-      .get<{ data: Store[] }>("/stores/mine")
-      .then((res) => {
-        if (cancelled) return;
-        const owned = res.data.data;
-        if (owned.length === 0) {
-          localStorage.removeItem(STORE_KEY);
-          navigate(AppRoutes.onboarding, { replace: true });
-          return;
-        }
-        const saved = localStorage.getItem(STORE_KEY);
-        const active = owned.find((s) => s.id === saved) ?? owned[0];
-        localStorage.setItem(STORE_KEY, active.id);
-        setStores(owned);
-        setSelectedStoreId(active.id);
-        setStatus("ready");
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        const code = err?.response?.status;
-        if (code === 401) {
-          clearSession();
-          navigate(AppRoutes.login, { replace: true });
-          return;
-        }
-        setErrorMessage(
-          code === 403
-            ? (err.response?.data?.error ??
-                "Your account can't access this portal.")
-            : "Couldn't load your stores.",
-        );
-        setStatus("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate]);
+  const storesQuery = useQuery({
+    queryKey: MY_STORES_KEY,
+    queryFn: listMyStores,
+    retry: false,
+  });
+  const stores = storesQuery.data ?? [];
+  const activeStore = stores.find((s) => s.id === selectedStoreId) ?? stores[0];
 
-  useEffect(() => load(), [load]);
+  // Keep the persisted X-Store-ID in sync with what the account actually owns.
+  useEffect(() => {
+    if (!storesQuery.data) return;
+    if (storesQuery.data.length === 0) {
+      localStorage.removeItem(STORE_KEY);
+      navigate(AppRoutes.onboarding, { replace: true });
+      return;
+    }
+    if (activeStore && activeStore.id !== selectedStoreId)
+      setSelectedStoreId(activeStore.id);
+    if (activeStore && localStorage.getItem(STORE_KEY) !== activeStore.id)
+      setActiveStoreId(activeStore.id);
+  }, [storesQuery.data, activeStore, selectedStoreId, navigate]);
+
+  const error = storesQuery.isError ? parseApiError(storesQuery.error) : null;
+  useEffect(() => {
+    if (error?.status === 401) {
+      clearSession();
+      navigate(AppRoutes.login, { replace: true });
+    }
+  }, [error?.status, navigate]);
 
   const handleSelectStore = (storeId: string) => {
-    localStorage.setItem(STORE_KEY, storeId);
+    setActiveStoreId(storeId);
     setSelectedStoreId(storeId);
   };
 
@@ -69,33 +59,35 @@ export function StoreOwnerLayout() {
     navigate(AppRoutes.login, { replace: true });
   };
 
-  const activeStore = stores.find((s) => s.id === selectedStoreId);
+  const ready = Boolean(storesQuery.data && activeStore);
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <header className="border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center space-x-6">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
+              <p className="text-xs font-semibold text-brand-700">
                 NearCommerce
               </p>
-              <h1 className="text-lg font-semibold">Store Owner Portal</h1>
+              <h1 className="text-lg font-semibold leading-tight">
+                Store Owner Portal
+              </h1>
             </div>
 
-            {status === "ready" && (
-              <div className="flex items-center space-x-2">
+            {ready && (
+              <div className="flex items-center gap-2">
                 <label
                   htmlFor="store-switcher"
                   className="text-sm font-medium text-slate-600"
                 >
-                  Active Store:
+                  Active store
                 </label>
                 <select
                   id="store-switcher"
-                  value={selectedStoreId}
+                  value={activeStore!.id}
                   onChange={(e) => handleSelectStore(e.target.value)}
-                  className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm focus:border-blue-500 focus:outline-none"
+                  className="h-9 max-w-[14rem] truncate rounded-md border border-slate-300 bg-white px-2 text-sm font-medium shadow-card focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 >
                   {stores.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -104,48 +96,90 @@ export function StoreOwnerLayout() {
                     </option>
                   ))}
                 </select>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => navigate(AppRoutes.onboarding)}
-                  className="rounded border border-blue-600 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50"
                 >
-                  + Add Store
-                </button>
+                  Add store
+                </Button>
               </div>
             )}
           </div>
 
-          <button
-            onClick={signOut}
-            className="rounded border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
-          >
+          <Button variant="secondary" size="sm" onClick={signOut}>
             Sign out
-          </button>
+          </Button>
         </div>
+
+        {ready && (
+          <nav
+            aria-label="Primary"
+            className="mx-auto max-w-7xl overflow-x-auto px-4 sm:px-6"
+          >
+            <ul className="flex gap-1">
+              {navItems.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      cn(
+                        "-mb-px inline-block border-b-2 px-3 py-2.5 text-sm font-medium",
+                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                        isActive
+                          ? "border-brand-600 text-brand-700"
+                          : "border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900",
+                      )
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
       </header>
 
-      {status === "ready" && activeStore?.is_suspended && (
-        <div className="bg-red-50 px-6 py-3 text-center text-sm text-red-800">
+      {ready && activeStore!.is_suspended && (
+        <div
+          role="alert"
+          className="border-b border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800"
+        >
           This store is suspended and hidden from search. Contact support for
           assistance.
         </div>
       )}
 
-      <main className="mx-auto max-w-7xl">
-        {status === "loading" && (
-          <p className="p-6 text-sm text-slate-500">Loading your stores…</p>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        {storesQuery.isLoading && (
+          <p className="text-sm text-slate-500">Loading your stores…</p>
         )}
-        {status === "error" && (
-          <div className="p-6 text-sm">
-            <p className="mb-2 text-red-700">{errorMessage}</p>
-            <button
-              onClick={load}
-              className="rounded border border-slate-300 px-3 py-1.5 hover:bg-white"
-            >
-              Retry
-            </button>
+
+        {error && error.status !== 401 && (
+          <div
+            role="alert"
+            className="max-w-xl rounded-lg border border-red-200 bg-white p-5"
+          >
+            <p className="font-medium text-red-800">
+              {error.status === 403
+                ? error.message
+                : "We couldn't load your stores."}
+            </p>
+            {error.status !== 403 && (
+              <Button
+                className="mt-3"
+                variant="secondary"
+                size="sm"
+                onClick={() => storesQuery.refetch()}
+              >
+                Try again
+              </Button>
+            )}
           </div>
         )}
-        {status === "ready" && <Outlet key={selectedStoreId} />}
+
+        {ready && <Outlet key={activeStore!.id} />}
       </main>
     </div>
   );

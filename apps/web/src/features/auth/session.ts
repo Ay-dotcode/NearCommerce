@@ -22,7 +22,6 @@ export const persistSession = (
   if (storeId) {
     localStorage.setItem(STORE_KEY, storeId);
     apiClient.defaults.headers.common[STORE_KEY] = storeId;
-    apiClient.defaults.headers.common[STORE_KEY] = storeId;
   }
 };
 
@@ -41,4 +40,10 @@ export const clearSession = () => {
   localStorage.removeItem(STORE_KEY);
   delete apiClient.defaults.headers.common.Authorization;
   delete apiClient.defaults.headers.common[STORE_KEY];
+};
+
+// Switches the store every owner request is scoped to (sent as the X-Store-ID header).
+export const setActiveStoreId = (storeId: string) => {
+  localStorage.setItem(STORE_KEY, storeId);
+  apiClient.defaults.headers.common[STORE_KEY] = storeId;
 };
