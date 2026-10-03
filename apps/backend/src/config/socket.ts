@@ -1,10 +1,5 @@
-import {
-  ENV_PATH,
-  LIST_ROOM_PREFIX,
-  SOCKET_EVENT_DISCONNECT,
-  SOCKET_EVENT_JOIN_LIST,
-  SOCKET_EVENT_LEAVE_LIST,
-} from "@/constants";
+import { ENV_PATH } from "@/constants";
+import { registerListSocketHandlers } from "@/features/lists/socket/list.socket";
 import { createAdapter } from "@socket.io/redis-adapter";
 import dotenv from "dotenv";
 import { Server as HttpServer } from "http";
@@ -16,17 +11,26 @@ dotenv.config({ path: ENV_PATH });
 if (!process.env.REDIS_URL)
   dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
-let io: Server;
+let io: Server | undefined;
+
+/**
+ * Creates the Socket.io server with authentication and list handlers, without any
+ * Redis dependency. Used directly by tests; production goes through initSocketServer.
+ */
+export const createSocketServer = (httpServer: HttpServer): Server => {
+  io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+    },
+  });
+  registerListSocketHandlers(io);
+  return io;
+};
 
 export const initSocketServer = async (
   httpServer: HttpServer,
 ): Promise<Server> => {
-  io = new Server(httpServer, {
-    cors: {
-      // Adjust to your frontend origin(s) in production (e.g. process.env.CLIENT_ORIGIN)
-      origin: "*",
-    },
-  });
+  const server = createSocketServer(httpServer);
 
   // Two separate Redis clients are required by the pub/sub adapter:
   // one to publish and one to subscribe (Redis protocol constraint).
@@ -39,28 +43,8 @@ export const initSocketServer = async (
   await Promise.all([pubClient.connect(), subClient.connect()]);
   console.log("[SOCKET] Redis adapter connected");
 
-  io.adapter(createAdapter(pubClient, subClient));
-
-  io.on("connection", (socket) => {
-    console.log(`[SOCKET] Client connected: ${socket.id}`);
-
-    // Clients call this event to subscribe to a specific household list room.
-    // Only members who have joined the room will receive real-time updates.
-    socket.on(SOCKET_EVENT_JOIN_LIST, (listId: string) => {
-      socket.join(`${LIST_ROOM_PREFIX}${listId}`);
-      console.log(`[SOCKET] ${socket.id} joined ${LIST_ROOM_PREFIX}${listId}`);
-    });
-
-    socket.on(SOCKET_EVENT_LEAVE_LIST, (listId: string) => {
-      socket.leave(`${LIST_ROOM_PREFIX}${listId}`);
-    });
-
-    socket.on(SOCKET_EVENT_DISCONNECT, () => {
-      console.log(`[SOCKET] Client disconnected: ${socket.id}`);
-    });
-  });
-
-  return io;
+  server.adapter(createAdapter(pubClient, subClient));
+  return server;
 };
 
 /**

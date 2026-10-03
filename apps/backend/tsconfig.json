@@ -12,7 +12,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["jest"]
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*"],
   "references": [{ "path": "../../packages/api/tsconfig.json" }]
