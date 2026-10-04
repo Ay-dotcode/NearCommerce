@@ -1,4 +1,5 @@
-import { isStoreOpen, OperatingHours } from "@/utils/storeStatus";
+import { isStoreOpen } from "@/utils/storeStatus";
+import { OperatingHours } from "@/utils/timezone";
 
 describe("Store Timezone & Operating Hours (Task 3.2.3)", () => {
   const schedule: OperatingHours = {

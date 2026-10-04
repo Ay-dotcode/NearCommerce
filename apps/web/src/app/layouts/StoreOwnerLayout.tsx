@@ -2,7 +2,7 @@ import { parseApiError } from "@/api/errors";
 import { listMyStores } from "@/api/stores";
 import { Button } from "@/components/ui";
 import { MY_STORES_KEY } from "@/constants";
-import { AppRoutes, STORE_KEY } from "@/constants/routes";
+import { AppRoutes } from "@/constants/routes";
 import {
   clearSession,
   setActiveStoreId,
@@ -10,6 +10,7 @@ import {
 } from "@/features/auth/session";
 import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { cn } from "@/lib/cn";
+import { STORE_KEY } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";

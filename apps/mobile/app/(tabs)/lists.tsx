@@ -1,9 +1,5 @@
-import {
-  LISTS_KEY,
-  apiErrorMessage,
-  createList,
-  fetchLists,
-} from "@/api/lists";
+import { apiErrorMessage } from "@/api/errors";
+import { LISTS_KEY, createList, fetchLists } from "@/api/lists";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";

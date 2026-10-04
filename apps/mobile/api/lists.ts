@@ -4,7 +4,6 @@ import type {
   HouseholdListMeta,
 } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";
-export { apiErrorMessage } from "@/api/errors";
 
 export const LISTS_KEY = ["lists"] as const;
 export const listKey = (id: string) => ["list", id] as const;

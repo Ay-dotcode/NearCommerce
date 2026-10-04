@@ -1,4 +1,5 @@
-import { addListItem, apiErrorMessage, fetchLists } from "@/api/lists";
+import { apiErrorMessage } from "@/api/errors";
+import { addListItem, fetchLists } from "@/api/lists";
 import FavoriteButton from "@/components/FavoriteButton";
 import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";

@@ -1,9 +1,9 @@
+import ForgotPasswordScreen from "@/app/(auth)/forgot-password";
+import ResetPasswordScreen from "@/app/(auth)/reset-password";
+import { AuthProvider, useAuth } from "@/src/context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Text } from "react-native";
-import ForgotPasswordScreen from "../app/(auth)/forgot-password";
-import ResetPasswordScreen from "../app/(auth)/reset-password";
-import { AuthProvider, useAuth } from "../src/context/AuthContext";
 
 jest.mock("react-native-safe-area-context", () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,

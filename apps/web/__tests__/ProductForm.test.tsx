@@ -1,6 +1,6 @@
+import { ProductForm } from "@/pages/owner/ProductForm";
 import { apiClient } from "@nearcommerce/api";
 import { fireEvent, render, waitFor } from "@testing-library/react";
-import { ProductForm } from "../src/pages/owner/ProductForm";
 
 // Mock shared API client
 jest.mock("@nearcommerce/api", () => ({

@@ -1,12 +1,10 @@
-import { STORE_KEY } from "@/constants/routes";
 import {
   apiClient,
   configureTokenRefresh,
   PortalRole,
+  STORE_KEY,
   UserRole,
 } from "@nearcommerce/api";
-export { UserRole } from "@nearcommerce/api";
-export type { PortalRole } from "@nearcommerce/api";
 
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
@@ -58,9 +56,9 @@ export const setActiveStoreId = (storeId: string) => {
   apiClient.defaults.headers.common[STORE_KEY] = storeId;
 };
 
- // Signs out. The local session is cleared immediately, so the UI can leave the
- // page at once; the returned promise settles when the server has been told (it
- // resolves quietly if the server can't be reached).
+// Signs out. The local session is cleared immediately, so the UI can leave the
+// page at once; the returned promise settles when the server has been told (it
+// resolves quietly if the server can't be reached).
 export const signOutEverywhere = (): Promise<void> => {
   const refreshToken = getRefreshToken();
   clearSession();
@@ -72,9 +70,9 @@ export const signOutEverywhere = (): Promise<void> => {
     .catch(() => undefined);
 };
 
- // Keeps the owner signed in past the 15-minute access token: a 401 silently
- // swaps the refresh token for a new pair. If that fails the session is cleared
- // and `onExpired` runs (the app uses it to go back to the login page).
+// Keeps the owner signed in past the 15-minute access token: a 401 silently
+// swaps the refresh token for a new pair. If that fails the session is cleared
+// and `onExpired` runs (the app uses it to go back to the login page).
 export const installTokenRefresh = (onExpired: () => void) => {
   configureTokenRefresh({
     getRefreshToken,

@@ -1,5 +1,5 @@
+import { Dialog } from "@/components/Dialog";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { Dialog } from "../Dialog";
 
 const setup = (props: Partial<React.ComponentProps<typeof Dialog>> = {}) => {
   const onClose = jest.fn();

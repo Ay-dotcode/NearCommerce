@@ -1,9 +1,10 @@
 import { createStore } from "@/api/stores";
 import { useToast } from "@/components/ui";
 import { MY_STORES_KEY } from "@/constants";
-import { AppRoutes, STORE_KEY } from "@/constants/routes";
+import { AppRoutes } from "@/constants/routes";
 import { setActiveStoreId } from "@/features/auth/session";
 import { StoreForm } from "@/features/stores/ui/StoreForm";
+import { STORE_KEY } from "@nearcommerce/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 

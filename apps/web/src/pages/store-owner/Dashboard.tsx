@@ -15,7 +15,6 @@ import {
   useToast,
 } from "@/components/ui";
 import { CATEGORIES_KEY, PRODUCTS_KEY } from "@/constants";
-import { STORE_KEY } from "@/constants/routes";
 import { formatPrice, timeAgo } from "@/features/products/lib/format";
 import { cn } from "@/lib/cn";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
@@ -25,6 +24,7 @@ import type {
   ProductSummary,
   StoreProduct,
 } from "@/types/products";
+import { STORE_KEY } from "@nearcommerce/api";
 import {
   keepPreviousData,
   useMutation,

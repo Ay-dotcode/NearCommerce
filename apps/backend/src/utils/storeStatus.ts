@@ -1,9 +1,3 @@
-export {
-  checkIfStoreIsOpen,
-  type OperatingHours,
-  type StoreSchedule,
-} from "@/utils/timezone";
-
 import { checkIfStoreIsOpen, StoreSchedule } from "@/utils/timezone";
 
 export function isStoreOpen(

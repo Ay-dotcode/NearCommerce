@@ -10,4 +10,3 @@ export const AppRoutes = {
 } as const;
 
 export type AppRoute = (typeof AppRoutes)[keyof typeof AppRoutes];
-export { STORE_KEY } from "@nearcommerce/api";

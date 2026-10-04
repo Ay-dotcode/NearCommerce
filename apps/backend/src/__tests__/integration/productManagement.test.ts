@@ -1,14 +1,14 @@
-import { app } from "@/app";
-import { db } from "@/config/database";
-import { scheduleProductEmbeddings } from "@/services/embedding.service";
-import request from "supertest";
 import {
   cleanupFixtures,
   createTestProduct,
   createTestStore,
   createTestUser,
   TestUser,
-} from "../helpers/fixtures";
+} from "@/__tests__/helpers/fixtures";
+import { app } from "@/app";
+import { db } from "@/config/database";
+import { scheduleProductEmbeddings } from "@/services/embedding.service";
+import request from "supertest";
 
 jest.mock("@/services/embedding.service", () => ({
   ...jest.requireActual("@/services/embedding.service"),
