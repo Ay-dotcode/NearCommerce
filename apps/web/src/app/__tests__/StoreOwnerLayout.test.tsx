@@ -8,6 +8,13 @@ jest.mock("@/api/stores", () => ({
   MY_STORES_KEY: ["my-stores"],
   listMyStores: jest.fn(),
 }));
+jest.mock("@/api/support", () => ({
+  SUPPORT_KEY: ["support-channels"],
+  getSupportChannels: jest.fn().mockResolvedValue({
+    channels: { email: "help@example.com", phone: "+90555" },
+    operating_hours: "24/7",
+  }),
+}));
 const listMock = listMyStores as jest.Mock;
 
 const store = (id: string, name: string, is_suspended = false) => ({
@@ -169,5 +176,26 @@ describe("StoreOwnerLayout", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Sign out" }));
     expect(await screen.findByText("Login page")).toBeInTheDocument();
     expect(localStorage.getItem("access_token")).toBeNull();
+  });
+  it("opens the support dialog from the header", async () => {
+    listMock.mockResolvedValue([store("s1", "Alpha")]);
+    renderLayout();
+    fireEvent.click(await screen.findByRole("button", { name: "Support" }));
+    expect(
+      await screen.findByRole("dialog", { name: "Contact support" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "help@example.com" }),
+    ).toBeInTheDocument();
+  });
+
+  it("signs out on request: clears token and store, returns to login", async () => {
+    localStorage.setItem("access_token", "t");
+    listMock.mockResolvedValue([store("s1", "Alpha")]);
+    renderLayout();
+    fireEvent.click(await screen.findByRole("button", { name: "Sign out" }));
+    expect(await screen.findByText("Login page")).toBeInTheDocument();
+    expect(localStorage.getItem("access_token")).toBeNull();
+    expect(localStorage.getItem("x-store-id")).toBeNull();
   });
 });

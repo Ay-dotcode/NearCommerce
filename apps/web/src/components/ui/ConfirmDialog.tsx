@@ -1,7 +1,7 @@
+import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/Field";
+import { Modal } from "@/components/ui/Modal";
 import { useEffect, useState } from "react";
-import { Button } from "./Button";
-import { TextField } from "./Field";
-import { Modal } from "./Modal";
 
 interface ConfirmDialogProps {
   open: boolean;

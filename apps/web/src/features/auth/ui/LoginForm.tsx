@@ -1,118 +1,147 @@
+import { Button, TextField } from "@/components/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useLogin } from "@/features/auth/api/useLogin";
-import { getUserRole } from "@/features/auth/session";
+import { clearSession, getUserRole } from "@/features/auth/session";
+import { AuthLayout } from "@/features/auth/ui/AuthLayout";
 import { UserRole } from "@nearcommerce/api";
-import { ErrorMessage, Field, Form, Formik } from "formik";
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
-// LoginForm
-//
-// Renders the NearCommerce Portal login screen. On submission it calls the
-// `/auth/login` mutation and performs RBAC-aware routing:
-//   - SYSTEM_ADMIN  → /admin/dashboard (master oversight portal)
-//   - STORE_OWNER   → /owner/dashboard  (inventory management, X-Store-ID set)
-//
-// Any unrecognised role produces an inline error rather than a silent redirect.
+// Only owner pages are valid return targets; anything else falls back to the dashboard.
+const safeReturnPath = (from: unknown) =>
+  typeof from === "string" && /^\/owner\/[\w/-]*$/.test(from)
+    ? from
+    : AppRoutes.storeOwnerDashboard;
+
+type Notice = { tone: "error" | "info"; title?: string; body: React.ReactNode };
+
+// Renders the Store Portal login. Only STORE_OWNER accounts can use this portal.
+// Shoppers and administrators who sign in here are told where to go instead of
+// being shown a bare "unauthorized" error, and no session is kept for them.
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const loginMutation = useLogin();
+  const [notice, setNotice] = useState<Notice | null>(null);
 
-  React.useEffect(() => {
-    const role = getUserRole();
-    if (role === UserRole.STORE_OWNER)
-      navigate(AppRoutes.storeOwnerDashboard, { replace: true });
-  }, [navigate]);
+  const returnTo = safeReturnPath(
+    (location.state as { from?: string } | null)?.from,
+  );
+
+  useEffect(() => {
+    if (getUserRole() === UserRole.STORE_OWNER)
+      navigate(returnTo, { replace: true });
+  }, [navigate, returnTo]);
+
+  const formik = useFormik({
+    initialValues: { email: "", password: "" },
+    validate: (values) => {
+      const errors: Partial<typeof values> = {};
+      if (!values.email) errors.email = "Required";
+      if (!values.password) errors.password = "Required";
+      return errors;
+    },
+    onSubmit: (values, { setSubmitting }) => {
+      setNotice(null);
+      loginMutation.mutate(values, {
+        onSuccess: (data) => {
+          setSubmitting(false);
+          if (data.user.role === UserRole.STORE_OWNER)
+            return navigate(returnTo);
+
+          // useLogin keeps admin sessions for the admin app; this portal must not hold one.
+          clearSession();
+          if (data.user.role === UserRole.SYSTEM_ADMIN)
+            setNotice({
+              tone: "info",
+              title: "This is the store portal",
+              body: "Administrator accounts sign in through the admin console, not here.",
+            });
+          else
+            setNotice({
+              tone: "info",
+              title: "This portal is for store owners",
+              body: (
+                <>
+                  Your account is a shopper account. Shopping and household
+                  lists live in the NearCommerce mobile app. To sell here,{" "}
+                  <Link
+                    className="font-medium underline"
+                    to={AppRoutes.register}
+                  >
+                    create a store owner account
+                  </Link>{" "}
+                  with a different email.
+                </>
+              ),
+            });
+        },
+        onError: () => {
+          setSubmitting(false);
+          setNotice({ tone: "error", body: "Invalid email or password." });
+        },
+      });
+    },
+  });
+
+  const error = (name: "email" | "password") =>
+    formik.touched[name] || formik.submitCount > 0
+      ? formik.errors[name]
+      : undefined;
+  const busy = formik.isSubmitting || loginMutation.isPending;
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
-      <h2 className="text-2xl font-bold mb-4">NearCommerce Store Portal</h2>
-      <Formik
-        initialValues={{ email: "", password: "" }}
-        validate={(values) => {
-          const errors: Partial<typeof values> = {};
-          if (!values.email) errors.email = "Required";
-          if (!values.password) errors.password = "Required";
-          return errors;
-        }}
-        onSubmit={(values, { setSubmitting, setStatus }) => {
-          loginMutation.mutate(values, {
-            onSuccess: (data) => {
-              if (data.user.role === UserRole.STORE_OWNER) {
-                navigate(AppRoutes.storeOwnerDashboard);
-              } else {
-                setStatus("Unauthorized role for store portal.");
-                setSubmitting(false);
-              }
-            },
-            onError: () => {
-              setStatus("Invalid email or password.");
-              setSubmitting(false);
-            },
-          });
-        }}
-      >
-        {({ isSubmitting, status }) => (
-          <Form className="flex flex-col gap-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium">
-                Email
-              </label>
-              <Field
-                id="email"
-                type="email"
-                name="email"
-                className="border p-2 rounded w-full"
-              />
-              <ErrorMessage
-                name="email"
-                component="div"
-                className="text-red-500 text-sm"
-              />
-            </div>
+    <AuthLayout
+      title="Log in to your store"
+      subtitle="Manage your inventory and keep shoppers up to date."
+    >
+      <form onSubmit={formik.handleSubmit} noValidate className="space-y-4">
+        <TextField
+          label="Email"
+          type="email"
+          required
+          autoComplete="email"
+          {...formik.getFieldProps("email")}
+          error={error("email")}
+        />
+        <TextField
+          label="Password"
+          type="password"
+          required
+          autoComplete="current-password"
+          {...formik.getFieldProps("password")}
+          error={error("password")}
+        />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium">
-                Password
-              </label>
-              <Field
-                id="password"
-                type="password"
-                name="password"
-                className="border p-2 rounded w-full"
-              />
-              <ErrorMessage
-                name="password"
-                component="div"
-                className="text-red-500 text-sm"
-              />
-            </div>
-
-            {status && (
-              <div role="alert" className="text-red-500 text-sm">
-                {status}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting || loginMutation.isPending}
-              className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isSubmitting || loginMutation.isPending
-                ? "Logging in..."
-                : "Login"}
-            </button>
-
-            <div className="text-center text-sm text-gray-600 mt-2">
-              Don't have an account?{" "}
-              <Link to={AppRoutes.register} className="text-blue-600 font-medium hover:underline">
-                Create one
-              </Link>
-            </div>
-          </Form>
+        {notice && (
+          <div
+            role="alert"
+            className={
+              notice.tone === "error"
+                ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                : "rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900"
+            }
+          >
+            {notice.title && <p className="font-semibold">{notice.title}</p>}
+            <p>{notice.body}</p>
+          </div>
         )}
-      </Formik>
-    </div>
+
+        <Button type="submit" className="w-full" loading={busy}>
+          {busy ? "Logging in…" : "Login"}
+        </Button>
+
+        <p className="text-center text-sm text-slate-600">
+          Don&apos;t have a store account?{" "}
+          <Link
+            to={AppRoutes.register}
+            className="font-medium text-brand-700 hover:underline"
+          >
+            Create one
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 };

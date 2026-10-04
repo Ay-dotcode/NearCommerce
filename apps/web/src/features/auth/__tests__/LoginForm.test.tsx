@@ -3,7 +3,13 @@ import { clearSession } from "@/features/auth/session";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 // ---------------------------------------------------------------------------
@@ -31,15 +37,26 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
       },
     });
 
-  const renderWithProviders = (queryClient: QueryClient) => {
+  const renderWithProviders = (
+    queryClient: QueryClient,
+    entry: string | { pathname: string; state?: unknown } = "/",
+  ) => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter
-          initialEntries={["/"]}
+          initialEntries={[entry]}
           future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
         >
           <Routes>
             <Route path={AppRoutes.home} element={<LoginForm />} />
+            <Route
+              path={AppRoutes.register}
+              element={<div>Register page</div>}
+            />
+            <Route
+              path={AppRoutes.storeProfile}
+              element={<div data-testid="owner-profile">Profile</div>}
+            />
             <Route
               path={AppRoutes.storeOwnerDashboard}
               element={<div data-testid="owner-dash">Owner Dashboard</div>}
@@ -107,11 +124,86 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
-    await waitFor(() => {
-      expect(
-        screen.getByText(/unauthorized role for store portal/i),
-      ).toBeInTheDocument();
+    const alert = await screen.findByRole("alert");
+    expect(
+      within(alert).getByText(/this portal is for store owners/i),
+    ).toBeInTheDocument();
+    expect(within(alert).getByText(/mobile app/i)).toBeInTheDocument();
+    fireEvent.click(
+      within(alert).getByRole("link", {
+        name: /create a store owner account/i,
+      }),
+    );
+    expect(await screen.findByText("Register page")).toBeInTheDocument();
+    // No session is kept for a shopper.
+    expect(localStorage.getItem("access_token")).toBeNull();
+  });
+
+  it("points administrators to the admin console and keeps no session", async () => {
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({
+      data: {
+        access_token: "admin-token",
+        user: { id: "9", role: "SYSTEM_ADMIN" },
+      },
     });
+    renderWithProviders(makeQueryClient());
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "admin@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+
+    expect(await screen.findByText(/admin console/i)).toBeInTheDocument();
+    expect(localStorage.getItem("access_token")).toBeNull();
+    expect(localStorage.getItem("user_role")).toBeNull();
+    expect(
+      (apiClient.defaults.headers.common as Record<string, unknown>)
+        .Authorization,
+    ).toBeUndefined();
+  });
+
+  it("returns an owner to the page they were sent from", async () => {
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({
+      data: {
+        access_token: "t",
+        user: { id: "2", role: "STORE_OWNER", store_id: "s1" },
+      },
+    });
+    renderWithProviders(makeQueryClient(), {
+      pathname: "/",
+      state: { from: AppRoutes.storeProfile },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "o@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+    expect(await screen.findByTestId("owner-profile")).toBeInTheDocument();
+  });
+
+  it("ignores an external or unexpected return path", async () => {
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({
+      data: {
+        access_token: "t",
+        user: { id: "2", role: "STORE_OWNER", store_id: "s1" },
+      },
+    });
+    renderWithProviders(makeQueryClient(), {
+      pathname: "/",
+      state: { from: "//evil.example/phish" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "o@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+    expect(await screen.findByTestId("owner-dash")).toBeInTheDocument();
   });
 
   it("shows an error message when credentials are rejected", async () => {

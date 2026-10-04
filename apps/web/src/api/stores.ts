@@ -1,8 +1,6 @@
 import type { Store, StorePayload } from "@/types/stores";
 import { httpClient } from "@nearcommerce/api";
 
-export const MY_STORES_KEY = ["my-stores"] as const;
-
 export async function listMyStores(): Promise<Store[]> {
   const response = await httpClient.get<{ data: Store[] }>("/stores/mine");
   return response.data.data;

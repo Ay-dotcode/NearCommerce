@@ -63,8 +63,3 @@ export async function importProducts(
   );
   return response.data?.data ?? null;
 }
-
-// @deprecated Use listProducts. Kept so the current dashboard compiles until it is rewritten.
-export async function getStoreProducts(): Promise<StoreProduct[]> {
-  return (await listProducts()).data;
-}

@@ -1,8 +1,10 @@
 import { parseApiError } from "@/api/errors";
-import { MY_STORES_KEY, listMyStores } from "@/api/stores";
+import { listMyStores } from "@/api/stores";
 import { Button } from "@/components/ui";
+import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes, STORE_KEY } from "@/constants/routes";
 import { clearSession, setActiveStoreId } from "@/features/auth/session";
+import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { cn } from "@/lib/cn";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -15,6 +17,7 @@ const navItems = [
 
 export function StoreOwnerLayout() {
   const navigate = useNavigate();
+  const [supportOpen, setSupportOpen] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState(
     () => localStorage.getItem(STORE_KEY) ?? "",
   );
@@ -107,9 +110,18 @@ export function StoreOwnerLayout() {
             )}
           </div>
 
-          <Button variant="secondary" size="sm" onClick={signOut}>
-            Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSupportOpen(true)}
+            >
+              Support
+            </Button>
+            <Button variant="secondary" size="sm" onClick={signOut}>
+              Sign out
+            </Button>
+          </div>
         </div>
 
         {ready && (
@@ -181,6 +193,8 @@ export function StoreOwnerLayout() {
 
         {ready && <Outlet key={activeStore!.id} />}
       </main>
+
+      <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
     </div>
   );
 }

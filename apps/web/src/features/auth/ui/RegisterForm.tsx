@@ -1,171 +1,137 @@
+import { Button, TextField } from "@/components/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useRegister } from "@/features/auth/api/useRegister";
-import { ErrorMessage, Field, Form, Formik } from "formik";
+import { AuthLayout } from "@/features/auth/ui/AuthLayout";
+import { UserRole } from "@nearcommerce/api";
+import { useFormik } from "formik";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
+const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+// Accounts created in the store portal are always store owners; shoppers register in the mobile app.
 export const RegisterForm: React.FC = () => {
   const registerMutation = useRegister();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const formik = useFormik({
+    initialValues: { full_name: "", email: "", password: "" },
+    validate: (values) => {
+      const errors: Partial<typeof values> = {};
+      if (!values.full_name.trim()) errors.full_name = "Full name is required";
+      else if (values.full_name.trim().length < 2)
+        errors.full_name = "Full name must be at least 2 characters";
+
+      if (!values.email) errors.email = "Email is required";
+      else if (!EMAIL_PATTERN.test(values.email))
+        errors.email = "Invalid email address";
+
+      if (!values.password) errors.password = "Password is required";
+      else if (values.password.length < 8)
+        errors.password = "Password must be at least 8 characters";
+      return errors;
+    },
+    onSubmit: (values, { setSubmitting }) => {
+      setServerError(null);
+      registerMutation.mutate(
+        {
+          ...values,
+          full_name: values.full_name.trim(),
+          role: UserRole.STORE_OWNER,
+        },
+        {
+          onSuccess: (data) => {
+            setSuccessMessage(data.message);
+            setSubmitting(false);
+          },
+          onError: (error: any) => {
+            setServerError(
+              error.response?.data?.error ||
+                "Registration failed. Please try again.",
+            );
+            setSubmitting(false);
+          },
+        },
+      );
+    },
+  });
+
+  const error = (name: keyof typeof formik.values) =>
+    formik.touched[name] || formik.submitCount > 0
+      ? formik.errors[name]
+      : undefined;
+  const busy = formik.isSubmitting || registerMutation.isPending;
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
-      <h2 className="text-2xl font-bold mb-2">Create an Account</h2>
-      <p className="text-sm text-gray-600 mb-6">
-        Create your account and get started immediately.
-      </p>
-
+    <AuthLayout
+      title="Create your store account"
+      subtitle="Set up your account, then add your store and products."
+    >
       {successMessage ? (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-md">
-          <h3 className="font-semibold text-emerald-900 mb-1">
-            🎉 Account Created!
-          </h3>
-          <p className="text-sm mb-3">{successMessage}</p>
-          <p className="text-sm text-emerald-700 mb-3">
-            Your account is ready — no email verification required.
-          </p>
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+          <h2 className="font-semibold">Account created</h2>
+          <p className="mt-1 text-sm">{successMessage}</p>
           <Link
             to={AppRoutes.login}
-            className="inline-block text-sm font-medium text-emerald-700 underline hover:text-emerald-900"
+            className="mt-3 inline-block text-sm font-medium underline"
           >
-            Go to Login
+            Go to login
           </Link>
         </div>
       ) : (
-        <Formik
-          initialValues={{ full_name: "", email: "", password: "" }}
-          validate={(values) => {
-            const errors: Partial<typeof values> = {};
-            if (!values.full_name) errors.full_name = "Full name is required";
-            else if (values.full_name.length < 2)
-              errors.full_name = "Full name must be at least 2 characters";
+        <form onSubmit={formik.handleSubmit} noValidate className="space-y-4">
+          <TextField
+            label="Full name"
+            required
+            autoComplete="name"
+            placeholder="Jane Doe"
+            {...formik.getFieldProps("full_name")}
+            error={error("full_name")}
+          />
+          <TextField
+            label="Email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+            {...formik.getFieldProps("email")}
+            error={error("email")}
+          />
+          <TextField
+            label="Password"
+            type="password"
+            required
+            autoComplete="new-password"
+            hint="At least 8 characters."
+            {...formik.getFieldProps("password")}
+            error={error("password")}
+          />
 
-            if (!values.email) errors.email = "Email is required";
-            else if (
-              !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
-            )
-              errors.email = "Invalid email address";
-
-            if (!values.password) errors.password = "Password is required";
-            else if (values.password.length < 8)
-              errors.password = "Password must be at least 8 characters";
-
-            return errors;
-          }}
-          onSubmit={(values, { setSubmitting, setStatus }) => {
-            setStatus(null);
-            registerMutation.mutate(values, {
-              onSuccess: (data) => {
-                setSuccessMessage(data.message);
-                setSubmitting(false);
-              },
-              onError: (error: any) => {
-                const message =
-                  error.response?.data?.error ||
-                  "Registration failed. Please try again.";
-                setStatus(message);
-                setSubmitting(false);
-              },
-            });
-          }}
-        >
-          {({ isSubmitting, status }) => (
-            <Form className="flex flex-col gap-4">
-              <div>
-                <label
-                  htmlFor="full_name"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Full Name
-                </label>
-                <Field
-                  id="full_name"
-                  type="text"
-                  name="full_name"
-                  placeholder="e.g. Jane Doe"
-                  className="border p-2 rounded w-full mt-1 border-gray-300"
-                />
-                <ErrorMessage
-                  name="full_name"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Email
-                </label>
-                <Field
-                  id="email"
-                  type="email"
-                  name="email"
-                  placeholder="you@example.com"
-                  className="border p-2 rounded w-full mt-1 border-gray-300"
-                />
-                <ErrorMessage
-                  name="email"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Password
-                </label>
-                <Field
-                  id="password"
-                  type="password"
-                  name="password"
-                  placeholder="At least 8 characters"
-                  className="border p-2 rounded w-full mt-1 border-gray-300"
-                />
-                <ErrorMessage
-                  name="password"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
-
-              {status && (
-                <div
-                  role="alert"
-                  className="text-red-600 bg-red-50 p-2 rounded border border-red-200 text-sm"
-                >
-                  {status}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting || registerMutation.isPending}
-                className="bg-blue-600 text-white p-2.5 rounded font-medium hover:bg-blue-700 disabled:opacity-50 transition"
-              >
-                {isSubmitting || registerMutation.isPending
-                  ? "Registering..."
-                  : "Create Account"}
-              </button>
-
-              <div className="text-center text-sm text-gray-600 mt-2">
-                Already have an account?{" "}
-                <Link
-                  to={AppRoutes.login}
-                  className="text-blue-600 font-medium hover:underline"
-                >
-                  Log in
-                </Link>
-              </div>
-            </Form>
+          {serverError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            >
+              {serverError}
+            </div>
           )}
-        </Formik>
+
+          <Button type="submit" className="w-full" loading={busy}>
+            {busy ? "Registering…" : "Create account"}
+          </Button>
+
+          <p className="text-center text-sm text-slate-600">
+            Already have an account?{" "}
+            <Link
+              to={AppRoutes.login}
+              className="font-medium text-brand-700 hover:underline"
+            >
+              Log in
+            </Link>
+          </p>
+        </form>
       )}
-    </div>
+    </AuthLayout>
   );
 };

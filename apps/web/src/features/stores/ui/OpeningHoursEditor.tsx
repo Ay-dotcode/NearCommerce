@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui";
+import {
+  DAY_LABELS,
+  type DayState,
+  type HoursState,
+} from "@/features/stores/lib/hours";
 import { cn } from "@/lib/cn";
 import { WEEKDAYS, type Weekday } from "@nearcommerce/api";
-import { DAY_LABELS, type DayState, type HoursState } from "../lib/hours";
 
 interface Props {
   value: HoursState;
@@ -14,21 +18,26 @@ const timeInput =
   "h-9 w-[7.5rem] rounded-md border border-slate-300 bg-white px-2 text-sm tabular-nums shadow-card focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";
 
 export function OpeningHoursEditor({ value, onChange, errors = {} }: Props) {
-  const update = (day: Weekday, patch: Partial<DayState>) => onChange({ ...value, [day]: { ...value[day], ...patch } });
+  const update = (day: Weekday, patch: Partial<DayState>) =>
+    onChange({ ...value, [day]: { ...value[day], ...patch } });
 
   const copyMondayToWeekdays = () => {
     const next = { ...value };
-    for (const day of ["tuesday", "wednesday", "thursday", "friday"] as const) next[day] = { ...value.monday };
+    for (const day of ["tuesday", "wednesday", "thursday", "friday"] as const)
+      next[day] = { ...value.monday };
     onChange(next);
   };
 
   return (
     <fieldset>
       {/* The legend must be the fieldset's first child for it to name the group. */}
-      <legend className="text-sm font-medium text-slate-700">Opening hours</legend>
+      <legend className="text-sm font-medium text-slate-700">
+        Opening hours
+      </legend>
       <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <p className="text-sm text-slate-500">
-          Times are in the store&apos;s timezone. Shoppers see an Open or Closed badge based on these hours.
+          Times are in the store&apos;s timezone. Shoppers see an Open or Closed
+          badge based on these hours.
         </p>
         <Button variant="ghost" size="sm" onClick={copyMondayToWeekdays}>
           Copy Monday to Tue–Fri
@@ -46,7 +55,9 @@ export function OpeningHoursEditor({ value, onChange, errors = {} }: Props) {
                   <input
                     type="checkbox"
                     checked={!d.isClosed}
-                    onChange={(e) => update(day, { isClosed: !e.target.checked })}
+                    onChange={(e) =>
+                      update(day, { isClosed: !e.target.checked })
+                    }
                     className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                     aria-label={`${DAY_LABELS[day]} open`}
                   />
