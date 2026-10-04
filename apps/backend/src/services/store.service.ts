@@ -14,10 +14,8 @@ export interface NormalizedDay {
 }
 export type NormalizedHours = Record<string, NormalizedDay | null>;
 
-/**
- * Collapses the legacy `closed` flag into `isClosed` so the database only ever
- * holds one shape. Days that are omitted stay omitted (treated as closed).
- */
+ // Collapses the legacy `closed` flag into `isClosed` so the database only ever
+ // holds one shape. Days that are omitted stay omitted (treated as closed).
 export function normalizeOpeningHours(
   hours: Record<
     string,
@@ -149,7 +147,7 @@ export async function updateStore(storeId: string, patch: UpdateStoreInput) {
   return toStoreDto(rows[0]);
 }
 
-/** Deletes the store; products, favorites and reviews cascade via foreign keys. */
+// Deletes the store; products, favorites and reviews cascade via foreign keys.
 export async function deleteStore(storeId: string): Promise<boolean> {
   const { rowCount } = await db.query(`DELETE FROM stores WHERE id = $1`, [
     storeId,

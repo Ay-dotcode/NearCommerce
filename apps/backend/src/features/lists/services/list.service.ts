@@ -29,7 +29,7 @@ import { z } from "zod";
 
 export type ListRole = "OWNER" | "MEMBER";
 
-/** A failure the controller (or socket handler) can turn into a response. */
+// A failure the controller (or socket handler) can turn into a response.
 export class ListError extends Error {
   constructor(
     public readonly status: number,
@@ -62,7 +62,7 @@ export async function getMemberRole(
   return rows.length ? (rows[0].role as ListRole) : null;
 }
 
-/** Non-members get the same 404 as a missing list, so list ids can't be probed. */
+// Non-members get the same 404 as a missing list, so list ids can't be probed.
 export async function requireMember(
   listId: string,
   userId: string,
@@ -111,7 +111,7 @@ const SUMMARY_SQL = `
     FROM household_lists l
     JOIN household_list_members m ON m.list_id = l.id AND m.user_id = $1`;
 
-/** Most recently joined first, so a list you just created or joined is the "current" one. */
+// Most recently joined first, so a list you just created or joined is the "current" one.
 export async function listUserLists(userId: string) {
   const { rows } = await db.query(
     `${SUMMARY_SQL} ORDER BY m.joined_at DESC, l.id`,
@@ -316,10 +316,8 @@ export async function regenerateInviteCode(
   throw new Error("Could not allocate a unique invite code");
 }
 
-/**
- * Leaving as the only member deletes the list; leaving as the owner hands ownership
- * to the longest-standing member (same rule as account deletion, SRS 1.3.3).
- */
+// Leaving as the only member deletes the list; leaving as the owner hands ownership
+// to the longest-standing member (same rule as account deletion, SRS 1.3.3).
 export async function leaveList(listId: string, userId: string) {
   const outcome = await inTransaction(async (client) => {
     const locked = await client.query(
@@ -405,14 +403,12 @@ export async function removeMember(
 
 type AddItemInput = z.infer<typeof AddListItemSchema> & { user_id: string };
 
-/**
- * Adds an item to a household list.
- *  - Catalogue product already on the list: quantity is incremented and `is_checked`
- *    reset (SRS 3.2.2). `already_on_list` lets clients show the "Item already on list" toast.
- *  - Product name is copied into `custom_item_name` / `item_name` so deleting the product
- *    later doesn't blank the line (orphan prevention, Implementation.md 3.2.3).
- *  - Custom items with the same name (case-insensitive) are merged the same way.
- */
+// Adds an item to a household list.
+//  - Catalogue product already on the list: quantity is incremented and `is_checked`
+//    reset (SRS 3.2.2). `already_on_list` lets clients show the "Item already on list" toast.
+//  - Product name is copied into `custom_item_name` / `item_name` so deleting the product
+//    later doesn't blank the line (orphan prevention, Implementation.md 3.2.3).
+//  - Custom items with the same name (case-insensitive) are merged the same way.
 export async function addListItem(input: AddItemInput) {
   const { list_id, product_id, custom_item_name, quantity, user_id } = input;
   await requireMember(list_id, user_id);
@@ -531,10 +527,8 @@ export async function updateListItem(
   return rows[0];
 }
 
-/**
- * Checks/unchecks an item addressed by either its product id or its own id. The mobile
- * client sends `product_id ?? item.id`, so one lookup has to accept both.
- */
+// Checks/unchecks an item addressed by either its product id or its own id. The mobile
+// client sends `product_id ?? item.id`, so one lookup has to accept both.
 export async function setItemChecked(
   listId: string,
   userId: string,

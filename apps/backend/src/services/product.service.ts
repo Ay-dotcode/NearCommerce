@@ -136,7 +136,7 @@ export async function createProduct(
 
 export interface UpdateProductResult {
   product: ProductDto;
-  /** True when name/description changed, so the embedding must be regenerated. */
+  // True when name/description changed, so the embedding must be regenerated.
   needsEmbedding: boolean;
 }
 
@@ -234,25 +234,23 @@ export interface ImportSummary {
   total: number;
   created: number;
   updated: number;
-  /** Rows dropped because a later row in the same file had the same name. */
+  // Rows dropped because a later row in the same file had the same name.
   duplicatesMerged: number;
   embeddingIds: string[];
 }
 
 export const importKey = (name: string) => name.trim().toLowerCase();
 
-/** Last row wins when a file lists the same product name more than once. */
+// Last row wins when a file lists the same product name more than once.
 export function dedupeImportRows(rows: ImportProductRow[]) {
   const byKey = new Map<string, ImportProductRow>();
   for (const row of rows) byKey.set(importKey(row.name), row);
   return { rows: [...byKey.values()], merged: rows.length - byKey.size };
 }
 
-/**
- * New product: published only when it has an image (and the row doesn't say otherwise).
- * Existing product: a row without an image never unpublishes or wipes the current image,
- * so a price/quantity-only CSV is safe to re-upload.
- */
+// New product: published only when it has an image (and the row doesn't say otherwise).
+// Existing product: a row without an image never unpublishes or wipes the current image,
+// so a price/quantity-only CSV is safe to re-upload.
 export function resolveImportVisibility(
   row: ImportProductRow,
   existing?: { image_url: string | null; is_published: boolean },

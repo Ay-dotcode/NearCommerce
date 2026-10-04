@@ -54,7 +54,7 @@ export async function createListViaApi(
   };
 }
 
-/** Adds a member straight in the database (bypasses the join endpoint and its rate limit). */
+// Adds a member straight in the database (bypasses the join endpoint and its rate limit).
 export async function addMemberDirect(
   listId: string,
   userId: string,
@@ -66,7 +66,7 @@ export async function addMemberDirect(
   );
 }
 
-/** A real product (needs a store + owner) that can be added to lists. */
+// A real product (needs a store + owner) that can be added to lists.
 export async function createCatalogueProduct(name = "Test Milk") {
   const owner = await createListUser("STORE_OWNER", "Shop Owner");
   const store = await db.query(
@@ -89,7 +89,7 @@ export function trackList(listId: string) {
   lists.push(listId);
 }
 
-/** Removes everything the suite created. Lists are deleted explicitly because they don't cascade from users. */
+// Removes everything the suite created. Lists are deleted explicitly because they don't cascade from users.
 export async function cleanupListFixtures() {
   if (lists.length)
     await db.query(`DELETE FROM household_lists WHERE id = ANY($1::uuid[])`, [

@@ -11,7 +11,7 @@ export interface EmbeddableProduct {
   description?: string | null;
 }
 
-/** The text that represents a product in vector space. Keep in sync with search expectations. */
+// The text that represents a product in vector space. Keep in sync with search expectations.
 export function buildEmbeddingText(product: EmbeddableProduct): string {
   const parts = [product.name, product.description]
     .map((p) => p?.trim())
@@ -33,11 +33,9 @@ export interface EmbedResult {
   failed: number;
 }
 
-/**
- * Generates and stores embeddings for the given products. Never throws:
- * embeddings are an enhancement (search falls back to pg_trgm / tsvector),
- * so a Gemini outage must not break product writes.
- */
+// Generates and stores embeddings for the given products. Never throws:
+// embeddings are an enhancement (search falls back to pg_trgm / tsvector),
+// so a Gemini outage must not break product writes.
 export async function embedProducts(
   productIds: string[],
 ): Promise<EmbedResult> {
@@ -88,9 +86,7 @@ export async function embedProducts(
   return { updated, failed };
 }
 
-/**
- * Fire-and-forget wrapper used by request handlers so the owner never waits on Gemini.
- */
+// Fire-and-forget wrapper used by request handlers so the owner never waits on Gemini.
 export function scheduleProductEmbeddings(productIds: string[]): void {
   if (productIds.length === 0) return;
   setImmediate(() => {
@@ -100,7 +96,7 @@ export function scheduleProductEmbeddings(productIds: string[]): void {
   });
 }
 
-/** Embeds every product that has no embedding yet (used by the backfill script). */
+// Embeds every product that has no embedding yet (used by the backfill script).
 export async function backfillMissingEmbeddings(
   limit = 5000,
 ): Promise<EmbedResult> {

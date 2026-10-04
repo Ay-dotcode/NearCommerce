@@ -13,10 +13,8 @@ if (!process.env.REDIS_URL)
 
 let io: Server | undefined;
 
-/**
- * Creates the Socket.io server with authentication and list handlers, without any
- * Redis dependency. Used directly by tests; production goes through initSocketServer.
- */
+// Creates the Socket.io server with authentication and list handlers, without any
+// Redis dependency. Used directly by tests; production goes through initSocketServer.
 export const createSocketServer = (httpServer: HttpServer): Server => {
   io = new Server(httpServer, {
     cors: {
@@ -47,10 +45,8 @@ export const initSocketServer = async (
   return server;
 };
 
-/**
- * Returns the initialized Socket.io server instance.
- * Must be called after `initSocketServer` has resolved.
- */
+// Returns the initialized Socket.io server instance.
+// Must be called after `initSocketServer` has resolved.
 export const getIO = (): Server => {
   if (!io)
     throw new Error(

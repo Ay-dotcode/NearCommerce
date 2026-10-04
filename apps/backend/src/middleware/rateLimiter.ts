@@ -3,6 +3,7 @@ import {
   RATE_LIMIT_MAX_REQUESTS,
   RATE_LIMIT_WINDOW_MINUTES,
   RATE_LIMIT_WINDOW_MS,
+  REFRESH_RATE_LIMIT_MAX,
   RESEND_RATE_LIMIT_MAX_REQUESTS,
 } from "@/constants";
 import rateLimit from "express-rate-limit";
@@ -47,5 +48,17 @@ export const joinListLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     error: "Too many join attempts, please try again later.",
+  },
+});
+
+// Refresh happens in the background roughly every 15 minutes per client, so allow far
+// more than the password endpoints while still capping token-guessing.
+export const refreshLimiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: REFRESH_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many refresh attempts, please try again later.",
   },
 });

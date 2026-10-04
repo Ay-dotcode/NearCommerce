@@ -1,27 +1,30 @@
 import { db } from "@/config/database";
-import redisClient from "@/config/redis";
 import {
   BCRYPT_SALT_ROUNDS,
   EMAIL_VERIFICATION_TOKEN_TTL_MS,
-  JWT_ACCESS_EXPIRY,
-  JWT_ACCESS_EXPIRY_SECONDS,
-  JWT_ACCESS_SECRET,
   PASSWORD_RESET_TOKEN_TTL_MS,
-  REFRESH_TOKEN_BYTES,
-  USER_SESSION_TTL_MS,
 } from "@/constants";
+import {
+  SessionError,
+  issueSession,
+  ownerStoreId,
+  primeSuspensionCache,
+  revokeSession,
+  rotateSession,
+} from "@/features/auth/services/session.service";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import { sendPasswordResetEmail } from "@/utils/email";
 import {
   ForgotPasswordSchema,
   LoginSchema,
+  LogoutSchema,
+  RefreshTokenSchema,
   RegisterSchema,
   ResetPasswordSchema,
 } from "@nearcommerce/api";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
 
 export const registerUser = async (req: Request, res: Response) => {
@@ -285,54 +288,15 @@ export const loginUser = async (req: Request, res: Response) => {
     if (!isValidPassword)
       return res.status(401).json({ error: "Invalid credentials" });
 
-    // Generate Tokens
-    const accessToken = jwt.sign(
-      { id: user.id, role: user.role },
-      JWT_ACCESS_SECRET,
-      { expiresIn: JWT_ACCESS_EXPIRY },
-    );
+    const session = await issueSession(user);
+    await primeSuspensionCache(user.id);
 
-    // Generate a secure random string for the refresh token, hash it for the DB
-    const rawRefreshToken = crypto
-      .randomBytes(REFRESH_TOKEN_BYTES)
-      .toString("hex");
-    const refreshTokenHash = crypto
-      .createHash("sha256")
-      .update(rawRefreshToken)
-      .digest("hex");
-
-    const refreshExpiresAt = new Date(Date.now() + USER_SESSION_TTL_MS);
-
-    await db.query(
-      `INSERT INTO user_sessions (user_id, refresh_token_hash, expires_at) VALUES ($1, $2, $3)`,
-      [user.id, refreshTokenHash, refreshExpiresAt],
-    );
-
-    // Prime the Redis cache for the middleware suspension check
-    try {
-      if (redisClient.isOpen)
-        await redisClient.set(`suspended:${user.id}`, "false", {
-          EX: JWT_ACCESS_EXPIRY_SECONDS,
-        }); // Match access token expiry
-    } catch (redisError) {
-      console.error(
-        "[AUTH] Failed to prime redis suspension cache:",
-        redisError,
-      );
-    }
-
-    let storeId: string | undefined;
-    if (user.role === "STORE_OWNER") {
-      const storeRes = await db.query(
-        `SELECT id FROM stores WHERE owner_id = $1 LIMIT 1`,
-        [user.id],
-      );
-      if (storeRes.rows.length > 0) storeId = storeRes.rows[0].id;
-    }
+    const storeId =
+      user.role === "STORE_OWNER" ? await ownerStoreId(user.id) : undefined;
 
     return res.status(200).json({
-      access_token: accessToken,
-      refresh_token: rawRefreshToken,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
       user: {
         id: user.id,
         role: user.role,
@@ -351,6 +315,39 @@ export const loginUser = async (req: Request, res: Response) => {
         details: JSON.parse(error.message),
       });
     console.error("Login error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// POST /auth/refresh: rotate the refresh token and issue a new access token.
+export const refreshSession = async (req: Request, res: Response) => {
+  try {
+    const { refresh_token } = RefreshTokenSchema.parse(req.body);
+    return res.status(200).json(await rotateSession(refresh_token));
+  } catch (error) {
+    if (error instanceof ZodError)
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.issues });
+    if (error instanceof SessionError)
+      return res.status(error.status).json({ error: error.message });
+    console.error("Refresh error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// POST /auth/logout: revoke this device's refresh token. Always 204 so it is safe to retry.
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    const { refresh_token } = LogoutSchema.parse(req.body);
+    await revokeSession(refresh_token);
+    return res.status(204).send();
+  } catch (error) {
+    if (error instanceof ZodError)
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.issues });
+    console.error("Logout error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

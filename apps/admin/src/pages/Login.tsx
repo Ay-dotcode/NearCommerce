@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 interface AuthResponse {
   access_token: string;
+  refresh_token?: string;
   user: { id: string; role: UserRole };
 }
 
@@ -33,7 +34,7 @@ export default function LoginPage() {
         return;
       }
 
-      persistSession(data.access_token);
+      persistSession(data.access_token, data.refresh_token);
       navigate("/dashboard", { replace: true });
     } catch {
       setError("Invalid email or password.");

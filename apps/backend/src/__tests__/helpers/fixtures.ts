@@ -9,7 +9,7 @@ export interface TestUser {
 
 const created: string[] = [];
 
-/** Inserts a user with a unique e-mail and returns it with a valid access token. */
+// Inserts a user with a unique e-mail and returns it with a valid access token.
 export async function createTestUser(
   role: "CUSTOMER" | "STORE_OWNER" | "SYSTEM_ADMIN",
   { suspended = false }: { suspended?: boolean } = {},
@@ -76,7 +76,7 @@ export async function createTestProduct(
   return rows[0].id as string;
 }
 
-/** Deletes every user created through this helper (stores/products cascade). */
+// Deletes every user created through this helper (stores/products cascade).
 export async function cleanupFixtures() {
   if (created.length)
     await db.query(`DELETE FROM users WHERE id = ANY($1::uuid[])`, [

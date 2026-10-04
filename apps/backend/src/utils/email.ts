@@ -1,8 +1,6 @@
 import nodemailer from "nodemailer";
 
-/**
- * Configure standard SMTP transporter using environment variables.
- */
+// Configure standard SMTP transporter using environment variables.
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
@@ -13,9 +11,7 @@ export const transporter = nodemailer.createTransport({
   },
 });
 
-/**
- * Sends account verification email with the 24-hour verification token.
- */
+// Sends account verification email with the 24-hour verification token.
 export async function sendVerificationEmail(
   toEmail: string,
   rawToken: string,
@@ -50,17 +46,19 @@ export async function sendVerificationEmail(
   });
 }
 
-/**
- * Sends password reset email with the 1-hour reset token.
- */
+// Sends password reset email with the 1-hour reset token.
 export async function sendPasswordResetEmail(
   toEmail: string,
   rawToken: string,
 ): Promise<void> {
   if (process.env.NODE_ENV === "test") return;
 
-  const baseUrl = process.env.VITE_API_URL || "http://localhost:4000";
-  const resetUrl = `${baseUrl}/auth/reset-password?token=${encodeURIComponent(rawToken)}`;
+  // The reset form lives in the web app; the API has no page at this path.
+  const frontendUrl =
+    process.env.FRONTEND_URL ||
+    process.env.WEB_APP_URL ||
+    "http://localhost:3001";
+  const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || "noreply@nearcommerce.local",

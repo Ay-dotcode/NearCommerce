@@ -40,11 +40,9 @@ const asAck = (candidate: unknown): Ack | undefined =>
 
 const UuidSchema = z.string().uuid();
 
-/**
- * Handshake authentication. Clients pass the same access token they use for REST:
- *   io(url, { auth: { token } })
- * Mirrors requireAuth, including the Redis suspension flag (SRS 1.3.2).
- */
+// Handshake authentication. Clients pass the same access token they use for REST:
+//   io(url, { auth: { token } })
+// Mirrors requireAuth, including the Redis suspension flag (SRS 1.3.2).
 export async function authenticateSocket(
   socket: Pick<Socket, "handshake" | "data">,
   next: (err?: Error) => void,
@@ -95,7 +93,7 @@ function describeError(error: unknown): { message: string; code: string } {
   return { message: "Something went wrong", code: "INTERNAL" };
 }
 
-/** Wraps a handler so failures reach the client as `list_error` (and the ack), never crash the process. */
+// Wraps a handler so failures reach the client as `list_error` (and the ack), never crash the process.
 function guarded<T>(
   socket: Socket,
   event: string,

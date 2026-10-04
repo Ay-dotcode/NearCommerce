@@ -1,11 +1,6 @@
 import { app } from "@/app";
 import { db } from "@/config/database";
 import { createSocketServer } from "@/config/socket";
-import http from "http";
-import { AddressInfo } from "net";
-import type { Server } from "socket.io";
-import { io as connect, Socket } from "socket.io-client";
-import request from "supertest";
 import {
   addMemberDirect,
   auth,
@@ -15,10 +10,15 @@ import {
   createListViaApi,
   ListTestUser,
 } from "@/features/lists/api/__tests__/listFixtures";
+import http from "http";
+import { AddressInfo } from "net";
+import type { Server } from "socket.io";
+import { io as connect, Socket } from "socket.io-client";
+import request from "supertest";
 
 const WAIT_MS = 2000;
 
-/** Resolves with the next payload of `event`, or rejects after WAIT_MS. */
+// Resolves with the next payload of `event`, or rejects after WAIT_MS.
 const next = <T = any>(socket: Socket, event: string): Promise<T> =>
   new Promise((resolve, reject) => {
     const timer = setTimeout(
@@ -31,7 +31,7 @@ const next = <T = any>(socket: Socket, event: string): Promise<T> =>
     });
   });
 
-/** Asserts nothing arrives for `event` in a short window. */
+// Asserts nothing arrives for `event` in a short window.
 const silent = (socket: Socket, event: string, ms = 250): Promise<void> =>
   new Promise((resolve, reject) => {
     const handler = () => reject(new Error(`unexpected "${event}"`));
@@ -65,7 +65,7 @@ describe("List sockets (real socket.io server and clients)", () => {
   };
   const ready = (socket: Socket) => next(socket, "connect");
 
-  /** Connects, joins the list room and waits for the state snapshot. */
+  // Connects, joins the list room and waits for the state snapshot.
   const joined = async (user: ListTestUser, listId = list.id) => {
     const socket = client(user);
     await ready(socket);

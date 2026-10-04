@@ -4,10 +4,8 @@ const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 export type EmbeddingTaskType = "RETRIEVAL_QUERY" | "RETRIEVAL_DOCUMENT";
 
-/**
- * Wraps a promise with a timeout. If the promise takes longer than `timeoutMs`,
- * it throws a Timeout Error, triggering our fallback logic.
- */
+// Wraps a promise with a timeout. If the promise takes longer than `timeoutMs`,
+// it throws a Timeout Error, triggering our fallback logic.
 export const withCircuitBreaker = <T>(
   promise: Promise<T>,
   timeoutMs: number,
@@ -29,11 +27,9 @@ export const withCircuitBreaker = <T>(
   });
 };
 
-/**
- * gemini-embedding-001 only returns unit-length vectors at its native 3072 dims.
- * For truncated (768) outputs we normalise ourselves so L2 distance in pgvector
- * behaves consistently between stored documents and live queries.
- */
+// gemini-embedding-001 only returns unit-length vectors at its native 3072 dims.
+// For truncated (768) outputs we normalise ourselves so L2 distance in pgvector
+// behaves consistently between stored documents and live queries.
 export const l2Normalize = (vector: number[]): number[] => {
   const norm = Math.sqrt(vector.reduce((sum, x) => sum + x * x, 0));
   if (!norm) throw new Error("Gemini returned a zero-norm embedding");
@@ -83,9 +79,7 @@ const assertDimensions = (values: number[] | undefined): number[] => {
   return values;
 };
 
-/**
- * Generates one 768-dimension embedding. Used by live search (RETRIEVAL_QUERY).
- */
+// Generates one 768-dimension embedding. Used by live search (RETRIEVAL_QUERY).
 export const fetchGeminiEmbedding = async (
   text: string,
   taskType: EmbeddingTaskType = "RETRIEVAL_QUERY",
@@ -99,10 +93,8 @@ export const fetchGeminiEmbedding = async (
   return l2Normalize(assertDimensions(data.embedding?.values));
 };
 
-/**
- * Generates embeddings for many texts in a single request (max 100).
- * Used by the product pipeline (RETRIEVAL_DOCUMENT). Result order matches input order.
- */
+// Generates embeddings for many texts in a single request (max 100).
+// Used by the product pipeline (RETRIEVAL_DOCUMENT). Result order matches input order.
 export const fetchGeminiEmbeddingsBatch = async (
   texts: string[],
   taskType: EmbeddingTaskType = "RETRIEVAL_DOCUMENT",

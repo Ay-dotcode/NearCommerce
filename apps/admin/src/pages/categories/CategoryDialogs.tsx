@@ -42,7 +42,7 @@ export function CategoryFormDialog({
   onSubmit,
 }: {
   open: boolean;
-  /** Provide to edit; omit to create. */
+  // Provide to edit; omit to create.
   category?: AdminCategory;
   onClose: () => void;
   onSubmit: (values: { name: string; iconUrl: string | null }) => Promise<void>;
@@ -274,7 +274,7 @@ export function DeleteReasonDialog({
 }: {
   open: boolean;
   title: string;
-  /** Plain-language impact, for example "12 products will become uncategorised." */
+  // Plain-language impact, for example "12 products will become uncategorised."
   consequences: string;
   confirmLabel: string;
   onClose: () => void;

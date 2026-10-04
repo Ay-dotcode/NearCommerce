@@ -1,4 +1,4 @@
-import { clearSession, getAccessToken, getUserRole } from "@/session";
+import { getAccessToken, getUserRole, signOutEverywhere } from "@/session";
 import {
   NavLink,
   Navigate,
@@ -24,7 +24,7 @@ export function AdminLayout() {
   const navigate = useNavigate();
 
   const signOut = () => {
-    clearSession();
+    void signOutEverywhere();
     navigate("/login", { replace: true });
   };
 

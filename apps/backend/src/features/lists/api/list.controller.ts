@@ -50,7 +50,7 @@ function handleError(res: Response, error: unknown, label: string) {
 // Lists
 // ---------------------------------------------------------------------------
 
-/** GET /lists */
+// GET /lists
 export const handleListMyLists = async (req: Request, res: Response) => {
   try {
     return res.status(200).json({ data: await listUserLists(userId(req)) });
@@ -59,7 +59,7 @@ export const handleListMyLists = async (req: Request, res: Response) => {
   }
 };
 
-/** GET /lists/my-list: the list the mobile Lists tab opens on. */
+// GET /lists/my-list: the list the mobile Lists tab opens on.
 export const handleGetCurrentList = async (req: Request, res: Response) => {
   try {
     return res.status(200).json(await getCurrentList(userId(req)));
@@ -68,7 +68,7 @@ export const handleGetCurrentList = async (req: Request, res: Response) => {
   }
 };
 
-/** POST /lists */
+// POST /lists
 export const handleCreateList = async (req: Request, res: Response) => {
   try {
     const { name } = CreateListSchema.parse(req.body);
@@ -78,7 +78,7 @@ export const handleCreateList = async (req: Request, res: Response) => {
   }
 };
 
-/** POST /lists/join */
+// POST /lists/join
 export const handleJoinList = async (req: Request, res: Response) => {
   try {
     const { invite_code } = JoinListSchema.parse(req.body);
@@ -89,7 +89,7 @@ export const handleJoinList = async (req: Request, res: Response) => {
   }
 };
 
-/** GET /lists/:list_id */
+// GET /lists/:list_id
 export const handleGetList = async (req: Request, res: Response) => {
   try {
     const { list_id } = ListIdParamSchema.parse(req.params);
@@ -99,7 +99,7 @@ export const handleGetList = async (req: Request, res: Response) => {
   }
 };
 
-/** PATCH /lists/:list_id */
+// PATCH /lists/:list_id
 export const handleRenameList = async (req: Request, res: Response) => {
   try {
     const { list_id } = ListIdParamSchema.parse(req.params);
@@ -110,7 +110,7 @@ export const handleRenameList = async (req: Request, res: Response) => {
   }
 };
 
-/** DELETE /lists/:list_id */
+// DELETE /lists/:list_id
 export const handleDeleteList = async (req: Request, res: Response) => {
   try {
     const { list_id } = ListIdParamSchema.parse(req.params);
@@ -121,7 +121,7 @@ export const handleDeleteList = async (req: Request, res: Response) => {
   }
 };
 
-/** POST /lists/:list_id/leave */
+// POST /lists/:list_id/leave
 export const handleLeaveList = async (req: Request, res: Response) => {
   try {
     const { list_id } = ListIdParamSchema.parse(req.params);
@@ -135,7 +135,7 @@ export const handleLeaveList = async (req: Request, res: Response) => {
   }
 };
 
-/** POST /lists/:list_id/regenerate-invite (alias: /regenerate-invite-code) */
+// POST /lists/:list_id/regenerate-invite (alias: /regenerate-invite-code)
 export const regenerateInviteCode = async (req: Request, res: Response) => {
   try {
     const { list_id } = RegenerateInviteCodeSchema.parse(req.params);
@@ -146,7 +146,7 @@ export const regenerateInviteCode = async (req: Request, res: Response) => {
   }
 };
 
-/** DELETE /lists/:list_id/members/:user_id */
+// DELETE /lists/:list_id/members/:user_id
 export const handleRemoveMember = async (req: Request, res: Response) => {
   try {
     const { list_id, user_id } = ListMemberParamsSchema.parse(req.params);
@@ -161,11 +161,9 @@ export const handleRemoveMember = async (req: Request, res: Response) => {
 // Items
 // ---------------------------------------------------------------------------
 
-/**
- * POST /lists/:list_id/items
- * Upserts on (list_id, product_id); the response includes `already_on_list` so clients
- * can show "Item already on list. Quantity increased to [X] and marked un-checked."
- */
+// POST /lists/:list_id/items
+// Upserts on (list_id, product_id); the response includes `already_on_list` so clients
+// can show "Item already on list. Quantity increased to [X] and marked un-checked."
 export const handleAddListItem = async (req: Request, res: Response) => {
   try {
     const parsed = AddListItemSchema.parse({
@@ -179,7 +177,7 @@ export const handleAddListItem = async (req: Request, res: Response) => {
   }
 };
 
-/** PATCH /lists/:list_id/items/:item_id */
+// PATCH /lists/:list_id/items/:item_id
 export const handleUpdateListItem = async (req: Request, res: Response) => {
   try {
     const { list_id, item_id } = ListItemParamsSchema.parse(req.params);
@@ -192,7 +190,7 @@ export const handleUpdateListItem = async (req: Request, res: Response) => {
   }
 };
 
-/** DELETE /lists/:list_id/items/:item_id */
+// DELETE /lists/:list_id/items/:item_id
 export const handleDeleteListItem = async (req: Request, res: Response) => {
   try {
     const { list_id, item_id } = ListItemParamsSchema.parse(req.params);

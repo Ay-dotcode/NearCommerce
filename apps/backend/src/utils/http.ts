@@ -28,7 +28,7 @@ export const sendValidationError = (
   error = "Validation failed",
 ) => res.status(400).json({ error, details: toValidationDetails(issues) });
 
-/** An error a service can throw to be turned into an HTTP response by the controller. */
+// An error a service can throw to be turned into an HTTP response by the controller.
 export class HttpError extends Error {
   constructor(
     public readonly status: number,
@@ -40,7 +40,7 @@ export class HttpError extends Error {
   }
 }
 
-/** Maps HttpError and the Postgres constraint errors we expect to a response. Returns false if unhandled. */
+// Maps HttpError and the Postgres constraint errors we expect to a response. Returns false if unhandled.
 export const handleKnownError = (res: Response, err: unknown): boolean => {
   if (err instanceof HttpError) {
     res.status(err.status).json({

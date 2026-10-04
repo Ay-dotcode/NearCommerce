@@ -10,7 +10,6 @@ interface DialogProps {
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
-  /** Set false while a request is in flight so Escape / backdrop can't dismiss it. */
   dismissible?: boolean;
 }
 
