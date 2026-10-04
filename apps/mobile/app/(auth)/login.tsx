@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 interface LoginResponse {
   access_token: string;
+  refresh_token?: string;
   user: { id: string; role: string };
 }
 
@@ -35,7 +36,7 @@ export default function LoginScreen() {
         email: email.trim().toLowerCase(),
         password,
       });
-      await login(res.data.access_token);
+      await login(res.data.access_token, res.data.refresh_token);
       router.replace("/(tabs)");
     } catch {
       Alert.alert(
@@ -90,6 +91,15 @@ export default function LoginScreen() {
           />
         </View>
 
+        <Pressable
+          testID="forgot-password-link"
+          style={styles.forgotLink}
+          onPress={() => router.push("/(auth)/forgot-password")}
+          accessibilityRole="link"
+        >
+          <Text style={styles.registerAction}>Forgot password?</Text>
+        </Pressable>
+
         {/* Submit */}
         <Pressable
           testID="login-button"
@@ -120,6 +130,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  forgotLink: { alignSelf: "flex-end", marginBottom: 16, padding: 4 },
   safe: { flex: 1, backgroundColor: "#f5f8fb" },
   container: {
     flex: 1,

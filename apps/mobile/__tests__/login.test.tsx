@@ -9,6 +9,7 @@ jest.mock("@nearcommerce/api", () => ({
     post: jest.fn(),
     defaults: { headers: { common: {} } },
   },
+  configureTokenRefresh: jest.fn(),
 }));
 
 // Mock expo-router so <Redirect> / router.replace don't crash in Jest
@@ -22,6 +23,8 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(() => Promise.resolve(null)),
   removeItem: jest.fn(() => Promise.resolve()),
+  removeMany: jest.fn(() => Promise.resolve()),
+  setMany: jest.fn(() => Promise.resolve()),
 }));
 
 // Lazy-require so mocks are applied first
@@ -131,5 +134,43 @@ describe("LoginScreen", () => {
     });
 
     AlertMock.mockRestore();
+  });
+
+  it("stores the refresh token alongside the access token", async () => {
+    const { apiClient } = require("@nearcommerce/api");
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({
+      data: {
+        access_token: "access-1",
+        refresh_token: "refresh-1",
+        user: { id: "u3", role: "CUSTOMER" },
+      },
+    });
+    const { getByTestId } = render(
+      <AuthProvider>
+        <LoginScreen />
+      </AuthProvider>,
+    );
+    fireEvent.changeText(getByTestId("email-input"), "a@b.com");
+    fireEvent.changeText(getByTestId("password-input"), "password123");
+    fireEvent.press(getByTestId("login-button"));
+
+    await waitFor(() =>
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        "@nearcommerce_refresh_token",
+        "refresh-1",
+      ),
+    );
+  });
+
+  it("links to the forgot-password screen", () => {
+    const { getByTestId } = render(
+      <AuthProvider>
+        <LoginScreen />
+      </AuthProvider>,
+    );
+    fireEvent.press(getByTestId("forgot-password-link"));
+    expect(require("expo-router").router.push).toHaveBeenCalledWith(
+      "/(auth)/forgot-password",
+    );
   });
 });

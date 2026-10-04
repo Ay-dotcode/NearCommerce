@@ -1,3 +1,4 @@
+import { useAuth } from "@/src/context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import {
@@ -11,6 +12,7 @@ import {
 } from "react-native";
 
 export default function SettingsScreen() {
+  const { logout } = useAuth();
   const [avoidTolls, setAvoidTolls] = useState(false);
 
   useEffect(() => {
@@ -49,6 +51,14 @@ export default function SettingsScreen() {
 
       <View style={styles.actionContainer}>
         <Button title="Test Native Map Handoff" onPress={testMapHandoff} />
+      </View>
+
+      <View style={styles.actionContainer}>
+        <Button
+          title="Sign out"
+          color="#b91c1c"
+          onPress={() => void logout()}
+        />
       </View>
     </View>
   );

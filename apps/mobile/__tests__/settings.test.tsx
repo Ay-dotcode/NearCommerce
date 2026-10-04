@@ -7,6 +7,11 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(() => Promise.resolve("false")),
 }));
 
+const mockLogout = jest.fn();
+jest.mock("@/src/context/AuthContext", () => ({
+  useAuth: () => ({ logout: mockLogout }),
+}));
+
 describe("SettingsScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -33,5 +38,11 @@ describe("SettingsScreen", () => {
         "true",
       );
     });
+  });
+
+  it("signs out from the settings screen", () => {
+    const { getByText } = render(<SettingsScreen />);
+    fireEvent.press(getByText("Sign out"));
+    expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 });

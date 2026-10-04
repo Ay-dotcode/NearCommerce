@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 interface RegisterResponse {
   access_token: string;
+  refresh_token?: string;
   user: { id: string; role: string };
 }
 
@@ -47,7 +48,7 @@ export default function RegisterScreen() {
         email: email.trim().toLowerCase(),
         password,
       });
-      await login(res.data.access_token);
+      await login(res.data.access_token, res.data.refresh_token);
       router.replace("/(tabs)");
     } catch (err: any) {
       const msg =

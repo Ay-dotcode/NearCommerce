@@ -4,6 +4,7 @@ import type {
   HouseholdListMeta,
 } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";
+export { apiErrorMessage } from "@/api/errors";
 
 export const LISTS_KEY = ["lists"] as const;
 export const listKey = (id: string) => ["list", id] as const;
@@ -71,10 +72,4 @@ export async function leaveList(listId: string) {
 
 export async function deleteList(listId: string) {
   await apiClient.delete(`/lists/${listId}`);
-}
-
-export function apiErrorMessage(error: unknown, fallback: string) {
-  const msg = (error as { response?: { data?: { error?: string } } })?.response
-    ?.data?.error;
-  return msg || fallback;
 }

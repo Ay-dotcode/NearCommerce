@@ -9,7 +9,7 @@ import Toast from "react-native-toast-message";
 
 type Target = { storeId?: string; productId?: string };
 
-/** Favourite state for one store or product, derived from the shared favourites list. */
+// Favourite state for one store or product, derived from the shared favourites list.
 export function useFavorite(target: Target) {
   const queryClient = useQueryClient();
   const enabled = Boolean(target.storeId || target.productId);

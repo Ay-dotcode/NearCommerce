@@ -15,7 +15,7 @@ export function addFavorite(target: { storeId?: string; productId?: string }) {
   });
 }
 
-/** 404 means it was already removed, which is the state we wanted. */
+// 404 means it was already removed, which is the state we wanted.
 export async function removeFavorite(favoriteId: string) {
   try {
     await apiClient.delete(`/favorites/${favoriteId}`);

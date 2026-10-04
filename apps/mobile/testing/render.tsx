@@ -13,7 +13,7 @@ export function renderWithClient(ui: ReactElement) {
   return render(createElement(QueryClientProvider, { client }, ui) as never);
 }
 
-/** Route a mocked apiClient.get by URL so tests don't depend on call order. */
+// Route a mocked apiClient.get by URL so tests don't depend on call order.
 export function serveGet(
   get: jest.Mock,
   routes: Record<string, unknown | (() => unknown)>,
