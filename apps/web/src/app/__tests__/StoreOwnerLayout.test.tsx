@@ -5,7 +5,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 jest.mock("@/api/stores", () => ({
-  MY_STORES_KEY: ["my-stores"],
   listMyStores: jest.fn(),
 }));
 jest.mock("@/api/support", () => ({

@@ -1,7 +1,6 @@
-import { CATEGORIES_KEY, listCategories } from "@/api/categories";
+import { listCategories } from "@/api/categories";
 import { parseApiError } from "@/api/errors";
 import {
-  PRODUCTS_KEY,
   confirmProductStock,
   deleteProduct,
   listProducts,
@@ -15,6 +14,7 @@ import {
   Modal,
   useToast,
 } from "@/components/ui";
+import { CATEGORIES_KEY, PRODUCTS_KEY } from "@/constants";
 import { STORE_KEY } from "@/constants/routes";
 import { formatPrice, timeAgo } from "@/features/products/lib/format";
 import { cn } from "@/lib/cn";

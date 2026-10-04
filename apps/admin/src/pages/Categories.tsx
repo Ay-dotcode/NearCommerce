@@ -48,7 +48,11 @@ export default function Categories() {
   const refreshAudit = () =>
     queryClient.invalidateQueries({ queryKey: ["admin-audit-logs"] });
 
-  const categories = query.data ?? [];
+  const categories: AdminCategory[] = Array.isArray(query.data)
+    ? query.data
+    : Array.isArray((query.data as any)?.data)
+      ? (query.data as any).data
+      : [];
 
   const deleteConsequences = (d: Deleting) => {
     if (d.kind === "sub") {
