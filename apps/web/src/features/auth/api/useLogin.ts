@@ -38,7 +38,12 @@ export function useLogin() {
         (data.user.role === UserRole.SYSTEM_ADMIN ||
           data.user.role === UserRole.STORE_OWNER)
       )
-        persistSession(data.access_token, data.user.role, data.user.store_id);
+        persistSession(
+          data.access_token,
+          data.user.role,
+          data.user.store_id,
+          data.refresh_token,
+        );
     },
   });
 }

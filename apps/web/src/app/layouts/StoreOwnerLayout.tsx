@@ -3,7 +3,11 @@ import { listMyStores } from "@/api/stores";
 import { Button } from "@/components/ui";
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes, STORE_KEY } from "@/constants/routes";
-import { clearSession, setActiveStoreId } from "@/features/auth/session";
+import {
+  clearSession,
+  setActiveStoreId,
+  signOutEverywhere,
+} from "@/features/auth/session";
 import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { cn } from "@/lib/cn";
 import { useQuery } from "@tanstack/react-query";
@@ -58,7 +62,7 @@ export function StoreOwnerLayout() {
   };
 
   const signOut = () => {
-    clearSession();
+    void signOutEverywhere();
     navigate(AppRoutes.login, { replace: true });
   };
 

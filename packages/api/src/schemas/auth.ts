@@ -37,3 +37,11 @@ export type ResendVerificationInput = z.infer<typeof ResendVerificationSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;
+
+export const RefreshTokenSchema = z.object({
+  refresh_token: z.string().min(1, "Refresh token is required"),
+});
+
+export const LogoutSchema = RefreshTokenSchema;
+
+export type RefreshTokenInput = z.infer<typeof RefreshTokenSchema>;

@@ -21,10 +21,10 @@ export const ConfirmStockParamsSchema = z.object({
 // Owner-side product management
 // ---------------------------------------------------------------------------
 
-/** DECIMAL(10, 2) ceiling. */
+// DECIMAL(10, 2) ceiling.
 export const MAX_PRODUCT_PRICE = 99_999_999.99;
 export const MAX_PRODUCT_QUANTITY = 1_000_000;
-/** Hard cap on rows accepted by a single CSV import request. */
+// Hard cap on rows accepted by a single CSV import request.
 export const IMPORT_MAX_ROWS = 1000;
 
 const priceSchema = z
@@ -79,7 +79,7 @@ export const UpdateProductSchema = z
     message: "Provide at least one field to update",
   });
 
-/** One CSV row, in the snake_case shape the web CSV importer sends. */
+// One CSV row, in the snake_case shape the web CSV importer sends.
 export const ImportProductRowSchema = z.object({
   name: ProductFieldsShape.name,
   description: z.string().trim().max(5000).nullable().optional(),

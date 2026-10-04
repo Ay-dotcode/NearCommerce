@@ -113,6 +113,14 @@ export const LoginForm: React.FC = () => {
           {...formik.getFieldProps("password")}
           error={error("password")}
         />
+        <div className="-mt-2 text-right">
+          <Link
+            to={AppRoutes.forgotPassword}
+            className="text-sm font-medium text-brand-700 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
 
         {notice && (
           <div

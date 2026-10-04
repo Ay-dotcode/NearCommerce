@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Largest quantity a single list line can hold. */
+// Largest quantity a single list line can hold.
 export const LIST_MAX_ITEM_QUANTITY = 999;
 
 const uuid = z.string().uuid();
@@ -42,7 +42,7 @@ export const RegenerateInviteCodeSchema = z.object({
 export const CreateListSchema = z.object({ name: listName });
 export const RenameListSchema = z.object({ name: listName });
 
-/** Invite codes are case-insensitive; normalise to upper case before lookup. */
+// Invite codes are case-insensitive; normalise to upper case before lookup.
 export const JoinListSchema = z.object({
   invite_code: z
     .string()
@@ -98,7 +98,7 @@ export const SocketAddItemSchema = z
     path: ["productId"],
   });
 
-/** The mobile client sends `productId` but falls back to the item id for custom items. */
+// The mobile client sends `productId` but falls back to the item id for custom items.
 export const SocketToggleItemSchema = z
   .object({
     listId: uuid,

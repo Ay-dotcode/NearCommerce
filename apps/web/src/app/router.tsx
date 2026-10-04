@@ -1,8 +1,10 @@
 import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { AppRoutes } from "@/constants/routes";
+import { ForgotPasswordForm } from "@/features/auth/ui/ForgotPasswordForm";
 import { LoginForm } from "@/features/auth/ui/LoginForm";
 import { RegisterForm } from "@/features/auth/ui/RegisterForm";
+import { ResetPasswordForm } from "@/features/auth/ui/ResetPasswordForm";
 import { StoreProfile } from "@/pages/owner/StoreProfile";
 import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
 import { StoreOnboardingPage } from "@/pages/store-owner/StoreOnboardingPage";
@@ -22,6 +24,14 @@ const router = createBrowserRouter(
     {
       path: AppRoutes.register,
       element: <RegisterForm />,
+    },
+    {
+      path: AppRoutes.forgotPassword,
+      element: <ForgotPasswordForm />,
+    },
+    {
+      path: AppRoutes.resetPassword,
+      element: <ResetPasswordForm />,
     },
     {
       path: AppRoutes.home,
