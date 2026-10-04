@@ -47,3 +47,23 @@ export interface AdminReview {
   comment: string | null;
   created_at: string;
 }
+
+export interface AdminSubcategory {
+  id: string;
+  name: string;
+  product_count: number;
+}
+
+export interface AdminCategory {
+  id: string;
+  name: string;
+  icon_url: string | null;
+  product_count: number;
+  subcategories: AdminSubcategory[];
+}
+
+export interface CategoryDeleteResult {
+  message: string;
+  affected_products: number;
+  deleted_subcategories?: number;
+}

@@ -6,13 +6,19 @@ export interface StoreProduct {
   quantity: number;
   image_url?: string | null;
   is_published: boolean;
+  subcategory_id?: string | null;
   last_verified_at: string;
   created_at?: string;
   updated_at?: string;
   isStale?: boolean;
 }
 
-export type ProductStatusFilter = "all" | "published" | "draft" | "stale" | "out_of_stock";
+export type ProductStatusFilter =
+  | "all"
+  | "published"
+  | "draft"
+  | "stale"
+  | "out_of_stock";
 
 export interface ProductListParams {
   q?: string;
@@ -50,6 +56,7 @@ export interface ProductPayload {
   quantity: number;
   imageUrl?: string | null;
   isPublished?: boolean;
+  subcategoryId?: string | null;
 }
 
 export interface ProductImportRow {

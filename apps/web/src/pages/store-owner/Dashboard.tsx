@@ -1,5 +1,7 @@
+import { CATEGORIES_KEY, listCategories } from "@/api/categories";
 import { parseApiError } from "@/api/errors";
 import {
+  PRODUCTS_KEY,
   confirmProductStock,
   deleteProduct,
   listProducts,
@@ -13,7 +15,6 @@ import {
   Modal,
   useToast,
 } from "@/components/ui";
-import { PRODUCTS_KEY } from "@/constants";
 import { STORE_KEY } from "@/constants/routes";
 import { formatPrice, timeAgo } from "@/features/products/lib/format";
 import { cn } from "@/lib/cn";
@@ -67,6 +68,15 @@ export default function StoreOwnerDashboard() {
     queryFn: () => listProducts(params),
     enabled: Boolean(storeId),
     placeholderData: keepPreviousData,
+  });
+
+  // Optional: the form still works (without a category picker) if this fails to load.
+  const categoriesQuery = useQuery({
+    queryKey: CATEGORIES_KEY,
+    queryFn: listCategories,
+    enabled: Boolean(storeId),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const products = productsQuery.data?.data ?? [];
@@ -475,6 +485,7 @@ export default function StoreOwnerDashboard() {
           <ProductForm
             storeId={storeId}
             product={editor.mode === "edit" ? editor.product : undefined}
+            categories={categoriesQuery.data}
             onCancel={() => setEditor(null)}
             onSuccess={async () => {
               const wasEdit = editor.mode === "edit";

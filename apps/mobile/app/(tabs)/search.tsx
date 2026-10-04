@@ -1,6 +1,8 @@
+import { searchProducts } from "@/api/client";
+import { getSessionLocation } from "@/utils/location";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,12 +14,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { searchProducts } from "@/api/client";
-import { getSessionLocation } from "@/utils/location";
 
 export default function SearchScreen() {
-  const params = useLocalSearchParams<{ category?: string }>();
-  const [searchQuery, setSearchQuery] = useState(params.category ?? "");
+  const params = useLocalSearchParams<{ q?: string }>();
+  const [searchQuery, setSearchQuery] = useState(params.q ?? "");
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -102,7 +102,11 @@ export default function SearchScreen() {
         contentContainerStyle={styles.results}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.result}>
+          <Pressable
+            style={styles.result}
+            onPress={() => router.push(`/product/${item.id}`)}
+            accessibilityRole="button"
+          >
             <View style={styles.resultIcon}>
               <Ionicons name="pricetag-outline" size={20} color="#2563eb" />
             </View>
@@ -114,7 +118,7 @@ export default function SearchScreen() {
               </Text>
             </View>
             <Text style={styles.price}>${Number(item.price).toFixed(2)}</Text>
-          </View>
+          </Pressable>
         )}
       />
     </SafeAreaView>

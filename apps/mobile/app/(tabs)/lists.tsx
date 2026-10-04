@@ -1,164 +1,182 @@
+import {
+  LISTS_KEY,
+  apiErrorMessage,
+  createList,
+  fetchLists,
+} from "@/api/lists";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { apiClient } from "@/api/client";
-import { useHouseholdList } from "@/hooks/useHouseholdList";
-import type { HouseholdListMeta } from "@/types/lists";
-
-const accessToken =
-  (globalThis as { process?: { env?: Record<string, string | undefined> } })
-    .process?.env?.EXPO_PUBLIC_ACCESS_TOKEN ?? "";
 
 export default function ListsScreen() {
   const queryClient = useQueryClient();
-  const { data: listMeta, isLoading } = useQuery<HouseholdListMeta>({
-    queryKey: ["my-list"],
-    queryFn: async () =>
-      (
-        await apiClient.get<HouseholdListMeta>("/lists/my-list", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-      ).data,
-    enabled: Boolean(accessToken),
+  const [name, setName] = useState("");
+  const {
+    data: lists = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: LISTS_KEY,
+    queryFn: fetchLists,
   });
-  const { items, toggleItem, isConnected } = useHouseholdList(
-    listMeta?.id ?? "",
-    accessToken,
-  );
-  const regenerateCodeMutation = useMutation({
-    mutationFn: async () =>
-      apiClient.post(`/lists/${listMeta?.id}/regenerate-invite`, undefined, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }),
-    onSuccess: (response) => {
-      queryClient.setQueryData<HouseholdListMeta>(["my-list"], (current) =>
-        current
-          ? { ...current, invite_code: response.data.invite_code }
-          : current,
-      );
-      Toast.show({
-        type: "success",
-        text1: "Code Regenerated",
-        text2: `New code: ${response.data.invite_code}`,
-      });
+
+  const create = useMutation({
+    mutationFn: (listName: string) => createList(listName),
+    onSuccess: (list) => {
+      setName("");
+      queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+      router.push(`/list/${list.id}` as never);
     },
+    onError: (error) =>
+      Toast.show({
+        type: "error",
+        text1: "Couldn't create list",
+        text2: apiErrorMessage(error, "Please try again."),
+      }),
   });
 
-  if (isLoading)
-    return <ActivityIndicator color="#2563eb" style={styles.loader} />;
-
-  if (!listMeta)
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.title}>Your lists</Text>
-        <Text style={styles.message}>
-          Sign in with an active household list to see shared items.
-        </Text>
-      </SafeAreaView>
-    );
+  const trimmed = name.trim();
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{listMeta.name}</Text>
-          <View
-            style={[
-              styles.connection,
-              isConnected ? styles.online : styles.offline,
-            ]}
-          />
-        </View>
-        <Text style={styles.inviteCode}>
-          Invite code: {listMeta.invite_code}
-        </Text>
-        {listMeta.role === "OWNER" && (
-          <Pressable
-            style={styles.regenerateButton}
-            onPress={() => regenerateCodeMutation.mutate()}
-            disabled={regenerateCodeMutation.isPending}
-          >
-            <Ionicons name="refresh-outline" size={18} color="#991b1b" />
-            <Text style={styles.regenerateText}>Regenerate invite code</Text>
-          </Pressable>
-        )}
+      <Text style={styles.title}>Your lists</Text>
+
+      <View style={styles.createRow}>
+        <TextInput
+          style={styles.input}
+          placeholder="New list name"
+          placeholderTextColor="#9ca3af"
+          value={name}
+          onChangeText={setName}
+          maxLength={100}
+          accessibilityLabel="New list name"
+          returnKeyType="done"
+          onSubmitEditing={() => trimmed && create.mutate(trimmed)}
+        />
+        <Pressable
+          style={[
+            styles.button,
+            (!trimmed || create.isPending) && styles.disabled,
+          ]}
+          disabled={!trimmed || create.isPending}
+          onPress={() => create.mutate(trimmed)}
+          accessibilityRole="button"
+          accessibilityLabel="Create list"
+        >
+          <Text style={styles.buttonText}>Create</Text>
+        </Pressable>
       </View>
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={
-          <Text style={styles.message}>Your shared list is empty.</Text>
-        }
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.itemRow}
-            onPress={() =>
-              toggleItem(item.product_id ?? item.id, !item.is_checked)
-            }
-          >
-            <Ionicons
-              name={item.is_checked ? "checkbox" : "square-outline"}
-              size={24}
-              color={item.is_checked ? "#10b981" : "#6b7280"}
-            />
-            <Text
-              style={[styles.itemName, item.is_checked && styles.itemChecked]}
-            >
-              {item.custom_item_name || "Product"} (x{item.quantity})
-            </Text>
+
+      <Pressable
+        style={styles.joinLink}
+        onPress={() => router.push("/(tabs)/lists/join" as never)}
+        accessibilityRole="button"
+      >
+        <Ionicons name="enter-outline" size={18} color="#2563eb" />
+        <Text style={styles.joinText}>Join with an invite code</Text>
+      </Pressable>
+
+      {isLoading ? (
+        <ActivityIndicator color="#2563eb" style={styles.loader} />
+      ) : isError ? (
+        <View style={styles.centered}>
+          <Text style={styles.message}>Couldn't load your lists.</Text>
+          <Pressable onPress={() => refetch()} accessibilityRole="button">
+            <Text style={styles.joinText}>Try again</Text>
           </Pressable>
-        )}
-      />
+        </View>
+      ) : (
+        <FlatList
+          data={lists}
+          keyExtractor={(l) => l.id}
+          ListEmptyComponent={
+            <Text style={styles.message}>
+              No lists yet. Create one above or join with an invite code.
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.card}
+              onPress={() => router.push(`/list/${item.id}` as never)}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${item.name}`}
+            >
+              <View style={styles.cardCopy}>
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <Text style={styles.cardMeta}>
+                  {item.unchecked_count ?? 0} to buy · {item.member_count ?? 1}{" "}
+                  {(item.member_count ?? 1) === 1 ? "member" : "members"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            </Pressable>
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f8fb",
-    padding: 24,
-  },
-  loader: { flex: 1, alignSelf: "center", marginTop: 32 },
-  header: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+  container: { flex: 1, backgroundColor: "#f5f8fb", padding: 20 },
+  title: {
+    color: "#123047",
+    fontSize: 26,
+    fontWeight: "800",
     marginBottom: 16,
   },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { color: "#123047", fontSize: 24, fontWeight: "800" },
-  connection: { width: 8, height: 8, borderRadius: 4 },
-  online: { backgroundColor: "#10b981" },
-  offline: { backgroundColor: "#f59e0b" },
-  inviteCode: { color: "#4b5563", marginTop: 6 },
-  regenerateButton: {
+  createRow: { flexDirection: "row", gap: 8 },
+  input: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#d9e2ec",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: "#123047",
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: "#2563eb",
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    justifyContent: "center",
+  },
+  disabled: { opacity: 0.5 },
+  buttonText: { color: "#fff", fontWeight: "800" },
+  joinLink: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 14,
-    padding: 10,
-    backgroundColor: "#fee2e2",
-    borderRadius: 8,
+    marginVertical: 14,
   },
-  regenerateText: { color: "#991b1b", fontWeight: "800" },
+  joinText: { color: "#2563eb", fontWeight: "700" },
+  loader: { marginTop: 32 },
+  centered: { alignItems: "center", gap: 10 },
   message: { color: "#718096", textAlign: "center", marginTop: 24 },
-  itemRow: {
+  card: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
   },
-  itemName: { color: "#123047", fontSize: 16, marginLeft: 12 },
-  itemChecked: { textDecorationLine: "line-through", color: "#9ca3af" },
+  cardCopy: { flex: 1 },
+  cardTitle: { color: "#123047", fontSize: 17, fontWeight: "800" },
+  cardMeta: { color: "#718096", fontSize: 13, marginTop: 4 },
 });

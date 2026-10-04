@@ -1,6 +1,6 @@
-import { Ionicons } from "@expo/vector-icons";
+import FavoriteButton from "@/components/FavoriteButton";
 import { apiClient } from "@nearcommerce/api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
@@ -17,33 +17,30 @@ interface Product {
   name: string;
   price: number;
   quantity: number;
+  in_stock: boolean;
+  isStale?: boolean;
 }
 
 interface Store {
   id: string;
   name: string;
   address: string;
+  isOpen?: boolean;
+  rating?: number;
+  review_count?: number;
   products: Product[];
 }
 
 export default function StoreDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const queryClient = useQueryClient();
 
   const { data: store, isLoading } = useQuery({
     queryKey: ["store", id],
     queryFn: async () => {
-      const res = await apiClient.get<Store>(`/stores/${id}`);
-      return res.data;
+      const res = await apiClient.get<{ data: Store }>(`/stores/${id}`);
+      return res.data.data;
     },
     enabled: Boolean(id),
-  });
-
-  const toggleFavorite = useMutation({
-    mutationFn: async () => {
-      return apiClient.post("/favorites", { store_id: id });
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["favorites"] }),
   });
 
   if (isLoading)
@@ -68,15 +65,23 @@ export default function StoreDetailScreen() {
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <Text style={styles.title}>{store.name}</Text>
-        <Pressable
-          onPress={() => toggleFavorite.mutate()}
-          disabled={toggleFavorite.isPending}
-          hitSlop={8}
-        >
-          <Ionicons name="heart-outline" size={28} color="#ef4444" />
-        </Pressable>
+        <FavoriteButton storeId={store.id} />
       </View>
       <Text style={styles.address}>{store.address}</Text>
+      <View style={styles.metaRow}>
+        <View
+          style={[styles.badge, store.isOpen ? styles.open : styles.closed]}
+        >
+          <Text style={styles.badgeText}>
+            {store.isOpen ? "Open Now" : "Closed"}
+          </Text>
+        </View>
+        <Text style={styles.rating}>
+          {store.rating && store.rating > 0
+            ? `★ ${store.rating.toFixed(1)} (${store.review_count ?? 0})`
+            : "No reviews yet"}
+        </Text>
+      </View>
 
       <Text style={styles.subtitle}>Inventory</Text>
       <FlatList
@@ -89,7 +94,7 @@ export default function StoreDetailScreen() {
           >
             <Text style={styles.productName}>{item.name}</Text>
             <Text style={styles.price}>${Number(item.price).toFixed(2)}</Text>
-            {item.quantity > 0 ? (
+            {item.in_stock ? (
               <Text style={styles.inStock}>In Stock ({item.quantity})</Text>
             ) : (
               <Text style={styles.outOfStock}>Out of Stock</Text>
@@ -112,7 +117,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: { fontSize: 24, fontWeight: "bold", color: "#123047" },
-  address: { fontSize: 14, color: "#6b7280", marginBottom: 20 },
+  address: { fontSize: 14, color: "#6b7280", marginBottom: 8 },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 20,
+  },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  open: { backgroundColor: "#dcfce7" },
+  closed: { backgroundColor: "#fee2e2" },
+  badgeText: { fontSize: 12, fontWeight: "800", color: "#123047" },
+  rating: { color: "#4b5563", fontSize: 14 },
   subtitle: {
     fontSize: 18,
     fontWeight: "600",

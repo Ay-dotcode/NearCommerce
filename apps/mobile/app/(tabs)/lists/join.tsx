@@ -13,8 +13,7 @@ export default function JoinListScreen() {
     mutationFn: async (code: string) =>
       apiClient.post("/lists/join", { invite_code: code }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["household_lists"] });
-      queryClient.invalidateQueries({ queryKey: ["my-list"] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
       router.back();
     },
     onError: () => Alert.alert("Error", "Invalid or expired invite code."),

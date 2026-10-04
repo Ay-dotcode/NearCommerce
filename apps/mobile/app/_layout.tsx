@@ -1,9 +1,9 @@
+import { AuthProvider, useAuth } from "@/src/context/AuthContext";
+import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Redirect, Stack } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
-import { AuthProvider, useAuth } from "../src/context/AuthContext";
-import { useLocationFetcher } from "../src/hooks/useLocationFetcher";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +30,8 @@ function AppShell() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="category/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="list/[id]" options={{ headerShown: false }} />
       </Stack>
 
       {/* Redirect based on auth state */}

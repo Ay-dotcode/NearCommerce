@@ -1,5 +1,6 @@
 import { AdminLayout, ProtectedRoute } from "@/components/AdminLayout";
 import AuditLogs from "@/pages/AuditLogs";
+import Categories from "@/pages/Categories";
 import Dashboard from "@/pages/Dashboard";
 import LoginPage from "@/pages/Login";
 import Reviews from "@/pages/Reviews";
@@ -27,6 +28,7 @@ export default function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/users" element={<Users />} />
               <Route path="/stores" element={<Stores />} />
+              <Route path="/categories" element={<Categories />} />
               <Route path="/reviews" element={<Reviews />} />
               <Route path="/audit-logs" element={<AuditLogs />} />
             </Route>

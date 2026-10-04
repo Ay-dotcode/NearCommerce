@@ -43,6 +43,7 @@ export function AdminLayout() {
               ["/dashboard", "Dashboard"],
               ["/users", "Users"],
               ["/stores", "Stores"],
+              ["/categories", "Categories"],
               ["/reviews", "Reviews"],
               ["/audit-logs", "Audit ledger"],
             ].map(([to, label]) => (

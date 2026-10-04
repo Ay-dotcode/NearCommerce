@@ -1,7 +1,6 @@
 import StoreCard from "@/components/StoreCard";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import { Ionicons } from "@expo/vector-icons";
-import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import {
@@ -14,27 +13,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const categories = [
-  { label: "Groceries", icon: "basket-outline" as const },
-  { label: "Pharmacy", icon: "medkit-outline" as const },
-  { label: "Pet care", icon: "paw-outline" as const },
-  { label: "Household", icon: "home-outline" as const },
-];
-
-interface NearbyStore {
-  id: string;
-  name: string;
-  is_open: boolean;
-  rating: number;
-  distance_meters: number;
-}
-
-async function fetchNearbyStores(lat: number, lng: number) {
-  const res = await apiClient.get<{ stores: NearbyStore[] }>("/search/stores", {
-    params: { lat, lng },
-  });
-  return res.data.stores;
-}
+import {
+  CATEGORIES_KEY,
+  fetchCategories,
+  fetchNearbyStores,
+} from "@/api/catalog";
+import type { Category } from "@/types/catalog";
+import { iconForCategory } from "@/utils/categoryIcon";
 
 export default function HomeScreen() {
   const { location, isFetching: isFetchingLocation } = useLocationFetcher();
@@ -53,12 +38,19 @@ export default function HomeScreen() {
   });
 
   // Map API response to the shape StoreCard expects
+  const categoriesQuery = useQuery({
+    queryKey: CATEGORIES_KEY,
+    queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000,
+  });
+  const categories: Category[] = categoriesQuery.data ?? [];
+
   const storeCards = stores.map((s) => ({
     id: s.id,
     name: s.name,
     isOpen: s.is_open,
     rating: s.rating,
-    distance: s.distance_meters / 1000, // convert to km
+    distance: s.distance_meters / 1609.34, // metres to miles (StoreCard shows miles)
   }));
 
   return (
@@ -87,19 +79,38 @@ export default function HomeScreen() {
 
             {/* Category grid */}
             <Text style={styles.sectionTitle}>Browse categories</Text>
+            {categoriesQuery.isLoading && (
+              <ActivityIndicator color="#2563eb" style={styles.loader} />
+            )}
+            {categoriesQuery.isError && (
+              <Text style={styles.emptyText}>
+                Couldn't load categories. Pull to retry later.
+              </Text>
+            )}
+            {categoriesQuery.isSuccess && categories.length === 0 && (
+              <Text style={styles.emptyText}>No categories yet.</Text>
+            )}
             <View style={styles.categoryGrid}>
               {categories.map((category) => (
                 <Link
-                  key={category.label}
+                  key={category.id}
                   href={{
-                    pathname: "/search",
-                    params: { category: category.label },
+                    pathname: "/category/[id]",
+                    params: { id: category.id },
                   }}
                   asChild
                 >
-                  <Pressable style={styles.category}>
-                    <Ionicons name={category.icon} size={24} color="#2563eb" />
-                    <Text style={styles.categoryLabel}>{category.label}</Text>
+                  <Pressable
+                    style={styles.category}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Browse ${category.name}`}
+                  >
+                    <Ionicons
+                      name={iconForCategory(category.name)}
+                      size={24}
+                      color="#2563eb"
+                    />
+                    <Text style={styles.categoryLabel}>{category.name}</Text>
                   </Pressable>
                 </Link>
               ))}

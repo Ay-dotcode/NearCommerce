@@ -1,15 +1,19 @@
-import { Ionicons } from "@expo/vector-icons";
+import { addListItem, apiErrorMessage, fetchLists } from "@/api/lists";
+import FavoriteButton from "@/components/FavoriteButton";
+import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 interface ProductDetail {
   id: string;
@@ -25,7 +29,6 @@ interface ProductDetail {
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const queryClient = useQueryClient();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
@@ -36,10 +39,47 @@ export default function ProductDetailScreen() {
     enabled: Boolean(id),
   });
 
-  const toggleFavorite = useMutation({
-    mutationFn: async () => apiClient.post("/favorites", { product_id: id }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["favorites"] }),
-  });
+  const addToList = async (listId: string, listName: string) => {
+    try {
+      const item = await addListItem(listId, { product_id: id });
+      Toast.show(
+        item.already_on_list
+          ? {
+              type: "info",
+              text1: "Item Updated",
+              text2: ALREADY_ON_LIST_MESSAGE(item.quantity),
+            }
+          : { type: "success", text1: `Added to ${listName}` },
+      );
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Couldn't add to list",
+        text2: apiErrorMessage(error, "Please try again."),
+      });
+    }
+  };
+
+  const onAddToList = async () => {
+    try {
+      const lists = await fetchLists();
+      if (lists.length === 0) return router.push("/(tabs)/lists");
+      if (lists.length === 1) return addToList(lists[0].id, lists[0].name);
+      Alert.alert("Add to which list?", undefined, [
+        ...lists.slice(0, 5).map((l) => ({
+          text: l.name,
+          onPress: () => addToList(l.id, l.name),
+        })),
+        { text: "Cancel", style: "cancel" as const },
+      ]);
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Couldn't load your lists",
+        text2: apiErrorMessage(error, "Please try again."),
+      });
+    }
+  };
 
   if (isLoading)
     return (
@@ -67,13 +107,7 @@ export default function ProductDetailScreen() {
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <Text style={styles.title}>{product.name}</Text>
-        <Pressable
-          onPress={() => toggleFavorite.mutate()}
-          disabled={toggleFavorite.isPending}
-          hitSlop={8}
-        >
-          <Ionicons name="heart-outline" size={28} color="#ef4444" />
-        </Pressable>
+        <FavoriteButton productId={product.id} />
       </View>
 
       <Text
@@ -102,10 +136,7 @@ export default function ProductDetailScreen() {
       </Text>
 
       <View style={styles.actions}>
-        <Pressable
-          style={styles.actionButton}
-          onPress={() => router.push("/(tabs)/lists")}
-        >
+        <Pressable style={styles.actionButton} onPress={onAddToList}>
           <Text style={styles.actionButtonText}>Add to Household List</Text>
         </Pressable>
       </View>

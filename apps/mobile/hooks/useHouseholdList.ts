@@ -1,74 +1,71 @@
-import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
-import Toast from "react-native-toast-message";
-import type { HouseholdListItem } from "@/types/lists";
+import { listKey, LISTS_KEY } from "@/api/lists";
 import type { ListClientEvents, ListServerEvents } from "@/types/socket";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import Toast from "react-native-toast-message";
+import { io, Socket } from "socket.io-client";
 
 const SOCKET_URL =
   (globalThis as { process?: { env?: Record<string, string | undefined> } })
     .process?.env?.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
-export function useHouseholdList(listId: string, token: string) {
-  const [socket, setSocket] = useState<Socket<
-    ListServerEvents,
-    ListClientEvents
-  > | null>(null);
-  const [items, setItems] = useState<HouseholdListItem[]>([]);
+type Options = {
+  onGone?: (reason: "deleted" | "revoked") => void;
+};
+
+export function useListLiveUpdates(
+  listId: string,
+  token: string | null,
+  options: Options = {},
+) {
+  const queryClient = useQueryClient();
+  const [isConnected, setIsConnected] = useState(false);
+  const { onGone } = options;
 
   useEffect(() => {
-    if (!listId || !token) {
-      setSocket(null);
-      return;
-    }
-
-    const newSocket: Socket<ListServerEvents, ListClientEvents> = io(
-      SOCKET_URL,
-      {
-        auth: { token },
-        transports: ["websocket"],
-      },
-    );
-
-    newSocket.on("connect", () => newSocket.emit("join_list", listId));
-    newSocket.on("list_item_updated", (updatedItem) => {
-      setItems((current) => {
-        const exists = current.some(
-          (item) => item.product_id === updatedItem.product_id,
-        );
-        if (exists) {
-          Toast.show({
-            type: "info",
-            text1: "Item Updated",
-            text2: `Item already on list. Quantity increased to ${updatedItem.quantity} and marked un-checked.`,
-          });
-          return current.map((item) =>
-            item.product_id === updatedItem.product_id ? updatedItem : item,
-          );
-        }
-        return [...current, updatedItem];
-      });
+    if (!listId || !token) return;
+    const socket: Socket<ListServerEvents, ListClientEvents> = io(SOCKET_URL, {
+      auth: { token },
+      transports: ["websocket"],
     });
 
-    setSocket(newSocket);
+    const refresh = () => {
+      queryClient.invalidateQueries({ queryKey: listKey(listId) });
+      queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+    };
+
+    socket.on("connect", () => {
+      setIsConnected(true);
+      socket.emit("join_list", listId);
+    });
+    socket.on("disconnect", () => setIsConnected(false));
+    socket.on("list_item_updated", refresh);
+    socket.on("list_item_removed", refresh);
+    socket.on("list_updated", refresh);
+    socket.on("list_member_joined", refresh);
+    socket.on("list_member_left", refresh);
+    socket.on("list_deleted", () => {
+      refresh();
+      onGone?.("deleted");
+    });
+    socket.on("list_access_revoked", () => {
+      refresh();
+      onGone?.("revoked");
+    });
+    socket.on("list_error", (payload) =>
+      Toast.show({
+        type: "error",
+        text1: "List update failed",
+        text2: payload?.message,
+      }),
+    );
 
     return () => {
-      newSocket.emit("leave_list", listId);
-      newSocket.disconnect();
+      socket.emit("leave_list", listId);
+      socket.disconnect();
+      setIsConnected(false);
     };
-  }, [listId, token]);
+  }, [listId, token, queryClient, onGone]);
 
-  const addItem = (productId: string, quantity = 1) => {
-    socket?.emit("add_item", { listId, productId, quantity });
-  };
-
-  const toggleItem = (productId: string, isChecked: boolean) => {
-    socket?.emit("toggle_item", { listId, productId, isChecked });
-  };
-
-  return {
-    items,
-    addItem,
-    toggleItem,
-    isConnected: socket?.connected ?? false,
-  };
+  return { isConnected };
 }

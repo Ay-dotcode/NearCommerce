@@ -1,8 +1,10 @@
 import type {
   AdminAuditLog,
+  AdminCategory,
   AdminReview,
   AdminStore,
   AdminUser,
+  CategoryDeleteResult,
   GlobalMetrics,
   PaginatedResponse,
 } from "@/types/admin";
@@ -75,6 +77,67 @@ export async function deleteReview(id: string, reason: string) {
 export async function getAuditLogs(page = 1, limit = 50) {
   const response = await apiClient.get<PaginatedResponse<AdminAuditLog>>(
     `/admin/audit-logs?page=${page}&limit=${limit}`,
+  );
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
+// Categories & subcategories
+// ---------------------------------------------------------------------------
+
+export const ADMIN_CATEGORIES_KEY = ["admin-categories"] as const;
+
+export async function getCategories() {
+  const response = await apiClient.get<AdminCategory[]>("/admin/categories");
+  return response.data;
+}
+
+export async function createCategory(input: {
+  name: string;
+  iconUrl?: string | null;
+}) {
+  const response = await apiClient.post<{ data: AdminCategory }>(
+    "/admin/categories",
+    input,
+  );
+  return response.data.data;
+}
+
+export async function updateCategory(
+  id: string,
+  input: { name?: string; iconUrl?: string | null },
+) {
+  const response = await apiClient.patch(`/admin/categories/${id}`, input);
+  return response.data.data;
+}
+
+export async function deleteCategory(id: string, reason: string) {
+  const response = await apiClient.delete<CategoryDeleteResult>(
+    `/admin/categories/${id}`,
+    { data: { reason } },
+  );
+  return response.data;
+}
+
+export async function createSubcategory(categoryId: string, name: string) {
+  const response = await apiClient.post(
+    `/admin/categories/${categoryId}/subcategories`,
+    { name },
+  );
+  return response.data.data;
+}
+
+export async function updateSubcategory(id: string, name: string) {
+  const response = await apiClient.patch(`/admin/subcategories/${id}`, {
+    name,
+  });
+  return response.data.data;
+}
+
+export async function deleteSubcategory(id: string, reason: string) {
+  const response = await apiClient.delete<CategoryDeleteResult>(
+    `/admin/subcategories/${id}`,
+    { data: { reason } },
   );
   return response.data;
 }

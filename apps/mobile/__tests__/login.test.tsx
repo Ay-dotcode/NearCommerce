@@ -1,6 +1,7 @@
+import LoginScreen from "@/app/(auth)/login";
+import { AuthProvider } from "@/src/context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
-import { AuthProvider } from "../src/context/AuthContext";
 
 // Mock the shared API client so no real network calls are made
 jest.mock("@nearcommerce/api", () => ({
@@ -29,8 +30,6 @@ const getApiClient = () =>
     post: jest.Mock;
     defaults: { headers: { common: Record<string, string> } };
   }>;
-
-import LoginScreen from "../app/(auth)/login";
 
 describe("LoginScreen", () => {
   beforeEach(() => {

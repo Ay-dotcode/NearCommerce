@@ -1,6 +1,6 @@
+import SettingsScreen from "@/app/(tabs)/settings";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
-import SettingsScreen from "../app/(tabs)/settings";
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(),
