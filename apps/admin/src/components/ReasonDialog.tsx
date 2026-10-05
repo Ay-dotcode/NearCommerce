@@ -1,9 +1,8 @@
 import { parseApiError } from "@/api/errors";
 import { Dialog, FormField, inputClass } from "@/components/Dialog";
+import { MIN_REASON_LENGTH } from "@/constants";
 import { Button } from "@nearcommerce/ui";
 import { FormEvent, useEffect, useId, useState } from "react";
-
-export const MIN_REASON_LENGTH = 5;
 
 interface ReasonDialogProps {
   open: boolean;

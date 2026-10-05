@@ -7,21 +7,13 @@ import type {
   CategoryDeleteResult,
   GlobalMetrics,
   PaginatedResponse,
-  UserRole,
+  UserFilters,
 } from "@/types/admin";
 import { apiClient } from "@nearcommerce/api";
 
 export async function getGlobalMetrics() {
   const response = await apiClient.get<GlobalMetrics>("/admin/metrics");
   return response.data;
-}
-
-export const ADMIN_USERS_KEY = ["admin-users"] as const;
-
-export interface UserFilters {
-  q?: string;
-  role?: UserRole;
-  status?: "active" | "suspended";
 }
 
 export async function getUsers(
@@ -120,8 +112,6 @@ export async function getAuditLogs(page = 1, limit = 50) {
 // ---------------------------------------------------------------------------
 // Categories & subcategories
 // ---------------------------------------------------------------------------
-
-export const ADMIN_CATEGORIES_KEY = ["admin-categories"] as const;
 
 export async function getCategories() {
   const response = await apiClient.get<AdminCategory[]>("/admin/categories");

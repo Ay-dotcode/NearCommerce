@@ -1,5 +1,4 @@
 import {
-  ADMIN_CATEGORIES_KEY,
   createCategory,
   createSubcategory,
   deleteCategory,
@@ -8,6 +7,7 @@ import {
   updateCategory,
   updateSubcategory,
 } from "@/api/admin";
+import { ADMIN_CATEGORIES_KEY } from "@/constants";
 import type { AdminCategory, AdminSubcategory } from "@/types/admin";
 import { Button } from "@nearcommerce/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

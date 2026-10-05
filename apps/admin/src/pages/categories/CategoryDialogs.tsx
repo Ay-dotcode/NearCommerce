@@ -1,5 +1,6 @@
 import { parseApiError } from "@/api/errors";
 import { Dialog, FormField, inputClass } from "@/components/Dialog";
+import { MIN_REASON_LENGTH } from "@/constants";
 import type { AdminCategory } from "@/types/admin";
 import {
   CreateCategorySchema,
@@ -261,8 +262,6 @@ export function SubcategoryFormDialog({
 // ---------------------------------------------------------------------------
 // Delete confirmation with a mandatory reason (stored in the audit ledger)
 // ---------------------------------------------------------------------------
-
-export const MIN_REASON_LENGTH = 5;
 
 export function DeleteReasonDialog({
   open,

@@ -74,3 +74,9 @@ export interface CategoryDeleteResult {
   affected_products: number;
   deleted_subcategories?: number;
 }
+
+export interface UserFilters {
+  q?: string;
+  role?: UserRole;
+  status?: "active" | "suspended";
+}

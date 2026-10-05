@@ -1,15 +1,14 @@
 import {
-  ADMIN_USERS_KEY,
   deleteUser,
   demoteAdmin,
   getUsers,
   toggleUserSuspension,
-  type UserFilters,
 } from "@/api/admin";
 import { ReasonDialog } from "@/components/ReasonDialog";
+import { ADMIN_USERS_KEY } from "@/constants";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { getCurrentUserId } from "@/session";
-import type { AdminUser } from "@/types/admin";
+import type { AdminUser, UserFilters } from "@/types/admin";
 import {
   Button,
   Table,
