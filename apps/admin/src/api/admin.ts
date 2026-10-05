@@ -7,6 +7,7 @@ import type {
   CategoryDeleteResult,
   GlobalMetrics,
   PaginatedResponse,
+  UserRole,
 } from "@/types/admin";
 import { apiClient } from "@nearcommerce/api";
 
@@ -15,10 +16,45 @@ export async function getGlobalMetrics() {
   return response.data;
 }
 
-export async function getUsers(page = 1, limit = 20) {
+export const ADMIN_USERS_KEY = ["admin-users"] as const;
+
+export interface UserFilters {
+  q?: string;
+  role?: UserRole;
+  status?: "active" | "suspended";
+}
+
+export async function getUsers(
+  page = 1,
+  limit = 20,
+  filters: UserFilters = {},
+) {
   const response = await apiClient.get<PaginatedResponse<AdminUser>>(
-    `/admin/users?page=${page}&limit=${limit}`,
+    "/admin/users",
+    {
+      params: {
+        page,
+        limit,
+        q: filters.q || undefined,
+        role: filters.role || undefined,
+        status: filters.status || undefined,
+      },
+    },
   );
+  return response.data;
+}
+
+export async function demoteAdmin(id: string, reason: string) {
+  const response = await apiClient.patch(`/admin/users/${id}/demote`, {
+    reason,
+  });
+  return response.data;
+}
+
+export async function deleteUser(id: string, reason: string) {
+  const response = await apiClient.delete(`/admin/users/${id}`, {
+    data: { reason },
+  });
   return response.data;
 }
 

@@ -1,8 +1,10 @@
+export type UserRole = "CUSTOMER" | "STORE_OWNER" | "SYSTEM_ADMIN";
+
 export interface AdminUser {
   id: string;
   email: string;
   full_name: string;
-  role: string;
+  role: UserRole;
   is_suspended: boolean;
   created_at: string;
   updated_at: string;
@@ -46,6 +48,11 @@ export interface AdminReview {
   rating: number;
   comment: string | null;
   created_at: string;
+  updated_at: string | null;
+  reviewer_name: string;
+  reviewer_email: string;
+  target_type: "STORE" | "PRODUCT";
+  target_name: string | null;
 }
 
 export interface AdminSubcategory {

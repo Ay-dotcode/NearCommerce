@@ -13,6 +13,19 @@ const writeCookie = (name: string, value: string) => {
 
 export const getAccessToken = () => readCookie("access_token");
 export const getUserRole = () => readCookie("user_role");
+
+// The signed-in admin's id, read from the access token (display logic only;
+// the server never trusts this).
+export const getCurrentUserId = () => {
+  const token = getAccessToken();
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return (JSON.parse(atob(payload)) as { id?: string }).id ?? null;
+  } catch {
+    return null;
+  }
+};
 export const getRefreshToken = () => {
   const raw = readCookie("refresh_token");
   return raw ? decodeURIComponent(raw) : null;
