@@ -1,6 +1,7 @@
 import { apiErrorMessage } from "@/api/errors";
 import { addListItem, fetchLists } from "@/api/lists";
 import FavoriteButton from "@/components/FavoriteButton";
+import ReviewsSection from "@/components/ReviewsSection";
 import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -106,47 +108,51 @@ export default function ProductDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{product.name}</Text>
-        <FavoriteButton productId={product.id} />
-      </View>
-
-      <Text
-        style={styles.storeLink}
-        onPress={() => router.push(`/store/${product.store_id}`)}
-      >
-        View Store: {product.store?.name ?? "Store details"}
-      </Text>
-
-      <View style={styles.metaContainer}>
-        <Text style={styles.price}>${Number(product.price).toFixed(2)}</Text>
-        <View
-          style={[
-            styles.badge,
-            isFresh ? styles.badgeFresh : styles.badgeStale,
-          ]}
-        >
-          <Text style={styles.badgeText}>
-            {isFresh ? "Verified Fresh" : "Stale (>30 days)"}
-          </Text>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{product.name}</Text>
+          <FavoriteButton productId={product.id} />
         </View>
-      </View>
 
-      <Text style={styles.description}>
-        {product.description || "No description provided."}
-      </Text>
+        <Text
+          style={styles.storeLink}
+          onPress={() => router.push(`/store/${product.store_id}`)}
+        >
+          View Store: {product.store?.name ?? "Store details"}
+        </Text>
 
-      <View style={styles.actions}>
-        <Pressable style={styles.actionButton} onPress={onAddToList}>
-          <Text style={styles.actionButtonText}>Add to Household List</Text>
-        </Pressable>
-      </View>
+        <View style={styles.metaContainer}>
+          <Text style={styles.price}>${Number(product.price).toFixed(2)}</Text>
+          <View
+            style={[
+              styles.badge,
+              isFresh ? styles.badgeFresh : styles.badgeStale,
+            ]}
+          >
+            <Text style={styles.badgeText}>
+              {isFresh ? "Verified Fresh" : "Stale (>30 days)"}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.description}>
+          {product.description || "No description provided."}
+        </Text>
+
+        <View style={styles.actions}>
+          <Pressable style={styles.actionButton} onPress={onAddToList}>
+            <Text style={styles.actionButtonText}>Add to Household List</Text>
+          </Pressable>
+        </View>
+        <ReviewsSection target={{ productId: product.id }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  scroll: { flexGrow: 1, paddingBottom: 24 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -176,7 +182,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 30,
   },
-  actions: { marginTop: "auto", marginBottom: 20 },
+  actions: { marginTop: 8, marginBottom: 8 },
   actionButton: {
     backgroundColor: "#2563eb",
     borderRadius: 8,

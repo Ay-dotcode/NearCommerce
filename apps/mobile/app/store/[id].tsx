@@ -1,4 +1,5 @@
 import FavoriteButton from "@/components/FavoriteButton";
+import ReviewsSection from "@/components/ReviewsSection";
 import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
@@ -104,6 +105,7 @@ export default function StoreDetailScreen() {
         ListEmptyComponent={
           <Text style={styles.emptyText}>No products available.</Text>
         }
+        ListFooterComponent={<ReviewsSection target={{ storeId: store.id }} />}
       />
     </SafeAreaView>
   );

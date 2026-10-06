@@ -1,10 +1,10 @@
 import { CATEGORIES_KEY, fetchCategories } from "@/api/catalog";
 import { searchProducts } from "@/api/client";
-import { getSessionLocation } from "@/utils/location";
+import { useSessionCoords } from "@/src/hooks/useSessionCoords";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -19,20 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function CategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [subcategoryId, setSubcategoryId] = useState<string | undefined>();
-  const [coords, setCoords] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    getSessionLocation().then((c) => {
-      if (active) setCoords({ latitude: c.latitude, longitude: c.longitude });
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+  const coords = useSessionCoords();
 
   const categories = useQuery({
     queryKey: CATEGORIES_KEY,

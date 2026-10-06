@@ -1,4 +1,7 @@
+import LocationFallbackModal from "@/components/LocationFallbackModal";
 import { useAuth } from "@/src/context/AuthContext";
+import { useManualLocation } from "@/src/hooks/useManualLocation";
+import { clearManualLocation } from "@/utils/location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import {
@@ -14,6 +17,8 @@ import {
 export default function SettingsScreen() {
   const { logout } = useAuth();
   const [avoidTolls, setAvoidTolls] = useState(false);
+  const [zipOpen, setZipOpen] = useState(false);
+  const manualLocation = useManualLocation();
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -49,6 +54,32 @@ export default function SettingsScreen() {
         />
       </View>
 
+      <Text style={[styles.title, styles.section]}>Location</Text>
+      <Text style={styles.label}>
+        {manualLocation
+          ? `Using ZIP code ${manualLocation.postalCode}`
+          : "Using your device location"}
+      </Text>
+      <View style={styles.actionContainer}>
+        <Button
+          title="Set location by ZIP code"
+          onPress={() => setZipOpen(true)}
+        />
+      </View>
+      {manualLocation && (
+        <View style={styles.smallGap}>
+          <Button
+            title="Use my device location"
+            onPress={() => void clearManualLocation()}
+          />
+        </View>
+      )}
+      <LocationFallbackModal
+        visible={zipOpen}
+        reason="manual"
+        onClose={() => setZipOpen(false)}
+      />
+
       <View style={styles.actionContainer}>
         <Button title="Test Native Map Handoff" onPress={testMapHandoff} />
       </View>
@@ -75,4 +106,6 @@ const styles = StyleSheet.create({
   },
   label: { fontSize: 16 },
   actionContainer: { marginTop: 40 },
+  section: { marginTop: 32, fontSize: 20 },
+  smallGap: { marginTop: 12 },
 });

@@ -1,9 +1,9 @@
 import { searchProducts } from "@/api/client";
-import { getSessionLocation } from "@/utils/location";
+import { useSessionCoords } from "@/src/hooks/useSessionCoords";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,17 +18,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ q?: string }>();
   const [searchQuery, setSearchQuery] = useState(params.q ?? "");
-  const [location, setLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
+  const location = useSessionCoords();
   const [isVisionAvailable] = useState(false);
-
-  useEffect(() => {
-    getSessionLocation().then((coords) => {
-      setLocation({ latitude: coords.latitude, longitude: coords.longitude });
-    });
-  }, []);
 
   const query = useQuery({
     queryKey: ["search", searchQuery, location],

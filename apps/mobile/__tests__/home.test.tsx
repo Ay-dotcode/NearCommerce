@@ -22,6 +22,7 @@ jest.mock("@/src/hooks/useLocationFetcher", () => ({
 }));
 jest.mock("@/utils/location", () => ({
   getSessionLocation: jest.fn(async () => ({ latitude: 1, longitude: 2 })),
+  subscribeManualLocation: jest.fn(() => () => undefined),
 }));
 jest.mock("@nearcommerce/api", () => ({
   apiClient: { get: jest.fn() },

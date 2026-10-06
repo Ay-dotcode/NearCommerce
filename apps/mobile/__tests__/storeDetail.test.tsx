@@ -59,9 +59,14 @@ describe("StoreDetailScreen", () => {
         },
       },
       "/favorites": { data: [] },
+      "/reviews": {
+        data: [],
+        summary: { rating: 0, review_count: 0, distribution: {} },
+        pagination: { page: 1, limit: 10, total: 0 },
+      },
     });
 
-    const { getByText, getByLabelText } = renderWithClient(
+    const { getByText, getByLabelText, findByText } = renderWithClient(
       <StoreDetailScreen />,
     );
 
@@ -75,6 +80,7 @@ describe("StoreDetailScreen", () => {
       expect(getByText("★ 4.5 (12)")).toBeTruthy();
       expect(getByLabelText("Add to favorites")).toBeTruthy();
     });
+    expect(await findByText("Write a review")).toBeTruthy();
   });
 
   it("shows a not-found message when the store request fails", async () => {

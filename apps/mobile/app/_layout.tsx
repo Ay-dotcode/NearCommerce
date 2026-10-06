@@ -1,7 +1,9 @@
+import LocationFallbackModal from "@/components/LocationFallbackModal";
 import { AuthProvider, useAuth } from "@/src/context/AuthContext";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Redirect, Stack } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -11,7 +13,12 @@ const queryClient = new QueryClient();
 //  Redirects unauthenticated users to the login screen.
 function AppShell() {
   const { token, isLoading } = useAuth();
-  const { isFetching: isFetchingLocation } = useLocationFetcher();
+  const {
+    isFetching: isFetchingLocation,
+    permissionDenied,
+    manualLocation,
+  } = useLocationFetcher();
+  const [fallbackDismissed, setFallbackDismissed] = useState(false);
 
   // Blank screen while AsyncStorage is being read on first mount
   if (isLoading) return null;
@@ -32,10 +39,22 @@ function AppShell() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="category/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="list/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="review/index" options={{ title: "Review" }} />
       </Stack>
 
       {/* Redirect based on auth state */}
       {!token && <Redirect href="/(auth)/login" />}
+
+      {/* Without GPS permission the shopper can still pick a location by ZIP */}
+      <LocationFallbackModal
+        visible={
+          Boolean(token) &&
+          permissionDenied &&
+          !manualLocation &&
+          !fallbackDismissed
+        }
+        onClose={() => setFallbackDismissed(true)}
+      />
 
       <Toast />
     </View>
