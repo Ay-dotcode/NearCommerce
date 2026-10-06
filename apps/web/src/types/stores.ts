@@ -4,6 +4,9 @@ export interface OpeningDay {
   isClosed: boolean;
 }
 
+export type DayState = OpeningDay;
+export type HoursState = Record<string, DayState>;
+
 export type OpeningHours = Record<string, OpeningDay | null>;
 
 export interface Store {
@@ -28,5 +31,8 @@ export interface StorePayload {
   latitude: number;
   longitude: number;
   timezone: string;
-  openingHours: Record<string, { open: string; close: string; isClosed: boolean }>;
+  openingHours: Record<
+    string,
+    { open: string; close: string; isClosed: boolean }
+  >;
 }

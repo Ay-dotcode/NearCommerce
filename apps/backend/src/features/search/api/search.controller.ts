@@ -4,10 +4,10 @@ import {
   SEARCH_RESULTS_LIMIT,
 } from "@/constants";
 import {
-  SqlParams,
   containsPattern,
   productVisibilityWhere,
 } from "@/features/search/services/search.queries";
+import { SqlParams } from "@/types/sql";
 import {
   fetchGeminiEmbedding,
   withCircuitBreaker,

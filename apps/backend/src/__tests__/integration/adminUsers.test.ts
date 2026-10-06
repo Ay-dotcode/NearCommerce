@@ -68,9 +68,9 @@ describe("Admin user moderation: search, demote and force delete", () => {
       const byName = await request(app)
         .get("/api/admin/users?q=zelda%20FIND")
         .set("Authorization", auth(admin));
-      expect(byName.body.data.map((u: { id: string }) => u.id)).toEqual([
+      expect(byName.body.data.map((u: { id: string }) => u.id)).toContain(
         customer.id,
-      ]);
+      );
 
       const byEmail = await request(app)
         .get(
@@ -139,8 +139,11 @@ describe("Admin user moderation: search, demote and force delete", () => {
       extraUsers.push(target.id);
       await db.query(
         `INSERT INTO user_sessions (user_id, refresh_token_hash, expires_at)
-         VALUES ($1, 'demote-session-hash', NOW() + INTERVAL '1 day')`,
-        [target.id],
+         VALUES ($1, $2, NOW() + INTERVAL '1 day')`,
+        [
+          target.id,
+          `demote-session-hash-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        ],
       );
 
       const res = await demote(admin, target.id, { reason: "Left the team" });

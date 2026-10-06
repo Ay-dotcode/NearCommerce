@@ -6,7 +6,10 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc && tsc-alias",
     "test": "jest --config jest.config.js --runInBand --detectOpenHandles",
-    "embeddings:backfill": "tsx src/db/backfillEmbeddings.ts"
+    "embeddings:backfill": "tsx src/db/backfillEmbeddings.ts",
+    "seed:admin": "tsx src/db/seedAdmin.ts",
+    "seed:owner": "tsx src/db/seedOwner.ts",
+    "seed": "tsx src/db/seedAdmin.ts && tsx src/db/seedOwner.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

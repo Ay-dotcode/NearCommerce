@@ -66,3 +66,9 @@ export const handleKnownError = (res: Response, err: unknown): boolean => {
   }
   return false;
 };
+
+export const fail = (res: Response, label: string, error: unknown) => {
+  if (handleKnownError(res, error)) return;
+  console.error(`${label} error:`, error);
+  return res.status(500).json({ error: "Internal Server Error" });
+};

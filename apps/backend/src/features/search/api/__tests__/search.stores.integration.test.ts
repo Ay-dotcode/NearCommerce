@@ -1,5 +1,4 @@
 import {
-  ALWAYS_OPEN,
   TestUser,
   cleanupFixtures,
   createTestStore,
@@ -7,6 +6,7 @@ import {
 } from "@/__tests__/helpers/fixtures";
 import { app } from "@/app";
 import { db } from "@/config/database";
+import { ALWAYS_OPEN } from "@/constants";
 import request from "supertest";
 
 // A patch of the Gulf of Guinea nobody else's fixtures use: 0.001 degrees is about 111 m.

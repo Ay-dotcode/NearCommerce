@@ -1,5 +1,4 @@
 import {
-  ALWAYS_OPEN,
   TestUser,
   cleanupFixtures,
   createTestProduct,
@@ -8,6 +7,7 @@ import {
 } from "@/__tests__/helpers/fixtures";
 import { app } from "@/app";
 import { db } from "@/config/database";
+import { ALWAYS_OPEN } from "@/constants";
 import { FAVORITES_MAX } from "@nearcommerce/api";
 import request from "supertest";
 

@@ -7,7 +7,7 @@ import {
   updateCategory,
   updateSubcategory,
 } from "@/features/catalog/services/category.service";
-import { handleKnownError, isUuid, sendValidationError } from "@/utils/http";
+import { fail, isUuid, sendValidationError } from "@/utils/http";
 import {
   AdminDeleteSchema,
   CreateCategorySchema,
@@ -16,12 +16,6 @@ import {
   UpdateSubcategorySchema,
 } from "@nearcommerce/api";
 import { Request, Response } from "express";
-
-const fail = (res: Response, label: string, error: unknown) => {
-  if (handleKnownError(res, error)) return;
-  console.error(`${label} error:`, error);
-  return res.status(500).json({ error: "Internal Server Error" });
-};
 
 export async function getCategories(_req: Request, res: Response) {
   try {

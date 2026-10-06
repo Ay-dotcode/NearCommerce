@@ -1,14 +1,6 @@
+import { SqlParams } from "@/types/sql";
 import { escapeLike } from "@/utils/like";
 import type { ProductSearchQueryInput } from "@nearcommerce/api";
-
-// Positional-parameter builder, so optional filters never disturb $n numbering.
-export class SqlParams {
-  readonly values: unknown[] = [];
-  add(value: unknown): string {
-    this.values.push(value);
-    return `$${this.values.length}`;
-  }
-}
 
 // WHERE clause shared by every product search path. A product is only ever shown when it is
 // published, in stock, its store is active, its OWNER is active (SRS 3.2.1), and the store lies

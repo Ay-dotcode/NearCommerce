@@ -1,9 +1,9 @@
 import {
-  SqlParams,
   containsPattern,
   distanceExpr,
   productVisibilityWhere,
 } from "@/features/search/services/search.queries";
+import { SqlParams } from "@/types/sql";
 import { escapeLike } from "@/utils/like";
 import { toRating } from "@/utils/ratings";
 

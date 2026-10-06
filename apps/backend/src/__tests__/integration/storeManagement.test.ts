@@ -3,12 +3,11 @@ import {
   createTestProduct,
   createTestStore,
   createTestUser,
-  OPEN_WEEK,
   TestUser,
 } from "@/__tests__/helpers/fixtures";
 import { app } from "@/app";
 import { db } from "@/config/database";
-import { MAX_STORES_PER_OWNER } from "@/constants";
+import { MAX_STORES_PER_OWNER, OPEN_WEEK } from "@/constants";
 import request from "supertest";
 
 const validBody = {

@@ -3,15 +3,9 @@ import {
   listFavorites,
   removeFavorite,
 } from "@/features/favorites/services/favorite.service";
-import { handleKnownError, isUuid, sendValidationError } from "@/utils/http";
+import { fail, isUuid, sendValidationError } from "@/utils/http";
 import { AddFavoriteSchema, ListFavoritesQuerySchema } from "@nearcommerce/api";
 import { Request, Response } from "express";
-
-const fail = (res: Response, label: string, error: unknown) => {
-  if (handleKnownError(res, error)) return;
-  console.error(`${label} error:`, error);
-  return res.status(500).json({ error: "Internal Server Error" });
-};
 
 export async function getFavorites(req: Request, res: Response) {
   const query = ListFavoritesQuerySchema.safeParse(req.query);

@@ -28,17 +28,7 @@ export async function createTestUser(
   };
 }
 
-export const ALWAYS_OPEN = Object.fromEntries(
-  [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-  ].map((day) => [day, { open: "00:00", close: "23:59" }]),
-);
+export { ALWAYS_OPEN, OPEN_WEEK } from "@/constants";
 
 export async function createTestStore(
   ownerId: string,
@@ -145,8 +135,3 @@ export async function cleanupFixtures() {
       createdCategories.splice(0),
     ]);
 }
-
-export const OPEN_WEEK = {
-  monday: { open: "09:00", close: "18:00" },
-  sunday: { open: "00:00", close: "00:00", closed: true },
-};
