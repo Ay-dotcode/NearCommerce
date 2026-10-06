@@ -4,6 +4,7 @@ import { renderWithClient, serveGet } from "@/testing/render";
 import { apiClient } from "@nearcommerce/api";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
@@ -43,7 +44,11 @@ const detail = (role: "OWNER" | "MEMBER" = "OWNER") => ({
   name: "Home",
   invite_code: "ABC123",
   role,
-  members: [{ user_id: "u1", role: "OWNER", full_name: "Ada" }],
+  viewer_id: role === "OWNER" ? "u1" : "u2",
+  members: [
+    { user_id: "u1", role: "OWNER", full_name: "Ada" },
+    { user_id: "u2", role: "MEMBER", full_name: "Ben" },
+  ],
   items: [
     {
       id: "i1",
@@ -163,6 +168,119 @@ describe("ListDetailScreen", () => {
     api.get.mockRejectedValue(new Error("403"));
     const { findByText } = renderWithClient(<ListDetailScreen />);
     expect(await findByText("This list isn't available.")).toBeTruthy();
+  });
+});
+
+describe("ListDetailScreen rename and members", () => {
+  it("lets the owner rename the list", async () => {
+    serveGet(api.get, { "/lists/list-1": detail() });
+    const { findByLabelText, getByLabelText } = renderWithClient(
+      <ListDetailScreen />,
+    );
+    fireEvent.press(await findByLabelText("Rename list"));
+    fireEvent.changeText(getByLabelText("List name"), "  Flat shop  ");
+    fireEvent.press(getByLabelText("Save name"));
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith("/lists/list-1", {
+        name: "Flat shop",
+      }),
+    );
+  });
+
+  it("doesn't call the API when the name is unchanged or blank", async () => {
+    serveGet(api.get, { "/lists/list-1": detail() });
+    const { findByLabelText, getByLabelText, getByText } = renderWithClient(
+      <ListDetailScreen />,
+    );
+    fireEvent.press(await findByLabelText("Rename list"));
+    fireEvent.press(getByLabelText("Save name"));
+    expect(api.patch).not.toHaveBeenCalled();
+    expect(getByText("Home")).toBeTruthy();
+
+    fireEvent.press(getByLabelText("Rename list"));
+    fireEvent.changeText(getByLabelText("List name"), "   ");
+    fireEvent.press(getByLabelText("Save name"));
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
+  it("cancels a rename", async () => {
+    serveGet(api.get, { "/lists/list-1": detail() });
+    const { findByLabelText, getByLabelText, getByText } = renderWithClient(
+      <ListDetailScreen />,
+    );
+    fireEvent.press(await findByLabelText("Rename list"));
+    fireEvent.changeText(getByLabelText("List name"), "Nope");
+    fireEvent.press(getByLabelText("Cancel rename"));
+    expect(getByText("Home")).toBeTruthy();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
+  it("shows the server's message when renaming fails", async () => {
+    serveGet(api.get, { "/lists/list-1": detail() });
+    api.patch.mockRejectedValue({
+      response: { data: { error: "Only the list owner can rename it." } },
+    });
+    const { findByLabelText, getByLabelText } = renderWithClient(
+      <ListDetailScreen />,
+    );
+    fireEvent.press(await findByLabelText("Rename list"));
+    fireEvent.changeText(getByLabelText("List name"), "New");
+    fireEvent.press(getByLabelText("Save name"));
+    await waitFor(() =>
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text2: "Only the list owner can rename it.",
+        }),
+      ),
+    );
+  });
+
+  it("hides rename from members", async () => {
+    serveGet(api.get, { "/lists/list-1": detail("MEMBER") });
+    const { findByText, queryByLabelText } = renderWithClient(
+      <ListDetailScreen />,
+    );
+    await findByText("Home");
+    expect(queryByLabelText("Rename list")).toBeNull();
+  });
+
+  it("lists members, marking the viewer", async () => {
+    serveGet(api.get, { "/lists/list-1": detail() });
+    const { findByText, getByText, queryByText } = renderWithClient(
+      <ListDetailScreen />,
+    );
+    fireEvent.press(await findByText("Members (2)"));
+    expect(getByText("Ada (You)")).toBeTruthy();
+    expect(getByText("Ben")).toBeTruthy();
+    expect(queryByText("Ben (You)")).toBeNull();
+  });
+
+  it("lets the owner remove a member after confirming", async () => {
+    serveGet(api.get, { "/lists/list-1": detail() });
+    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    const { findByText, getByLabelText, queryByLabelText } = renderWithClient(
+      <ListDetailScreen />,
+    );
+    fireEvent.press(await findByText("Members (2)"));
+    expect(queryByLabelText("Remove Ada")).toBeNull();
+    fireEvent.press(getByLabelText("Remove Ben"));
+    expect(api.delete).not.toHaveBeenCalled();
+
+    alert.mock.calls[0][2]!.find((b) => b.text === "Remove")!.onPress!();
+    await waitFor(() =>
+      expect(api.delete).toHaveBeenCalledWith("/lists/list-1/members/u2"),
+    );
+    alert.mockRestore();
+  });
+
+  it("gives members no remove buttons", async () => {
+    serveGet(api.get, { "/lists/list-1": detail("MEMBER") });
+    const { findByText, queryByLabelText } = renderWithClient(
+      <ListDetailScreen />,
+    );
+    fireEvent.press(await findByText("Members (2)"));
+    expect(queryByLabelText("Remove Ada")).toBeNull();
+    expect(queryByLabelText("Remove Ben")).toBeNull();
   });
 });
 

@@ -151,6 +151,7 @@ describe("Household lists REST API", () => {
       const res = await request(app).get(`/lists/${list.id}`).set(auth(member));
       expect(res.status).toBe(200);
       expect(res.body.role).toBe("MEMBER");
+      expect(res.body.viewer_id).toBe(member.id);
       expect(res.body.members.map((m: any) => [m.full_name, m.role])).toEqual([
         ["Olu Owner", "OWNER"],
         ["Mia Member", "MEMBER"],

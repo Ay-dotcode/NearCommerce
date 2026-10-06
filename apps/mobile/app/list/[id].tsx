@@ -10,6 +10,8 @@ import {
   regenerateInvite,
   setItemChecked,
 } from "@/api/lists";
+import ListMembers from "@/components/lists/ListMembers";
+import RenameListForm from "@/components/lists/RenameListForm";
 import { useListLiveUpdates } from "@/hooks/useHouseholdList";
 import { useAuth } from "@/src/context/AuthContext";
 import type { HouseholdListDetail, HouseholdListItem } from "@/types/lists";
@@ -36,6 +38,7 @@ export default function ListDetailScreen() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [newItem, setNewItem] = useState("");
+  const [renaming, setRenaming] = useState(false);
 
   const onGone = useCallback((reason: "deleted" | "revoked") => {
     Toast.show({
@@ -169,9 +172,32 @@ export default function ListDetailScreen() {
         >
           <Ionicons name="chevron-back" size={26} color="#123047" />
         </Pressable>
-        <Text style={styles.title} numberOfLines={1}>
-          {data.name}
-        </Text>
+        {renaming ? (
+          <RenameListForm
+            listId={id!}
+            name={data.name}
+            onDone={(saved) => {
+              setRenaming(false);
+              if (saved) refresh();
+            }}
+          />
+        ) : (
+          <>
+            <Text style={styles.title} numberOfLines={1}>
+              {data.name}
+            </Text>
+            {isOwner && (
+              <Pressable
+                onPress={() => setRenaming(true)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Rename list"
+              >
+                <Ionicons name="pencil" size={18} color="#2563eb" />
+              </Pressable>
+            )}
+          </>
+        )}
         <View
           accessibilityLabel={isConnected ? "Live updates on" : "Offline"}
           style={[styles.dot, isConnected ? styles.online : styles.offline]}
@@ -180,10 +206,13 @@ export default function ListDetailScreen() {
 
       <View style={styles.header}>
         <Text style={styles.inviteCode}>Invite code: {data.invite_code}</Text>
-        <Text style={styles.meta}>
-          {data.members.length}{" "}
-          {data.members.length === 1 ? "member" : "members"}
-        </Text>
+        <ListMembers
+          listId={id!}
+          members={data.members}
+          viewerId={data.viewer_id}
+          isOwner={isOwner}
+          onChanged={refresh}
+        />
         <View style={styles.actions}>
           {isOwner && (
             <Pressable
@@ -303,7 +332,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inviteCode: { color: "#123047", fontWeight: "700" },
-  meta: { color: "#718096", marginTop: 4 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   actionButton: {
     flexDirection: "row",

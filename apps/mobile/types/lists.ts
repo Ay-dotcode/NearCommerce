@@ -30,6 +30,7 @@ export type ListMember = {
 };
 
 export type HouseholdListDetail = HouseholdListMeta & {
+  viewer_id?: string;
   members: ListMember[];
   items: HouseholdListItem[];
 };

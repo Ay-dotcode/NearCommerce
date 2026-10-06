@@ -72,3 +72,11 @@ export async function leaveList(listId: string) {
 export async function deleteList(listId: string) {
   await apiClient.delete(`/lists/${listId}`);
 }
+
+export async function renameList(listId: string, name: string) {
+  await apiClient.patch(`/lists/${listId}`, { name });
+}
+
+export async function removeMember(listId: string, userId: string) {
+  await apiClient.delete(`/lists/${listId}/members/${userId}`);
+}

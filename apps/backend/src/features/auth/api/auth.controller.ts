@@ -61,8 +61,13 @@ export const registerUser = async (req: Request, res: Response) => {
       await client.query("BEGIN");
       const userResult = await client.query(
         `INSERT INTO users (email, password_hash, full_name, role) 
-         VALUES ($1, $2, $3, 'CUSTOMER') RETURNING id`,
-        [validatedData.email, passwordHash, validatedData.full_name],
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [
+          validatedData.email,
+          passwordHash,
+          validatedData.full_name,
+          validatedData.role,
+        ],
       );
       const userId = userResult.rows[0].id;
 

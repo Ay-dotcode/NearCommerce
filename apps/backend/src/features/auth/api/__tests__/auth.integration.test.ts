@@ -51,6 +51,31 @@ describe("Auth Integration Tests", () => {
       expect(userResult.rows[0].email_verified_at).not.toBeNull();
     });
 
+    it("creates a STORE_OWNER when the store portal asks for one", async () => {
+      const response = await request(app)
+        .post("/auth/register")
+        .send({ ...testUser, role: "STORE_OWNER" });
+      expect(response.status).toBe(201);
+
+      const { rows } = await db.query(
+        "SELECT role FROM users WHERE email = $1",
+        [testUser.email],
+      );
+      expect(rows[0].role).toBe("STORE_OWNER");
+    });
+
+    it("never lets a sign-up choose the admin role", async () => {
+      const response = await request(app)
+        .post("/auth/register")
+        .send({ ...testUser, role: "SYSTEM_ADMIN" });
+      expect(response.status).toBe(400);
+
+      const { rows } = await db.query("SELECT 1 FROM users WHERE email = $1", [
+        testUser.email,
+      ]);
+      expect(rows).toHaveLength(0);
+    });
+
     it("should return 400 if validation fails", async () => {
       const response = await request(app)
         .post("/auth/register")

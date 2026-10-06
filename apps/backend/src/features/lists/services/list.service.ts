@@ -157,7 +157,12 @@ export async function getListDetail(listId: string, userId: string) {
       [listId],
     ),
   ]);
-  return { ...summary, members: members.rows, items: items.rows };
+  return {
+    ...summary,
+    viewer_id: userId,
+    members: members.rows,
+    items: items.rows,
+  };
 }
 
 export async function createList(userId: string, name: string) {
