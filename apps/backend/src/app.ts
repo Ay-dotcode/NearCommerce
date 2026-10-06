@@ -1,4 +1,6 @@
 import authRouter from "@/features/auth/api/auth.routes";
+import categoryRouter from "@/features/catalog/api/category.routes";
+import favoriteRouter from "@/features/favorites/api/favorite.routes";
 import listsRouter from "@/features/lists/api/list.routes";
 import searchRouter from "@/features/search/api/search.routes";
 import supportRouter from "@/features/support/api/support.routes";
@@ -24,6 +26,10 @@ app.use("/auth", authRouter);
 app.use("/search", searchRouter);
 app.use("/support", supportRouter);
 app.use("/lists", listsRouter);
+app.use("/categories", categoryRouter);
+app.use("/api/categories", categoryRouter);
+app.use("/favorites", favoriteRouter);
+app.use("/api/favorites", favoriteRouter);
 app.use("/api/users", userRouter);
 app.use("/users", userRouter);
 app.use("/api/stores", storeRouter);

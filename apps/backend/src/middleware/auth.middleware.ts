@@ -44,3 +44,25 @@ export const requireAuth = async (
     return res.status(401).json({ error: "Invalid token" });
   }
 };
+
+// Attaches req.user when a valid token is sent, and carries on anonymously
+// otherwise. For public routes that tailor the response to a signed-in viewer.
+export const optionalAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return next();
+
+  try {
+    const decoded = jwt.verify(header.split(" ")[1], JWT_ACCESS_SECRET) as {
+      id: string;
+      role: string;
+    };
+    req.user = { id: decoded.id, role: decoded.role };
+  } catch {
+    // A bad or expired token on a public route is treated as signed out.
+  }
+  return next();
+};

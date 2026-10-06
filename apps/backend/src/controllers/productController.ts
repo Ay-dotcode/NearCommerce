@@ -80,10 +80,15 @@ export async function getProductById(req: Request, res: Response) {
     const result = await db.query(
       `SELECT ${PRODUCT_COLUMNS.split(",")
         .map((c) => `p.${c.trim()}`)
-        .join(", ")}
+        .join(", ")},
+              s.name AS store_name, pr.rating_avg, pr.review_count
        FROM products p
        JOIN stores s ON p.store_id = s.id
        JOIN users u ON s.owner_id = u.id
+       LEFT JOIN LATERAL (
+         SELECT ROUND(AVG(r.rating)::numeric, 1)::float AS rating_avg, COUNT(*)::int AS review_count
+           FROM reviews r WHERE r.product_id = p.id
+       ) pr ON true
        WHERE p.id = $1 AND p.is_published = true
          AND s.is_suspended = false AND u.is_suspended = false`,
       [productId],
@@ -94,9 +99,12 @@ export async function getProductById(req: Request, res: Response) {
         error: "Product not found, unpublished, or store suspended",
       });
 
-    const product = result.rows[0];
+    const { store_name, rating_avg, review_count, ...product } = result.rows[0];
     return res.status(200).json({
       ...product,
+      store: { id: product.store_id, name: store_name },
+      rating: rating_avg ?? 0,
+      review_count: review_count ?? 0,
       price: Number(product.price),
       isStale: isProductStale(product.last_verified_at),
     });

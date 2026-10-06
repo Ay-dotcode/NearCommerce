@@ -1,7 +1,12 @@
 import { db } from "@/config/database";
 import redisClient from "@/config/redis";
+import { releaseHouseholdLists } from "@/services/account.service";
+import { auditSnapshot } from "@/utils/audit";
+import { isUuid } from "@/utils/http";
+import { escapeLike } from "@/utils/like";
 import {
   AdminDeleteSchema,
+  AdminUserListQuerySchema,
   PaginationQuerySchema,
   ToggleSuspensionSchema,
 } from "@nearcommerce/api";
@@ -48,16 +53,40 @@ const parsePagination = (query: Request["query"]) => {
 };
 
 export async function listUsers(req: Request, res: Response) {
+  const parsed = AdminUserListQuerySchema.safeParse(req.query);
+  if (!parsed.success) return sendValidationError(res, parsed.error.issues);
   const pagination = parsePagination(req.query);
   if ("error" in pagination) return sendValidationError(res, pagination.error);
+
+  // Filters are optional and combine with AND.
+  const where: string[] = [];
+  const values: unknown[] = [];
+  const { q, role, status } = parsed.data;
+  if (q) {
+    values.push(`%${escapeLike(q)}%`);
+    where.push(
+      `(email ILIKE $${values.length} ESCAPE '\\' OR full_name ILIKE $${values.length} ESCAPE '\\')`,
+    );
+  }
+  if (role) {
+    values.push(role);
+    where.push(`role = $${values.length}`);
+  }
+  if (status) where.push(`is_suspended = ${status === "suspended"}`);
+  const clause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
   const offset = (pagination.page - 1) * pagination.limit;
   const result = await db.query(
     `SELECT id, email, full_name, role, is_suspended, email_verified_at, created_at, updated_at
-     FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
-    [pagination.limit, offset],
+     FROM users ${clause}
+     ORDER BY created_at DESC, id
+     LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+    [...values, pagination.limit, offset],
   );
-  const count = await db.query("SELECT COUNT(*)::int AS count FROM users");
+  const count = await db.query(
+    `SELECT COUNT(*)::int AS count FROM users ${clause}`,
+    values,
+  );
   return res.json({
     data: result.rows,
     pagination: {
@@ -141,8 +170,17 @@ export async function listReviews(req: Request, res: Response) {
   if ("error" in pagination) return sendValidationError(res, pagination.error);
   const offset = (pagination.page - 1) * pagination.limit;
   const result = await db.query(
-    `SELECT id, user_id, store_id, product_id, rating, comment, created_at
-     FROM reviews ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+    `SELECT r.id, r.user_id, r.store_id, r.product_id, r.rating, r.comment,
+            r.created_at, r.updated_at,
+            u.full_name AS reviewer_name, u.email AS reviewer_email,
+            CASE WHEN r.store_id IS NOT NULL THEN 'STORE' ELSE 'PRODUCT' END
+              AS target_type,
+            COALESCE(s.name, p.name) AS target_name
+     FROM reviews r
+     JOIN users u ON u.id = r.user_id
+     LEFT JOIN stores s ON s.id = r.store_id
+     LEFT JOIN products p ON p.id = r.product_id
+     ORDER BY r.created_at DESC, r.id LIMIT $1 OFFSET $2`,
     [pagination.limit, offset],
   );
   const count = await db.query("SELECT COUNT(*)::int AS count FROM reviews");
@@ -283,6 +321,8 @@ async function deleteTarget(
   const parsed = parseBody(AdminDeleteSchema, req.body);
   if ("error" in parsed) return sendValidationError(res, parsed.error);
   const id = table === "users" ? req.params.userId : req.params.storeId;
+  if (!isUuid(id))
+    return res.status(404).json({ error: `${targetType} not found.` });
   const client = await db.connect();
 
   try {
@@ -296,16 +336,22 @@ async function deleteTarget(
       return res.status(404).json({ error: `${targetType} not found.` });
     }
 
-    if (
-      table === "users" &&
-      id !== req.user!.id &&
-      target.rows[0].role === "SYSTEM_ADMIN" &&
-      !target.rows[0].is_suspended
-    ) {
-      await client.query("ROLLBACK");
-      return res
-        .status(409)
-        .json({ error: "Demote the active SYSTEM_ADMIN before deletion." });
+    if (table === "users") {
+      // SRS 1.3.3: nobody deletes themselves here, and an admin must be
+      // demoted by another admin before the account can be removed.
+      if (id === req.user!.id) {
+        await client.query("ROLLBACK");
+        return res
+          .status(409)
+          .json({ error: "You cannot delete your own account here." });
+      }
+      if (target.rows[0].role === "SYSTEM_ADMIN") {
+        await client.query("ROLLBACK");
+        return res
+          .status(409)
+          .json({ error: "Demote the SYSTEM_ADMIN before deletion." });
+      }
+      await releaseHouseholdLists(client, id);
     }
 
     await client.query(
@@ -317,19 +363,21 @@ async function deleteTarget(
         id,
         targetType,
         parsed.data.reason,
-        JSON.stringify(target.rows[0]),
+        JSON.stringify(auditSnapshot(target.rows[0])),
       ],
     );
     await client.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
     await client.query("COMMIT");
 
-    if (table === "users") await invalidateSuspensionCache(id);
+    // A deleted user's access token must stop working straight away.
+    if (table === "users") await invalidateSuspensionCache(id, true);
     else await invalidateSuspensionCache(target.rows[0].owner_id);
     return res.json({
       message: `${targetType} deleted and audited successfully.`,
     });
   } catch (error) {
     await client.query("ROLLBACK");
+    console.error("[ADMIN] deleteTarget error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {
     client.release();
@@ -341,3 +389,62 @@ export const deleteUser = (req: Request, res: Response) =>
 
 export const deleteStore = (req: Request, res: Response) =>
   deleteTarget(req, res, "stores", "STORE", "DELETE_STORE");
+
+// PATCH /admin/users/:userId/demote
+// Turns a SYSTEM_ADMIN into a CUSTOMER. Another admin has to do it (SRS 1.3.3).
+export async function demoteAdmin(req: Request, res: Response) {
+  const parsed = parseBody(AdminDeleteSchema, req.body);
+  if ("error" in parsed) return sendValidationError(res, parsed.error);
+  const userId = req.params.userId;
+  if (!isUuid(userId))
+    return res.status(404).json({ error: "User not found." });
+  if (userId === req.user!.id)
+    return res.status(409).json({ error: "Another admin must demote you." });
+
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const target = await client.query(
+      "SELECT * FROM users WHERE id = $1 FOR UPDATE",
+      [userId],
+    );
+    if (!target.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (target.rows[0].role !== "SYSTEM_ADMIN") {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "User is not a SYSTEM_ADMIN." });
+    }
+
+    const updated = await client.query(
+      `UPDATE users SET role = 'CUSTOMER', updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING id, email, full_name, role, is_suspended, created_at, updated_at`,
+      [userId],
+    );
+    // Sign them out everywhere; their access token stops working on admin
+    // routes immediately because those re-check the role.
+    await client.query("DELETE FROM user_sessions WHERE user_id = $1", [
+      userId,
+    ]);
+    await client.query(
+      `INSERT INTO admin_audit_logs (admin_id, action, target_id, target_type, reason, snapshot)
+       VALUES ($1, 'DEMOTE_ADMIN', $2, 'USER', $3, $4)`,
+      [
+        req.user!.id,
+        userId,
+        parsed.data.reason,
+        JSON.stringify(auditSnapshot(target.rows[0])),
+      ],
+    );
+    await client.query("COMMIT");
+    return res.json({ data: updated.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("[ADMIN] demoteAdmin error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
+}
