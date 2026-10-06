@@ -2,8 +2,10 @@ import { z } from "zod";
 import { UserRole } from "./types/roles";
 export * from "./schemas/admin";
 export * from "./schemas/auth";
+export * from "./schemas/catalog";
 export * from "./schemas/lists";
 export * from "./schemas/product";
+export * from "./schemas/review";
 export * from "./schemas/search";
 export * from "./schemas/store";
 
@@ -36,31 +38,8 @@ export const AddHouseholdListItemSchema = z
     path: ["customItemName"],
   });
 
-// Reviews & Ratings
-export const CreateReviewSchema = z
-  .object({
-    storeId: z.string().uuid().optional(),
-    productId: z.string().uuid().optional(),
-    rating: z
-      .number()
-      .int()
-      .min(1, "Rating must be at least 1")
-      .max(5, "Rating cannot exceed 5"),
-    comment: z.string().optional(),
-  })
-  // Enforces the review_target_check constraint from the database
-  .refine(
-    (data) =>
-      (data.storeId && !data.productId) || (!data.storeId && data.productId),
-    {
-      message: "Review must target exactly one store OR one product",
-      path: ["productId"],
-    },
-  );
-
 // Type Exports for Frontend & Backend
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type AddHouseholdListItemInput = z.infer<
   typeof AddHouseholdListItemSchema
 >;
-export type CreateReviewInput = z.infer<typeof CreateReviewSchema>;

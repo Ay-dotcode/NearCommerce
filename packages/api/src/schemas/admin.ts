@@ -5,6 +5,12 @@ export const PaginationQuerySchema = z.object({
   limit: z.string().regex(/^\d+$/).default("20"),
 });
 
+export const AdminUserListQuerySchema = PaginationQuerySchema.extend({
+  q: z.string().trim().max(100).optional(),
+  role: z.enum(["CUSTOMER", "STORE_OWNER", "SYSTEM_ADMIN"]).optional(),
+  status: z.enum(["active", "suspended"]).optional(),
+});
+
 export const ToggleSuspensionSchema = z.object({
   is_suspended: z.boolean(),
   reason: z.string().min(5),
