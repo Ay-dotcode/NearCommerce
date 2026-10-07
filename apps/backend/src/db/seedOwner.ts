@@ -22,7 +22,7 @@ async function seed() {
     throw new Error(
       "Set SEED_OWNER_EMAIL and SEED_OWNER_PASSWORD to seed an owner in production.",
     );
-  const fullName = "Joseph Owolabi";
+  const fullName = "Store Owner";
   const passwordHash = await bcrypt.hash(password ?? "Password12++", 12);
 
   // Upsert user
