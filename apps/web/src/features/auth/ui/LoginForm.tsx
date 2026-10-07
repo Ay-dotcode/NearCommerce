@@ -1,3 +1,4 @@
+import { loginErrorMessage } from "@/api/errors";
 import { Button, TextField } from "@/components/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useLogin } from "@/features/auth/api/useLogin";
@@ -77,9 +78,9 @@ export const LoginForm: React.FC = () => {
               ),
             });
         },
-        onError: () => {
+        onError: (err) => {
           setSubmitting(false);
-          setNotice({ tone: "error", body: "Invalid email or password." });
+          setNotice({ tone: "error", body: loginErrorMessage(err) });
         },
       });
     },

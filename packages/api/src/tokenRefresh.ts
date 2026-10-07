@@ -7,11 +7,11 @@ export interface RefreshedTokens {
 }
 
 export interface TokenRefreshHandlers {
-  /** The stored refresh token, or null when the user has none. */
+  // The stored refresh token, or null when the user has none.
   getRefreshToken: () => string | null | Promise<string | null>;
-  /** Persist the new pair. Must make `accessToken` the one future requests send. */
+  // Persist the new pair. Must make `accessToken` the one future requests send.
   onTokens: (tokens: RefreshedTokens) => void | Promise<void>;
-  /** The refresh token is missing, expired, revoked or the account is suspended. */
+  // The refresh token is missing, expired, revoked or the account is suspended.
   onAuthFailure: () => void | Promise<void>;
 }
 

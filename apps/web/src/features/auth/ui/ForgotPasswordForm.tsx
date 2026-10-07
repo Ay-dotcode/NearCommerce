@@ -2,10 +2,10 @@ import { parseApiError } from "@/api/errors";
 import { Button, TextField } from "@/components/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useForgotPassword } from "@/features/auth/api/usePasswordReset";
+import { AuthLayout } from "@/features/auth/ui/AuthLayout";
 import { useFormik } from "formik";
 import React from "react";
 import { Link } from "react-router-dom";
-import { AuthLayout } from "./AuthLayout";
 
 const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 

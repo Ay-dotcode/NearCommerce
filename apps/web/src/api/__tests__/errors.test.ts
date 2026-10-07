@@ -1,4 +1,4 @@
-import { parseApiError } from "@/api/errors";
+import { loginErrorMessage, parseApiError } from "@/api/errors";
 
 describe("parseApiError", () => {
   it("reads the backend error message, status, code and field details", () => {
@@ -41,5 +41,32 @@ describe("parseApiError", () => {
       },
     });
     expect(parsed.details).toEqual([{ path: "a", message: "ok" }]);
+  });
+});
+
+describe("loginErrorMessage", () => {
+  const withResponse = (status: number, error?: string) => ({
+    response: { status, data: error ? { error } : {} },
+  });
+
+  it("keeps wrong credentials vague", () => {
+    expect(loginErrorMessage(withResponse(401, "Invalid credentials"))).toBe(
+      "Invalid email or password.",
+    );
+  });
+
+  it("surfaces lockouts and suspensions from the server", () => {
+    expect(
+      loginErrorMessage(withResponse(429, "Too many failed login attempts.")),
+    ).toBe("Too many failed login attempts.");
+    expect(loginErrorMessage(withResponse(403, "Account is suspended."))).toBe(
+      "Account is suspended.",
+    );
+  });
+
+  it("explains when the server cannot be reached", () => {
+    expect(loginErrorMessage(new Error("Network Error"))).toMatch(
+      /can't reach the server/i,
+    );
   });
 });

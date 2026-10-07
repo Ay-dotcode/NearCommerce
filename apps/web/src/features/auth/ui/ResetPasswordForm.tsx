@@ -1,10 +1,10 @@
 import { Button, TextField } from "@/components/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useResetPassword } from "@/features/auth/api/usePasswordReset";
+import { AuthLayout } from "@/features/auth/ui/AuthLayout";
 import { useFormik } from "formik";
 import React from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { AuthLayout } from "./AuthLayout";
 
 // Landing page for the link in the reset email: /reset-password?token=...
 export const ResetPasswordForm: React.FC = () => {

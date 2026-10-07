@@ -207,9 +207,9 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
   });
 
   it("shows an error message when credentials are rejected", async () => {
-    (apiClient.post as jest.Mock).mockRejectedValueOnce(
-      new Error("Unauthorized"),
-    );
+    (apiClient.post as jest.Mock).mockRejectedValueOnce({
+      response: { status: 401, data: { error: "Invalid credentials" } },
+    });
 
     const queryClient = makeQueryClient();
     renderWithProviders(queryClient);
@@ -226,6 +226,55 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
       expect(
         screen.getByText(/invalid email or password/i),
       ).toBeInTheDocument();
+    });
+  });
+
+  it("shows the lockout message when too many attempts were made", async () => {
+    (apiClient.post as jest.Mock).mockRejectedValueOnce({
+      response: {
+        status: 429,
+        data: {
+          error: "Too many failed login attempts. Try again in 60 seconds.",
+        },
+      },
+    });
+
+    const queryClient = makeQueryClient();
+    renderWithProviders(queryClient);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "wrong@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "wrongpassword" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/too many failed login attempts/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("says so when the server cannot be reached", async () => {
+    (apiClient.post as jest.Mock).mockRejectedValueOnce(
+      new Error("Network Error"),
+    );
+
+    const queryClient = makeQueryClient();
+    renderWithProviders(queryClient);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "wrong@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "wrongpassword" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/can't reach the server/i)).toBeInTheDocument();
     });
   });
 
