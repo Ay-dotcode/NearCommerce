@@ -9,10 +9,14 @@ import {
   within,
 } from "@testing-library/react";
 
-jest.mock("@nearcommerce/api", () => ({
-  STORE_KEY: "x-store-id",
-  apiClient: { post: jest.fn() },
-}));
+jest.mock("@nearcommerce/api", () => {
+  const actual = jest.requireActual("@nearcommerce/api");
+  return {
+    ...actual,
+    STORE_KEY: "x-store-id",
+    apiClient: { post: jest.fn() },
+  };
+});
 const post = apiClient.post as jest.Mock;
 
 function renderImporter() {

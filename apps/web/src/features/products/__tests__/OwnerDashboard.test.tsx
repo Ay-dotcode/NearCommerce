@@ -10,15 +10,19 @@ import {
   within,
 } from "@testing-library/react";
 
-jest.mock("@nearcommerce/api", () => ({
-  STORE_KEY: "x-store-id",
-  apiClient: {
-    get: jest.fn(),
-    patch: jest.fn(),
-    post: jest.fn(),
-    delete: jest.fn(),
-  },
-}));
+jest.mock("@nearcommerce/api", () => {
+  const actual = jest.requireActual("@nearcommerce/api");
+  return {
+    ...actual,
+    STORE_KEY: "x-store-id",
+    apiClient: {
+      get: jest.fn(),
+      patch: jest.fn(),
+      post: jest.fn(),
+      delete: jest.fn(),
+    },
+  };
+});
 
 const get = apiClient.get as jest.Mock;
 const patch = apiClient.patch as jest.Mock;

@@ -4,13 +4,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 // Mock the shared API client so no real network calls are made
-jest.mock("@nearcommerce/api", () => ({
-  apiClient: {
-    post: jest.fn(),
-    defaults: { headers: { common: {} } },
-  },
-  configureTokenRefresh: jest.fn(),
-}));
+jest.mock("@nearcommerce/api", () => {
+  const actual = jest.requireActual("@nearcommerce/api");
+  return {
+    ...actual,
+    apiClient: {
+      post: jest.fn(),
+      defaults: { headers: { common: {} } },
+    },
+    configureTokenRefresh: jest.fn(),
+  };
+});
 
 // Mock expo-router so <Redirect> / router.replace don't crash in Jest
 jest.mock("expo-router", () => ({
