@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "tsc --noEmit",
-    "test": "jest --runInBand --detectOpenHandles"
+    "test": "jest --runInBand --detectOpenHandles --silent"
   },
   "dependencies": {
     "@nearcommerce/api": "workspace:*",
