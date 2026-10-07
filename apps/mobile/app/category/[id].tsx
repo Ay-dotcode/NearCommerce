@@ -1,5 +1,6 @@
 import { CATEGORIES_KEY, fetchCategories } from "@/api/catalog";
 import { searchProducts } from "@/api/client";
+import ProductCard from "@/components/ProductCard";
 import { useSessionCoords } from "@/src/hooks/useSessionCoords";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -94,20 +95,16 @@ export default function CategoryScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.results}
         renderItem={({ item }) => (
-          <Pressable
-            style={styles.result}
+          <ProductCard
+            name={item.name}
+            price={item.price}
+            storeName={item.store_name}
+            distanceMeters={item.distance_meters}
+            inStock={item.in_stock}
+            isStale={item.isStale}
+            quantity={item.quantity}
             onPress={() => router.push(`/product/${item.id}`)}
-            accessibilityRole="button"
-          >
-            <View style={styles.resultCopy}>
-              <Text style={styles.resultName}>{item.name}</Text>
-              <Text style={styles.storeName}>
-                {item.store_name} ·{" "}
-                {(item.distance_meters / 1609.34).toFixed(1)} mi
-              </Text>
-            </View>
-            <Text style={styles.price}>${Number(item.price).toFixed(2)}</Text>
-          </Pressable>
+          />
         )}
       />
     </SafeAreaView>

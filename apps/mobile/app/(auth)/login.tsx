@@ -1,3 +1,4 @@
+import { loginErrorMessage } from "@/api/errors";
 import { useAuth } from "@/src/context/AuthContext";
 import { apiClient } from "@nearcommerce/api";
 import { router } from "expo-router";
@@ -38,11 +39,8 @@ export default function LoginScreen() {
       });
       await login(res.data.access_token, res.data.refresh_token);
       router.replace("/(tabs)");
-    } catch {
-      Alert.alert(
-        "Login Failed",
-        "Invalid email or password. Please try again.",
-      );
+    } catch (err) {
+      Alert.alert("Login Failed", loginErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

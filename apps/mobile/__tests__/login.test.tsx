@@ -111,13 +111,37 @@ describe("LoginScreen", () => {
     });
   });
 
-  it("shows an Alert on failed login (network / bad credentials)", async () => {
+  it.each([
+    [
+      "wrong credentials",
+      { response: { status: 401, data: { error: "Invalid credentials" } } },
+      "Invalid email or password.",
+    ],
+    [
+      "a lockout",
+      {
+        response: {
+          status: 429,
+          data: {
+            error: "Too many failed login attempts. Try again in 60 seconds.",
+          },
+        },
+      },
+      "Too many failed login attempts. Try again in 60 seconds.",
+    ],
+    [
+      "an unreachable server",
+      new Error("Network Error"),
+      "Can't reach the server. Check your connection and try again.",
+    ],
+  ])("shows an Alert explaining %s", async (_name, rejection, message) => {
     const { apiClient } = require("@nearcommerce/api");
-    (apiClient.post as jest.Mock).mockRejectedValueOnce(new Error("401"));
+    (apiClient.post as jest.Mock).mockRejectedValueOnce(rejection);
 
+    const alert = jest.fn();
     const AlertMock = jest
       .spyOn(require("react-native"), "Alert", "get")
-      .mockReturnValue({ alert: jest.fn() });
+      .mockReturnValue({ alert });
 
     const { getByTestId } = render(
       <AuthProvider>
@@ -130,8 +154,9 @@ describe("LoginScreen", () => {
     fireEvent.press(getByTestId("login-button"));
 
     await waitFor(() => {
-      expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+      expect(alert).toHaveBeenCalledWith("Login Failed", message);
     });
+    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
 
     AlertMock.mockRestore();
   });

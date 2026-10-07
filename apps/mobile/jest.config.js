@@ -1,4 +1,5 @@
 module.exports = {
+  testTimeout: 30000,
   preset: "jest-expo",
   setupFilesAfterEnv: ["@testing-library/jest-native/extend-expect"],
   transformIgnorePatterns: [

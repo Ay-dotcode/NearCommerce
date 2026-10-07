@@ -1,5 +1,6 @@
 import { apiErrorMessage } from "@/api/errors";
 import { addListItem, fetchLists } from "@/api/lists";
+import DirectionsButton from "@/components/DirectionsButton";
 import FavoriteButton from "@/components/FavoriteButton";
 import ReviewsSection from "@/components/ReviewsSection";
 import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
@@ -24,9 +25,14 @@ interface ProductDetail {
   price: number;
   description?: string;
   last_verified_at: string;
+  isStale: boolean;
+  in_stock: boolean;
+  quantity: number;
   store_id: string;
   store?: {
     name: string;
+    latitude?: number;
+    longitude?: number;
   };
 }
 
@@ -102,9 +108,7 @@ export default function ProductDetailScreen() {
       </SafeAreaView>
     );
 
-  const isFresh =
-    new Date(product.last_verified_at) >
-    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const isFresh = !product.isStale;
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -135,9 +139,22 @@ export default function ProductDetailScreen() {
           </View>
         </View>
 
+        <Text style={product.in_stock ? styles.inStock : styles.outOfStock}>
+          {product.in_stock ? `In Stock (${product.quantity})` : "Out of Stock"}
+        </Text>
+
         <Text style={styles.description}>
           {product.description || "No description provided."}
         </Text>
+
+        {product.store?.latitude !== undefined &&
+          product.store?.longitude !== undefined && (
+            <DirectionsButton
+              latitude={product.store.latitude}
+              longitude={product.store.longitude}
+              label={product.store.name}
+            />
+          )}
 
         <View style={styles.actions}>
           <Pressable style={styles.actionButton} onPress={onAddToList}>
@@ -176,6 +193,8 @@ const styles = StyleSheet.create({
   badgeFresh: { backgroundColor: "#d1fae5" },
   badgeStale: { backgroundColor: "#fee2e2" },
   badgeText: { fontSize: 12, fontWeight: "600", color: "#374151" },
+  inStock: { color: "#10b981", fontSize: 14, fontWeight: "bold" },
+  outOfStock: { color: "#ef4444", fontSize: 14, fontWeight: "bold" },
   description: {
     fontSize: 16,
     color: "#4b5563",

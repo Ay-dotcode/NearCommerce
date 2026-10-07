@@ -1,7 +1,8 @@
 import StoreDetailScreen from "@/app/store/[id]";
 import { renderWithClient, serveGet } from "@/testing/render";
+import { openNativeMaps } from "@/utils/maps";
 import { apiClient } from "@nearcommerce/api";
-import { waitFor } from "@testing-library/react-native";
+import { fireEvent, waitFor } from "@testing-library/react-native";
 
 // Mock vector icons
 jest.mock("@expo/vector-icons", () => ({
@@ -23,6 +24,8 @@ jest.mock("expo-router", () => ({
 jest.mock("@nearcommerce/api", () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
 }));
+
+jest.mock("@/utils/maps", () => ({ openNativeMaps: jest.fn() }));
 
 jest.mock("react-native-toast-message", () => ({
   __esModule: true,
@@ -81,6 +84,55 @@ describe("StoreDetailScreen", () => {
       expect(getByLabelText("Add to favorites")).toBeTruthy();
     });
     expect(await findByText("Write a review")).toBeTruthy();
+  });
+
+  it("shows freshness per product and hands off to native maps", async () => {
+    (openNativeMaps as jest.Mock).mockResolvedValue(true);
+    serveGet(apiClient.get as jest.Mock, {
+      "/stores/store-123": {
+        data: {
+          id: "store-123",
+          name: "Local Tech Shop",
+          address: "123 Main St",
+          latitude: 35.1,
+          longitude: 32.8,
+          isOpen: true,
+          products: [
+            {
+              id: "p1",
+              name: "Old Cable",
+              price: 5,
+              quantity: 3,
+              in_stock: true,
+              isStale: true,
+            },
+            {
+              id: "p2",
+              name: "New Cable",
+              price: 6,
+              quantity: 2,
+              in_stock: true,
+              isStale: false,
+            },
+          ],
+        },
+      },
+    });
+
+    const { findByText, getByLabelText, getByText } = renderWithClient(
+      <StoreDetailScreen />,
+    );
+    expect(await findByText("Not recently verified")).toBeTruthy();
+    expect(getByText("Recently verified")).toBeTruthy();
+
+    fireEvent.press(getByLabelText("Get directions to Local Tech Shop"));
+    await waitFor(() =>
+      expect(openNativeMaps).toHaveBeenCalledWith(
+        35.1,
+        32.8,
+        "Local Tech Shop",
+      ),
+    );
   });
 
   it("shows a not-found message when the store request fails", async () => {

@@ -11,7 +11,6 @@ export type {
 } from "@/types/location";
 export { PostalCodeError };
 
-const ROUTING_PREF_KEY = "@nearcommerce_routing_pref";
 const MANUAL_LOCATION_KEY = "@nearcommerce_manual_location";
 const DEFAULT_COORDS = { latitude: 0, longitude: 0 };
 
@@ -128,13 +127,4 @@ async function fetchSessionLocation() {
 export async function getSessionLocation(): Promise<Coords> {
   if (manualLocation) return manualLocation;
   return sessionLocation ?? (await pollSessionLocation()) ?? DEFAULT_COORDS;
-}
-
-export async function saveRoutingPreference(preference: "walking" | "driving") {
-  await AsyncStorage.setItem(ROUTING_PREF_KEY, preference);
-}
-
-export async function getRoutingPreference(): Promise<"walking" | "driving"> {
-  const preference = await AsyncStorage.getItem(ROUTING_PREF_KEY);
-  return preference === "walking" ? "walking" : "driving";
 }

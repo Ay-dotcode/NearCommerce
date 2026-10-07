@@ -6,3 +6,9 @@ export const REVIEWS_PAGE_SIZE = 10;
 
 // Accepts US ZIP codes and most international postal codes.
 export const POSTAL_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 -]{2,9}$/;
+
+// AsyncStorage key for the "avoid tolls" routing preference (SRS 5.4.2).
+export const AVOID_TOLLS_KEY = "@routing_avoid_tolls";
+
+// Metres in a mile, for showing distances.
+export const METERS_PER_MILE = 1609.34;

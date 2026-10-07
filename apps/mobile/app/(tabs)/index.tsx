@@ -1,4 +1,5 @@
 import StoreCard from "@/components/StoreCard";
+import { METERS_PER_MILE } from "@/constants";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -50,7 +51,7 @@ export default function HomeScreen() {
     name: s.name,
     isOpen: s.is_open,
     rating: s.rating,
-    distance: s.distance_meters / 1609.34, // metres to miles (StoreCard shows miles)
+    distance: s.distance_meters / METERS_PER_MILE,
   }));
 
   return (

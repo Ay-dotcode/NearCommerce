@@ -1,6 +1,8 @@
 import SettingsScreen from "@/app/(tabs)/settings";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiClient } from "@nearcommerce/api";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { Alert } from "react-native";
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(),
@@ -44,5 +46,59 @@ describe("SettingsScreen", () => {
     const { getByText } = render(<SettingsScreen />);
     fireEvent.press(getByText("Sign out"));
     expect(mockLogout).toHaveBeenCalledTimes(1);
+  });
+
+  describe("delete account", () => {
+    const pressConfirm = () => {
+      const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as {
+        text: string;
+        onPress?: () => void;
+      }[];
+      buttons.find((b) => b.text === "Delete account")!.onPress!();
+    };
+
+    beforeEach(() => {
+      jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    });
+
+    it("asks for confirmation before calling the API", () => {
+      const del = jest.spyOn(apiClient, "delete");
+      const { getByText } = render(<SettingsScreen />);
+      fireEvent.press(getByText("Delete account"));
+
+      expect(Alert.alert).toHaveBeenCalledWith(
+        "Delete your account?",
+        expect.any(String),
+        expect.any(Array),
+      );
+      expect(del).not.toHaveBeenCalled();
+    });
+
+    it("deletes via /users/me and then signs out", async () => {
+      const del = jest.spyOn(apiClient, "delete").mockResolvedValue({});
+      const { getByText } = render(<SettingsScreen />);
+      fireEvent.press(getByText("Delete account"));
+      pressConfirm();
+
+      await waitFor(() => expect(mockLogout).toHaveBeenCalledTimes(1));
+      expect(del).toHaveBeenCalledWith("/users/me");
+    });
+
+    it("stays signed in and explains when deletion fails", async () => {
+      jest.spyOn(apiClient, "delete").mockRejectedValue({
+        response: { data: { error: "Server said no" } },
+      });
+      const { getByText } = render(<SettingsScreen />);
+      fireEvent.press(getByText("Delete account"));
+      pressConfirm();
+
+      await waitFor(() =>
+        expect(Alert.alert).toHaveBeenLastCalledWith(
+          "Couldn't delete account",
+          "Server said no",
+        ),
+      );
+      expect(mockLogout).not.toHaveBeenCalled();
+    });
   });
 });

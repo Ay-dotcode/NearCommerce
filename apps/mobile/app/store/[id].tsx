@@ -1,4 +1,6 @@
+import DirectionsButton from "@/components/DirectionsButton";
 import FavoriteButton from "@/components/FavoriteButton";
+import ProductCard from "@/components/ProductCard";
 import ReviewsSection from "@/components/ReviewsSection";
 import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
@@ -6,7 +8,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -19,13 +20,15 @@ interface Product {
   price: number;
   quantity: number;
   in_stock: boolean;
-  isStale?: boolean;
+  isStale: boolean;
 }
 
 interface Store {
   id: string;
   name: string;
   address: string;
+  latitude: number;
+  longitude: number;
   isOpen?: boolean;
   rating?: number;
   review_count?: number;
@@ -84,23 +87,25 @@ export default function StoreDetailScreen() {
         </Text>
       </View>
 
+      <DirectionsButton
+        latitude={store.latitude}
+        longitude={store.longitude}
+        label={store.name}
+      />
+
       <Text style={styles.subtitle}>Inventory</Text>
       <FlatList
         data={store.products ?? []}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Pressable
-            style={styles.productCard}
+          <ProductCard
+            name={item.name}
+            price={item.price}
+            inStock={item.in_stock}
+            isStale={item.isStale}
+            quantity={item.quantity}
             onPress={() => router.push(`/product/${item.id}`)}
-          >
-            <Text style={styles.productName}>{item.name}</Text>
-            <Text style={styles.price}>${Number(item.price).toFixed(2)}</Text>
-            {item.in_stock ? (
-              <Text style={styles.inStock}>In Stock ({item.quantity})</Text>
-            ) : (
-              <Text style={styles.outOfStock}>Out of Stock</Text>
-            )}
-          </Pressable>
+          />
         )}
         ListEmptyComponent={
           <Text style={styles.emptyText}>No products available.</Text>
@@ -137,17 +142,6 @@ const styles = StyleSheet.create({
     color: "#123047",
     marginBottom: 10,
   },
-  productCard: {
-    padding: 15,
-    backgroundColor: "#fff",
-    marginBottom: 10,
-    borderRadius: 8,
-    elevation: 1,
-  },
-  productName: { fontSize: 16, fontWeight: "500", color: "#123047" },
-  price: { fontSize: 14, color: "#374151", marginVertical: 4 },
-  inStock: { color: "#10b981", fontSize: 12, fontWeight: "bold" },
-  outOfStock: { color: "#ef4444", fontSize: 12, fontWeight: "bold" },
   error: { textAlign: "center", marginTop: 50, fontSize: 16, color: "#6b7280" },
   emptyText: { color: "#718096", textAlign: "center", marginTop: 20 },
 });

@@ -1,18 +1,13 @@
+import { apiErrorMessage } from "@/api/errors";
 import LocationFallbackModal from "@/components/LocationFallbackModal";
+import { AVOID_TOLLS_KEY } from "@/constants";
 import { useAuth } from "@/src/context/AuthContext";
 import { useManualLocation } from "@/src/hooks/useManualLocation";
 import { clearManualLocation } from "@/utils/location";
+import { apiClient } from "@nearcommerce/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import {
-  Button,
-  Linking,
-  Platform,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Button, StyleSheet, Switch, Text, View } from "react-native";
 
 export default function SettingsScreen() {
   const { logout } = useAuth();
@@ -22,7 +17,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     const loadPreferences = async () => {
-      const stored = await AsyncStorage.getItem("@routing_avoid_tolls");
+      const stored = await AsyncStorage.getItem(AVOID_TOLLS_KEY);
       if (stored !== null) setAvoidTolls(stored === "true");
     };
     loadPreferences();
@@ -30,17 +25,34 @@ export default function SettingsScreen() {
 
   const toggleSwitch = async (value: boolean) => {
     setAvoidTolls(value);
-    await AsyncStorage.setItem("@routing_avoid_tolls", String(value));
+    await AsyncStorage.setItem(AVOID_TOLLS_KEY, String(value));
   };
 
-  const testMapHandoff = () => {
-    // Deep linking to native maps (geo: for Android, maps:// for iOS)
-    const url =
-      Platform.OS === "ios"
-        ? "maps://?q=40.7128,-74.0060"
-        : "geo:40.7128,-74.0060?q=40.7128,-74.0060(Store)";
-    Linking.openURL(url);
+  const deleteAccount = async () => {
+    try {
+      await apiClient.delete("/users/me");
+      await logout();
+    } catch (error) {
+      Alert.alert(
+        "Couldn't delete account",
+        apiErrorMessage(error, "Please try again."),
+      );
+    }
   };
+
+  const confirmDeleteAccount = () =>
+    Alert.alert(
+      "Delete your account?",
+      "This permanently removes your account, favorites and reviews. Household lists you own pass to the next member, or are deleted if you are the only member. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: () => void deleteAccount(),
+        },
+      ],
+    );
 
   return (
     <View style={styles.container}>
@@ -81,14 +93,18 @@ export default function SettingsScreen() {
       />
 
       <View style={styles.actionContainer}>
-        <Button title="Test Native Map Handoff" onPress={testMapHandoff} />
-      </View>
-
-      <View style={styles.actionContainer}>
         <Button
           title="Sign out"
           color="#b91c1c"
           onPress={() => void logout()}
+        />
+      </View>
+
+      <View style={styles.smallGap}>
+        <Button
+          title="Delete account"
+          color="#b91c1c"
+          onPress={confirmDeleteAccount}
         />
       </View>
     </View>

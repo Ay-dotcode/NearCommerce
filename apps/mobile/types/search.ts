@@ -6,6 +6,11 @@ export type SearchResult = {
   store_id: string;
   store_name: string;
   distance_meters: number;
+  quantity: number;
+  in_stock: boolean;
+  isStale: boolean;
+  store_latitude: number;
+  store_longitude: number;
 };
 
 export type SearchResponse = {
