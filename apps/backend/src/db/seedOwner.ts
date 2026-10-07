@@ -31,6 +31,7 @@ async function seed() {
      VALUES ($1, $2, $3, 'STORE_OWNER', NOW(), false)
      ON CONFLICT (email) DO UPDATE 
      SET password_hash = EXCLUDED.password_hash,
+         full_name = EXCLUDED.full_name,
          role = 'STORE_OWNER',
          email_verified_at = NOW(),
          is_suspended = false
