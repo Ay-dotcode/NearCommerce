@@ -8,15 +8,15 @@ import {
   updateSubcategory,
 } from "@/api/admin";
 import { ADMIN_CATEGORIES_KEY } from "@/constants";
-import type { AdminCategory, AdminSubcategory } from "@/types/admin";
-import { Button } from "@nearcommerce/ui";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import {
   CategoryFormDialog,
   DeleteReasonDialog,
   SubcategoryFormDialog,
-} from "./categories/CategoryDialogs";
+} from "@/pages/categories/CategoryDialogs";
+import type { AdminCategory, AdminSubcategory } from "@/types/admin";
+import { Button } from "@nearcommerce/ui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 type CategoryForm =
   | { mode: "create" }

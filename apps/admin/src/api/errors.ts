@@ -30,3 +30,19 @@ export function parseApiError(
       : [],
   };
 }
+
+export function loginErrorMessage(error: unknown): string {
+  const response = (
+    error as {
+      response?: { status?: number; data?: { error?: string } };
+    } | null
+  )?.response;
+  if (!response)
+    return "Can't reach the server. Check your connection and try again.";
+  if (
+    (response.status === 403 || response.status === 429) &&
+    typeof response.data?.error === "string"
+  )
+    return response.data.error;
+  return "Invalid email or password.";
+}

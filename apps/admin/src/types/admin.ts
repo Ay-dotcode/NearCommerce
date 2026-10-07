@@ -13,6 +13,7 @@ export interface AdminUser {
 export interface AdminAuditLog {
   id: string;
   admin_id: string | null;
+  admin_email?: string | null;
   action: string;
   target_id: string;
   target_type: string;
@@ -37,7 +38,11 @@ export interface AdminStore {
   id: string;
   name: string;
   owner_id: string;
+  owner_email?: string;
+  owner_name?: string;
+  address?: string;
   is_suspended: boolean;
+  created_at?: string;
 }
 
 export interface AdminReview {

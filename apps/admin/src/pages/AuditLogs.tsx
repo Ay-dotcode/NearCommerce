@@ -1,11 +1,22 @@
 import { getAuditLogs } from "@/api/admin";
+import { ADMIN_AUDIT_LOGS_KEY } from "@/constants";
+import { Button } from "@nearcommerce/ui";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 export default function AuditLogs() {
+  const [page, setPage] = useState(1);
   const query = useQuery({
-    queryKey: ["admin-audit-logs"],
-    queryFn: () => getAuditLogs(),
+    queryKey: [...ADMIN_AUDIT_LOGS_KEY, page],
+    queryFn: () => getAuditLogs(page),
   });
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      (query.data?.pagination.total ?? 0) /
+        (query.data?.pagination.limit ?? 50),
+    ),
+  );
 
   if (query.isLoading)
     return <p className="text-slate-400">Loading audit ledger…</p>;
@@ -35,8 +46,8 @@ export default function AuditLogs() {
               </div>
               <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-slate-500">Admin ID</dt>
-                  <dd>{log.admin_id ?? "Deleted admin"}</dd>
+                  <dt className="text-slate-500">Admin</dt>
+                  <dd>{log.admin_email ?? log.admin_id ?? "Deleted admin"}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">Target</dt>
@@ -66,6 +77,29 @@ export default function AuditLogs() {
             No audit events recorded.
           </p>
         )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
+        <span>
+          Page {page} of {totalPages}
+          {query.data && ` · ${query.data.pagination.total} events`}
+        </span>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            Previous
+          </Button>
+          <Button
+            type="button"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </section>
   );

@@ -1,3 +1,4 @@
+import { loginErrorMessage } from "@/api/errors";
 import { persistSession } from "@/session";
 import { apiClient, UserRole } from "@nearcommerce/api";
 import { useState } from "react";
@@ -36,8 +37,8 @@ export default function LoginPage() {
 
       persistSession(data.access_token, data.refresh_token);
       navigate("/dashboard", { replace: true });
-    } catch {
-      setError("Invalid email or password.");
+    } catch (err) {
+      setError(loginErrorMessage(err));
     } finally {
       setLoading(false);
     }
