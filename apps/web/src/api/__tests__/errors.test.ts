@@ -1,4 +1,4 @@
-import { loginErrorMessage, parseApiError } from "@/api/errors";
+import { loginErrorMessage, parseApiError } from "@nearcommerce/api/src/errors";
 
 describe("parseApiError", () => {
   it("reads the backend error message, status, code and field details", () => {
