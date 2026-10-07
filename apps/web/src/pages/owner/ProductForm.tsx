@@ -1,8 +1,8 @@
-import { parseApiError } from "@/api/errors";
 import { createProduct, updateProduct } from "@/api/products";
 import { Button, SelectField, TextAreaField, TextField } from "@/components/ui";
 import type { Category } from "@/types/categories";
 import type { StoreProduct } from "@/types/products";
+import { parseApiError } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import { useState } from "react";
 import * as Yup from "yup";

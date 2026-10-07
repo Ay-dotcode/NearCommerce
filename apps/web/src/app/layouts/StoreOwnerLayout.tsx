@@ -1,4 +1,3 @@
-import { parseApiError } from "@/api/errors";
 import { listMyStores } from "@/api/stores";
 import { Button } from "@/components/ui";
 import { MY_STORES_KEY } from "@/constants";
@@ -10,7 +9,7 @@ import {
 } from "@/features/auth/session";
 import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { cn } from "@/lib/cn";
-import { STORE_KEY } from "@nearcommerce/api";
+import { parseApiError, STORE_KEY } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";

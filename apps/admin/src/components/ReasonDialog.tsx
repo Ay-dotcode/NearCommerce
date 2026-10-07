@@ -1,6 +1,6 @@
-import { parseApiError } from "@/api/errors";
 import { Dialog, FormField, inputClass } from "@/components/Dialog";
 import { MIN_REASON_LENGTH } from "@/constants";
+import { parseApiError } from "@nearcommerce/api";
 import { Button } from "@nearcommerce/ui";
 import { FormEvent, useEffect, useId, useState } from "react";
 

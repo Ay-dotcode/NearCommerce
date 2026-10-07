@@ -1,6 +1,5 @@
-import { loginErrorMessage } from "@/api/errors";
 import { persistSession } from "@/session";
-import { apiClient, UserRole } from "@nearcommerce/api";
+import { apiClient, loginErrorMessage, UserRole } from "@nearcommerce/api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 

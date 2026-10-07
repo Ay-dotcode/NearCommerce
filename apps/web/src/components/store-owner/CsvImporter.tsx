@@ -1,4 +1,3 @@
-import { parseApiError } from "@/api/errors";
 import { importProducts } from "@/api/products";
 import { Button, Modal, useToast } from "@/components/ui";
 import { PRODUCTS_KEY } from "@/constants";
@@ -10,6 +9,7 @@ import {
 } from "@/features/products/lib/csv";
 import { cn } from "@/lib/cn";
 import type { ImportResult } from "@/types/products";
+import { parseApiError } from "@nearcommerce/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChangeEvent, useRef, useState } from "react";
 

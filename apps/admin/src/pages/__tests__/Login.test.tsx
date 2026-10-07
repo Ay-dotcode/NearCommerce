@@ -6,6 +6,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 jest.mock("@nearcommerce/api", () => ({
+  ...jest.requireActual("@nearcommerce/api"),
   UserRole: {
     CUSTOMER: "CUSTOMER",
     STORE_OWNER: "STORE_OWNER",

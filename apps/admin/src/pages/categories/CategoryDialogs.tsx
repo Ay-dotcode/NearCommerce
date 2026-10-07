@@ -1,10 +1,10 @@
-import { parseApiError } from "@/api/errors";
 import { Dialog, FormField, inputClass } from "@/components/Dialog";
 import { MIN_REASON_LENGTH } from "@/constants";
 import type { AdminCategory } from "@/types/admin";
 import {
   CreateCategorySchema,
   CreateSubcategorySchema,
+  parseApiError,
 } from "@nearcommerce/api";
 import { Button } from "@nearcommerce/ui";
 import { FormEvent, useEffect, useState } from "react";

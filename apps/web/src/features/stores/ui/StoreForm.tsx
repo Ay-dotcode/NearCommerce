@@ -1,4 +1,3 @@
-import { parseApiError } from "@/api/errors";
 import { Button, TextAreaField, TextField } from "@/components/ui";
 import {
   defaultHours,
@@ -8,7 +7,7 @@ import {
 } from "@/features/stores/lib/hours";
 import { OpeningHoursEditor } from "@/features/stores/ui/OpeningHoursEditor";
 import type { Store, StorePayload } from "@/types/stores";
-import { CreateStoreSchema, WEEKDAYS, type Weekday } from "@nearcommerce/api";
+import { CreateStoreSchema, parseApiError, WEEKDAYS, type Weekday } from "@nearcommerce/api";
 import { FormEvent, ReactNode, useMemo, useState } from "react";
 
 interface Props {

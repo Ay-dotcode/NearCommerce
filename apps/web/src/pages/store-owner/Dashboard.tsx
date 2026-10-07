@@ -1,5 +1,4 @@
 import { listCategories } from "@/api/categories";
-import { parseApiError } from "@/api/errors";
 import {
   confirmProductStock,
   deleteProduct,
@@ -24,7 +23,7 @@ import type {
   ProductSummary,
   StoreProduct,
 } from "@/types/products";
-import { STORE_KEY } from "@nearcommerce/api";
+import { parseApiError, STORE_KEY } from "@nearcommerce/api";
 import {
   keepPreviousData,
   useMutation,

@@ -1,8 +1,8 @@
-import { parseApiError } from "@/api/errors";
 import { Button, TextField } from "@/components/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useForgotPassword } from "@/features/auth/api/usePasswordReset";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
+import { parseApiError } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import React from "react";
 import { Link } from "react-router-dom";

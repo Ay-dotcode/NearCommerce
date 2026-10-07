@@ -16,6 +16,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 // Mock the shared Axios client so tests never hit the real network
 // ---------------------------------------------------------------------------
 jest.mock("@nearcommerce/api", () => ({
+  ...jest.requireActual("@nearcommerce/api"),
   UserRole: {
     CUSTOMER: "CUSTOMER",
     STORE_OWNER: "STORE_OWNER",
