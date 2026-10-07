@@ -1,11 +1,15 @@
 import LocationFallbackModal from "@/components/LocationFallbackModal";
+import { API_URL } from "@/constants";
 import { AuthProvider, useAuth } from "@/src/context/AuthContext";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
+import { configureApiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Redirect, Stack } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
+
+configureApiClient({ baseURL: API_URL });
 
 const queryClient = new QueryClient();
 

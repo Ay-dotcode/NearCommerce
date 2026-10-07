@@ -1,13 +1,10 @@
 import { listKey, LISTS_KEY } from "@/api/lists";
+import { API_URL } from "@/constants";
 import type { ListClientEvents, ListServerEvents } from "@/types/socket";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import { io, Socket } from "socket.io-client";
-
-const SOCKET_URL =
-  (globalThis as { process?: { env?: Record<string, string | undefined> } })
-    .process?.env?.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
 type Options = {
   onGone?: (reason: "deleted" | "revoked") => void;
@@ -24,7 +21,7 @@ export function useListLiveUpdates(
 
   useEffect(() => {
     if (!listId || !token) return;
-    const socket: Socket<ListServerEvents, ListClientEvents> = io(SOCKET_URL, {
+    const socket: Socket<ListServerEvents, ListClientEvents> = io(API_URL, {
       auth: { token },
       transports: ["websocket"],
     });
