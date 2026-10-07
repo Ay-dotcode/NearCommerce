@@ -153,7 +153,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
       console.error("[EMAIL DISPATCH ERROR] Password reset email failed:", err);
     });
 
-    if (process.env.NODE_ENV !== "test")
+    if (!["test", "production"].includes(process.env.NODE_ENV ?? ""))
       console.log(
         `[EMAIL DISPATCH] Password Reset To: ${email}, Token: ${rawToken}`,
       );

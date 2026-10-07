@@ -408,12 +408,6 @@ export async function removeMember(
 
 type AddItemInput = z.infer<typeof AddListItemSchema> & { user_id: string };
 
-// Adds an item to a household list.
-//  - Catalogue product already on the list: quantity is incremented and `is_checked`
-//    reset (SRS 3.2.2). `already_on_list` lets clients show the "Item already on list" toast.
-//  - Product name is copied into `custom_item_name` / `item_name` so deleting the product
-//    later doesn't blank the line (orphan prevention, Implementation.md 3.2.3).
-//  - Custom items with the same name (case-insensitive) are merged the same way.
 export async function addListItem(input: AddItemInput) {
   const { list_id, product_id, custom_item_name, quantity, user_id } = input;
   await requireMember(list_id, user_id);
@@ -422,7 +416,11 @@ export async function addListItem(input: AddItemInput) {
     let name: string;
     if (product_id) {
       const product = await client.query(
-        `SELECT name FROM products WHERE id = $1`,
+        `SELECT p.name FROM products p
+           JOIN stores s ON s.id = p.store_id
+           JOIN users u ON u.id = s.owner_id
+          WHERE p.id = $1 AND p.is_published = true
+            AND s.is_suspended = false AND u.is_suspended = false`,
         [product_id],
       );
       if (!product.rows.length)
@@ -430,7 +428,6 @@ export async function addListItem(input: AddItemInput) {
       name = product.rows[0].name;
     } else name = custom_item_name as string;
 
-    // Row-level lock on the list serialises the size check with concurrent adds.
     await client.query(
       `SELECT id FROM household_lists WHERE id = $1 FOR UPDATE`,
       [list_id],

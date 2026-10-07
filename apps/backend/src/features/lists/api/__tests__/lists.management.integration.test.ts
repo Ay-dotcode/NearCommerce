@@ -37,6 +37,9 @@ describe("Household lists REST API", () => {
   let milk: { id: string; name: string };
 
   beforeAll(async () => {
+    await db.query(
+      `DELETE FROM household_lists WHERE name IN ('My House', 'Test List') OR invite_code = 'TESTCODE'`,
+    );
     owner = await createListUser("CUSTOMER", "Olu Owner");
     member = await createListUser("CUSTOMER", "Mia Member");
     stranger = await createListUser("CUSTOMER", "Sam Stranger");

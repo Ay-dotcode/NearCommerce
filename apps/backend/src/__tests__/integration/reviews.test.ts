@@ -13,6 +13,7 @@ describe("Community Ratings & Trust Gate API Integration", () => {
   let verifiedToken: string;
 
   let storeId: string;
+  let storeOwnerToken: string;
 
   beforeAll(async () => {
     // 1. Setup unverified user
@@ -31,18 +32,24 @@ describe("Community Ratings & Trust Gate API Integration", () => {
     verifiedUserId = verifiedRes.rows[0].id;
     verifiedToken = generateMockToken(verifiedUserId);
 
-    // 3. Setup mock store
+    // 3. Setup mock store, owned by someone other than the reviewers
+    const ownerRes = await db.query(
+      `INSERT INTO users (email, password_hash, full_name, role, email_verified_at)
+       VALUES ('review-owner@test.com', 'hash', 'Store Owner', 'STORE_OWNER', NOW()) RETURNING id`,
+    );
+    const ownerId = ownerRes.rows[0].id;
+    storeOwnerToken = generateMockToken(ownerId);
     const storeRes = await db.query(
       `INSERT INTO stores (owner_id, name, address, latitude, longitude, timezone, opening_hours) 
        VALUES ($1, 'Review Store', '123 Test', 0, 0, 'UTC', '{}') RETURNING id`,
-      [verifiedUserId],
+      [ownerId],
     );
     storeId = storeRes.rows[0].id;
   });
 
   afterAll(async () => {
     await db.query(
-      `DELETE FROM users WHERE email IN ('unverified@test.com', 'verified@test.com')`,
+      `DELETE FROM users WHERE email IN ('unverified@test.com', 'verified@test.com', 'review-owner@test.com')`,
     );
     await db.end();
   });
@@ -65,6 +72,15 @@ describe("Community Ratings & Trust Gate API Integration", () => {
     expect(res.status).toBe(201);
     expect(res.body.data).toHaveProperty("id");
     expect(res.body.data.rating).toBe(5);
+  });
+
+  it("should return 403 when a store owner reviews their own store", async () => {
+    const response = await request(app)
+      .post("/api/reviews")
+      .set("Authorization", `Bearer ${storeOwnerToken}`)
+      .send({ storeId, rating: 5, comment: "Best store ever" });
+
+    expect(response.status).toBe(403);
   });
 
   it("should return 400 when submitting a review with an invalid rating", async () => {

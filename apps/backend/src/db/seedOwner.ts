@@ -16,10 +16,14 @@ async function seed() {
   console.log("Seeding store owner user and store...");
 
   // 1. Create STORE_OWNER user
-  const email = "joseyowolabi@gmail.com";
-  const password = "Password12++";
+  const email = process.env.SEED_OWNER_EMAIL;
+  const password = process.env.SEED_OWNER_PASSWORD;
+  if (process.env.NODE_ENV === "production" && (!email || !password))
+    throw new Error(
+      "Set SEED_OWNER_EMAIL and SEED_OWNER_PASSWORD to seed an owner in production.",
+    );
   const fullName = "Joseph Owolabi";
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await bcrypt.hash(password ?? "Password12++", 12);
 
   // Upsert user
   const userResult = await pool.query(

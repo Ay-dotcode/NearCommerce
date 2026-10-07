@@ -75,7 +75,8 @@ export async function createCatalogueProduct(name = "Test Milk") {
     [owner.id],
   );
   const product = await db.query(
-    `INSERT INTO products (store_id, name, price, quantity) VALUES ($1, $2, 2.50, 10) RETURNING id`,
+    `INSERT INTO products (store_id, name, price, quantity, is_published, image_url)
+     VALUES ($1, $2, 2.50, 10, true, 'https://cdn.nearcommerce.test/p.jpg') RETURNING id`,
     [store.rows[0].id, name],
   );
   return { id: product.rows[0].id as string, name };

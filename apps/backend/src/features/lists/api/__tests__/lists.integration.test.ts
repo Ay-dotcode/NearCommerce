@@ -49,7 +49,8 @@ describe("Lists API Integration Tests", () => {
       [ownerId],
     );
     const productRes = await db.query(
-      `INSERT INTO products (store_id, name, price, quantity) VALUES ($1, 'Test Product', 10.00, 100) RETURNING id`,
+      `INSERT INTO products (store_id, name, price, quantity, is_published, image_url)
+       VALUES ($1, 'Test Product', 10.00, 100, true, 'https://cdn.nearcommerce.test/p.jpg') RETURNING id`,
       [storeRes.rows[0].id],
     );
     productId = productRes.rows[0].id;
@@ -100,6 +101,35 @@ describe("Lists API Integration Tests", () => {
       expect(response.body.quantity).toBe(3); // 1 (previous) + 2 (new)
       expect(response.body.is_checked).toBe(false);
     });
+    it("refuses products that are unpublished or from a suspended store", async () => {
+      await db.query(`UPDATE products SET is_published = false WHERE id = $1`, [
+        productId,
+      ]);
+      const unpublished = await request(app)
+        .post(`/lists/${listId}/items`)
+        .set("Authorization", `Bearer ${ownerToken}`)
+        .send({ list_id: listId, product_id: productId, quantity: 1 });
+      expect(unpublished.status).toBe(404);
+
+      await db.query(`UPDATE products SET is_published = true WHERE id = $1`, [
+        productId,
+      ]);
+      await db.query(
+        `UPDATE stores SET is_suspended = true WHERE id = (SELECT store_id FROM products WHERE id = $1)`,
+        [productId],
+      );
+      const suspended = await request(app)
+        .post(`/lists/${listId}/items`)
+        .set("Authorization", `Bearer ${ownerToken}`)
+        .send({ list_id: listId, product_id: productId, quantity: 1 });
+      expect(suspended.status).toBe(404);
+
+      await db.query(
+        `UPDATE stores SET is_suspended = false WHERE id = (SELECT store_id FROM products WHERE id = $1)`,
+        [productId],
+      );
+    });
+
     it("should reject unauthenticated requests with 401", async () => {
       const response = await request(app)
         .post(`/lists/${listId}/items`)

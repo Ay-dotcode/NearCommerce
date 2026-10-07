@@ -15,16 +15,18 @@ const pool = new Pool({
 async function seedAdmin() {
   console.log("Seeding system admin users...");
 
+  const email = process.env.SEED_ADMIN_EMAIL;
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  if (process.env.NODE_ENV === "production" && (!email || !password))
+    throw new Error(
+      "Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD to seed an admin in production.",
+    );
+
   const adminUsers = [
     {
-      email: "joseyowolabi@gmail.com",
-      fullName: "Joseph Owolabi",
-      password: "Password12++",
-    },
-    {
-      email: "admin@nearcommerce.com",
+      email: email,
       fullName: "System Admin",
-      password: "Password12++",
+      password: password ?? "Password12++",
     },
   ];
 

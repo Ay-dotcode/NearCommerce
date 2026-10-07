@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 const srcPath = fileURLToPath(new URL("./src", import.meta.url));
 
 export default defineConfig({
+  envDir: fileURLToPath(new URL("../..", import.meta.url)),
   plugins: [react()],
   resolve: { alias: { "@": srcPath } },
   server: { port: 3000 },

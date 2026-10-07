@@ -1,6 +1,7 @@
 import {
   deleteOwnReview,
   createReview as insertReview,
+  isOwnTarget,
   isTargetVisible,
   listMyReviews,
   listTargetReviews,
@@ -43,6 +44,11 @@ export async function createReview(req: Request, res: Response) {
       return res
         .status(404)
         .json({ error: "Target store or product does not exist." });
+
+    if (await isOwnTarget(userId, target))
+      return res
+        .status(403)
+        .json({ error: "You can't review your own store or its products." });
 
     const review = await insertReview(userId, parsed.data);
     return res

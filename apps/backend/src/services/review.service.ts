@@ -34,6 +34,21 @@ export async function isTargetVisible(target: ReviewTarget) {
   return rows.length > 0;
 }
 
+export async function isOwnTarget(userId: string, target: ReviewTarget) {
+  const { rows } =
+    "storeId" in target
+      ? await db.query(`SELECT 1 FROM stores WHERE id = $1 AND owner_id = $2`, [
+          target.storeId,
+          userId,
+        ])
+      : await db.query(
+          `SELECT 1 FROM products p JOIN stores s ON s.id = p.store_id
+            WHERE p.id = $1 AND s.owner_id = $2`,
+          [target.productId, userId],
+        );
+  return rows.length > 0;
+}
+
 const REVIEW_COLUMNS = `id, store_id, product_id, rating, comment, created_at, updated_at`;
 
 export async function createReview(userId: string, input: CreateReviewInput) {
