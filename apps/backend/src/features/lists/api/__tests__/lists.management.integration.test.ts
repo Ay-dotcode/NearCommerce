@@ -17,7 +17,6 @@ jest.mock("@/config/socket", () => ({
 import { app } from "@/app";
 import { db } from "@/config/database";
 import { MAX_LIST_ITEMS, MAX_LIST_MEMBERS } from "@/constants";
-import request from "supertest";
 import {
   addMemberDirect,
   auth,
@@ -26,7 +25,8 @@ import {
   createListUser,
   createListViaApi,
   ListTestUser,
-} from "./listFixtures";
+} from "@/features/lists/api/__tests__/listFixtures";
+import request from "supertest";
 
 const eventsOf = (name: string) => mockEmitted.filter((e) => e.event === name);
 

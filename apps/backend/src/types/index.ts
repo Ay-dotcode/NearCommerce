@@ -1,3 +1,2 @@
-export * from "./review";
-export * from "./sql";
-
+export * from "@/types/review";
+export * from "@/types/sql";

@@ -78,4 +78,20 @@ describe("Product Freshness API Integration", () => {
     const now = new Date();
     expect(now.getTime() - updatedDate.getTime()).toBeLessThan(5000); // within 5 seconds
   });
+
+  it("public product detail includes stock status and the store's location", async () => {
+    const res = await request(app).get(`/api/products/${productId}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      in_stock: true,
+      store: { id: storeId, name: "Fresh Store", latitude: 0, longitude: 0 },
+    });
+
+    await db.query(`UPDATE products SET quantity = 0 WHERE id = $1`, [
+      productId,
+    ]);
+    const soldOut = await request(app).get(`/api/products/${productId}`);
+    expect(soldOut.body.in_stock).toBe(false);
+  });
 });

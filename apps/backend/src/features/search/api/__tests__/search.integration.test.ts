@@ -75,6 +75,31 @@ describe("GET /search", () => {
     expect(results[0].name).toBe("Fresh Milk");
   });
 
+  it("returns what a product card needs: stock, freshness, price and store location", async () => {
+    await db.query(
+      `UPDATE products SET last_verified_at = NOW() - INTERVAL '45 days' WHERE name = 'Fresh Milk'`,
+    );
+    const stale = await request(app)
+      .get("/search")
+      .query({ q: "Milk", lat: 35.14, lng: 32.83, radius_meters: 5000 });
+    expect(stale.body.data[0]).toMatchObject({
+      price: 2.5,
+      in_stock: true,
+      isStale: true,
+      store_latitude: 35.14,
+      store_longitude: 32.83,
+    });
+    expect(stale.body.data[0]).not.toHaveProperty("last_verified_at");
+
+    await db.query(
+      `UPDATE products SET last_verified_at = NOW() WHERE name = 'Fresh Milk'`,
+    );
+    const fresh = await request(app)
+      .get("/search")
+      .query({ q: "Milk", lat: 35.14, lng: 32.83, radius_meters: 5000 });
+    expect(fresh.body.data[0].isStale).toBe(false);
+  });
+
   it("should fail validation if lat/lng are missing", async () => {
     const response = await request(app).get("/search").query({ q: "Milk" });
     expect(response.status).toBe(400);

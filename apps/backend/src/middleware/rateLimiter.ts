@@ -4,6 +4,7 @@ import {
   RATE_LIMIT_WINDOW_MINUTES,
   RATE_LIMIT_WINDOW_MS,
   REFRESH_RATE_LIMIT_MAX,
+  REGISTER_RATE_LIMIT_MAX,
   RESEND_RATE_LIMIT_MAX_REQUESTS,
 } from "@/constants";
 import rateLimit from "express-rate-limit";
@@ -60,5 +61,17 @@ export const refreshLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     error: "Too many refresh attempts, please try again later.",
+  },
+});
+
+// Registration is limited per IP so one client cannot mass-create accounts.
+export const registerLimiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: REGISTER_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test",
+  message: {
+    error: "Too many registration attempts, please try again later.",
   },
 });

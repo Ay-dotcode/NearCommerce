@@ -11,13 +11,14 @@ import {
 import {
   forgotPasswordLimiter,
   refreshLimiter,
+  registerLimiter,
   resendVerificationLimiter,
 } from "@/middleware/rateLimiter";
 import { Router } from "express";
 
 const authRouter = Router();
 
-authRouter.post("/register", registerUser);
+authRouter.post("/register", registerLimiter, registerUser);
 authRouter.post("/login", loginUser);
 authRouter.post("/refresh", refreshLimiter, refreshSession);
 authRouter.post("/logout", logoutUser);

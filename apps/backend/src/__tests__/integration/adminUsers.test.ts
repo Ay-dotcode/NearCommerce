@@ -310,6 +310,25 @@ describe("Admin user moderation: search, demote and force delete", () => {
     });
   });
 
+  describe("GET /admin/metrics", () => {
+    it("stops counting a store as active once its owner is suspended", async () => {
+      const owner = await createTestUser("STORE_OWNER");
+      await createTestStore(owner.id, "Metrics Store");
+      const activeStores = async () =>
+        (
+          await request(app)
+            .get("/api/admin/metrics")
+            .set("Authorization", auth(admin))
+        ).body.totalActiveStores as number;
+
+      const before = await activeStores();
+      await db.query(`UPDATE users SET is_suspended = true WHERE id = $1`, [
+        owner.id,
+      ]);
+      expect(await activeStores()).toBe(before - 1);
+    });
+  });
+
   describe("admin routes use the live role", () => {
     it("locks out a suspended admin even with a valid token", async () => {
       const suspended = await createTestUser("SYSTEM_ADMIN", {

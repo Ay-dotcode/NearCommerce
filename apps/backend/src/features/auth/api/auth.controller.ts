@@ -1,9 +1,10 @@
 import { db } from "@/config/database";
+import { BCRYPT_SALT_ROUNDS, PASSWORD_RESET_TOKEN_TTL_MS } from "@/constants";
 import {
-  BCRYPT_SALT_ROUNDS,
-  EMAIL_VERIFICATION_TOKEN_TTL_MS,
-  PASSWORD_RESET_TOKEN_TTL_MS,
-} from "@/constants";
+  clearLoginFailures,
+  getLoginLockout,
+  recordLoginFailure,
+} from "@/features/auth/services/loginLockout.service";
 import {
   SessionError,
   issueSession,
@@ -26,6 +27,12 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { Request, Response } from "express";
 import { ZodError } from "zod";
+
+// Compared against when the email is unknown so login timing does not leak which emails exist.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
+  crypto.randomBytes(16).toString("hex"),
+  BCRYPT_SALT_ROUNDS,
+);
 
 export const registerUser = async (req: Request, res: Response) => {
   let validatedData;
@@ -55,55 +62,23 @@ export const registerUser = async (req: Request, res: Response) => {
       BCRYPT_SALT_ROUNDS,
     );
 
-    // 4. Start Database Transaction using a dedicated pool client
-    const client = await db.connect();
-    try {
-      await client.query("BEGIN");
-      const userResult = await client.query(
-        `INSERT INTO users (email, password_hash, full_name, role) 
-         VALUES ($1, $2, $3, $4) RETURNING id`,
-        [
-          validatedData.email,
-          passwordHash,
-          validatedData.full_name,
-          validatedData.role,
-        ],
-      );
-      const userId = userResult.rows[0].id;
+    // 4. Insert the user. MVP: auto-verified, no verification email or token.
+    await db.query(
+      `INSERT INTO users (email, password_hash, full_name, role, email_verified_at)
+       VALUES ($1, $2, $3, $4, NOW())`,
+      [
+        validatedData.email,
+        passwordHash,
+        validatedData.full_name,
+        validatedData.role,
+      ],
+    );
 
-      // 5. Manage Verification Tokens
-      await client.query(
-        `DELETE FROM email_verification_tokens WHERE user_id = $1`,
-        [userId],
-      );
-      const { rawToken, tokenHash } = generateVerificationToken();
-      const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS);
-
-      await client.query(
-        `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at) 
-         VALUES ($1, $2, $3)`,
-        [userId, tokenHash, expiresAt],
-      );
-
-      await client.query("COMMIT");
-
-      // 6. Mark email as verified immediately (MVP without verification)
-      await client.query(
-        `UPDATE users SET email_verified_at = NOW() WHERE id = $1`,
-        [userId],
-      );
-
-      // 7. Return success – account is ready to use immediately
-      return res.status(201).json({
-        message:
-          "User registered successfully. Email verification is disabled in the MVP.",
-      });
-    } catch (txError) {
-      await client.query("ROLLBACK");
-      throw txError;
-    } finally {
-      client.release();
-    }
+    // 5. Return success – account is ready to use immediately
+    return res.status(201).json({
+      message:
+        "User registered successfully. Email verification is disabled in the MVP.",
+    });
   } catch (error) {
     if (
       error &&
@@ -276,22 +251,37 @@ export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = LoginSchema.parse(req.body);
 
+    const ip = req.ip ?? "unknown";
+
+    const lockedFor = await getLoginLockout(email, ip);
+    if (lockedFor > 0) {
+      res.setHeader("Retry-After", String(lockedFor));
+      return res.status(429).json({
+        error: `Too many failed login attempts. Try again in ${lockedFor} seconds.`,
+      });
+    }
+
     const userResult = await db.query(
       `SELECT id, password_hash, role, is_suspended FROM users WHERE email = $1`,
       [email],
     );
 
-    if (userResult.rows.length === 0)
-      return res.status(401).json({ error: "Invalid credentials" });
     const user = userResult.rows[0];
+    // Always run bcrypt so response time does not reveal whether the email exists.
+    const isValidPassword = await bcrypt.compare(
+      password,
+      user?.password_hash ?? DUMMY_PASSWORD_HASH,
+    );
+    if (!user || !isValidPassword) {
+      await recordLoginFailure(email, ip);
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-    // Check if account is suspended right at login
+    // Only reveal the suspension once the caller has proven they own the account.
     if (user.is_suspended)
       return res.status(403).json({ error: "Account is suspended." });
 
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
-    if (!isValidPassword)
-      return res.status(401).json({ error: "Invalid credentials" });
+    await clearLoginFailures(email, ip);
 
     const session = await issueSession(user);
     await primeSuspensionCache(user.id);

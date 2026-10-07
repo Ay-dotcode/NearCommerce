@@ -12,6 +12,7 @@ import {
   fetchGeminiEmbedding,
   withCircuitBreaker,
 } from "@/utils/circuitBreaker";
+import { isProductStale } from "@/utils/freshness";
 import { sendValidationError } from "@/utils/http";
 import { storeRatingJoin, toRating } from "@/utils/ratings";
 import { checkIfStoreIsOpen } from "@/utils/timezone";
@@ -22,12 +23,26 @@ import {
 import { Request, Response } from "express";
 
 const SELECT_PRODUCT = (distance: string) => `
-  SELECT p.id, p.name, p.price, p.image_url, p.subcategory_id,
+  SELECT p.id, p.name, p.price, p.quantity, p.image_url, p.subcategory_id,
+         p.last_verified_at,
          s.id AS store_id, s.name AS store_name,
+         s.latitude AS store_latitude, s.longitude AS store_longitude,
          ${distance} AS distance_meters
     FROM products p
     JOIN stores s ON p.store_id = s.id
     JOIN users u ON s.owner_id = u.id`;
+
+// Shoppers see stock and freshness on every result card (SRS 5.2.2). Stock is derived
+// purely from quantity, and the raw timestamp stays server-side.
+const toProductResult = (row: any) => {
+  const { last_verified_at, ...rest } = row;
+  return {
+    ...rest,
+    price: Number(rest.price),
+    in_stock: rest.quantity > 0,
+    isStale: isProductStale(last_verified_at),
+  };
+};
 
 export const searchProducts = async (req: Request, res: Response) => {
   const parsed = ProductSearchQuerySchema.safeParse(req.query);
@@ -56,7 +71,10 @@ export const searchProducts = async (req: Request, res: Response) => {
          LIMIT ${limit}`,
         params.values,
       );
-      return res.status(200).json({ data: result.rows, used_fallback: false });
+      return res.status(200).json({
+        data: result.rows.map(toProductResult),
+        used_fallback: false,
+      });
     }
 
     let rows: unknown[] = [];
@@ -112,7 +130,10 @@ export const searchProducts = async (req: Request, res: Response) => {
       ).rows;
     }
 
-    return res.status(200).json({ data: rows, used_fallback: usedFallback });
+    return res.status(200).json({
+      data: (rows as any[]).map(toProductResult),
+      used_fallback: usedFallback,
+    });
   } catch (error) {
     console.error("Search API Error:", error);
     return res.status(500).json({ error: "Internal server error" });

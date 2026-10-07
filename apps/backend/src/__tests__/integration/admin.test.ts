@@ -89,6 +89,32 @@ describe("System Admin Operations API Integration", () => {
     expect(logRes.rows[0].action).toBe("SUSPEND_STORE");
   });
 
+  it("lists stores with the owner's email for the moderation grid", async () => {
+    const res = await request(app)
+      .get("/api/admin/stores?limit=100")
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    const row = res.body.data.find(
+      (s: { id: string }) => s.id === targetStoreId,
+    );
+    expect(row).toMatchObject({ name: "Target Store", owner_id: customerId });
+    expect(row.owner_email).toMatch(/@admin\.test$/);
+  });
+
+  it("names the acting admin in the audit ledger", async () => {
+    const res = await request(app)
+      .get("/api/admin/audit-logs?limit=100")
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    const row = res.body.data.find(
+      (l: { target_id: string }) => l.target_id === targetStoreId,
+    );
+    expect(row).toMatchObject({ action: "SUSPEND_STORE", admin_id: adminId });
+    expect(row.admin_email).toMatch(/@admin\.test$/);
+  });
+
   it("should hard delete a store and save a snapshot in the audit log", async () => {
     const res = await request(app)
       .delete(`/api/admin/stores/${targetStoreId}`)

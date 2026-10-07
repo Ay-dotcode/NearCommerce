@@ -81,7 +81,8 @@ export async function getProductById(req: Request, res: Response) {
       `SELECT ${PRODUCT_COLUMNS.split(",")
         .map((c) => `p.${c.trim()}`)
         .join(", ")},
-              s.name AS store_name, pr.rating_avg, pr.review_count
+              s.name AS store_name, s.latitude AS store_latitude,
+              s.longitude AS store_longitude, pr.rating_avg, pr.review_count
        FROM products p
        JOIN stores s ON p.store_id = s.id
        JOIN users u ON s.owner_id = u.id
@@ -99,10 +100,23 @@ export async function getProductById(req: Request, res: Response) {
         error: "Product not found, unpublished, or store suspended",
       });
 
-    const { store_name, rating_avg, review_count, ...product } = result.rows[0];
+    const {
+      store_name,
+      store_latitude,
+      store_longitude,
+      rating_avg,
+      review_count,
+      ...product
+    } = result.rows[0];
     return res.status(200).json({
       ...product,
-      store: { id: product.store_id, name: store_name },
+      store: {
+        id: product.store_id,
+        name: store_name,
+        latitude: store_latitude,
+        longitude: store_longitude,
+      },
+      in_stock: product.quantity > 0,
       rating: rating_avg ?? 0,
       review_count: review_count ?? 0,
       price: Number(product.price),

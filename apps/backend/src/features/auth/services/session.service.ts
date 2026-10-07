@@ -37,7 +37,7 @@ export interface IssuedSession {
   user: SessionUser;
 }
 
-// reates a session row and returns a fresh access + refresh token pair.
+// Creates a session row and returns a fresh access + refresh token pair.
 export async function issueSession(
   user: { id: string; role: string },
   client: Queryable = db,
@@ -76,7 +76,7 @@ export async function ownerStoreId(
   return res.rows[0]?.id;
 }
 
-/** Keeps the real-time suspension check (auth middleware) in step with a new access token. */
+// Keeps the real-time suspension check (auth middleware) in step with a new access token.
 export async function primeSuspensionCache(userId: string) {
   try {
     if (redisClient.isOpen)
@@ -147,7 +147,7 @@ export async function rotateSession(rawRefreshToken: string) {
   }
 }
 
-/** Idempotent: unknown or already-revoked tokens are not an error. */
+// Idempotent: unknown or already-revoked tokens are not an error.
 export async function revokeSession(rawRefreshToken: string) {
   await db.query(`DELETE FROM user_sessions WHERE refresh_token_hash = $1`, [
     hashRefreshToken(rawRefreshToken),

@@ -103,7 +103,10 @@ export async function listStores(req: Request, res: Response) {
 
   const offset = (pagination.page - 1) * pagination.limit;
   const result = await db.query(
-    `SELECT * FROM stores ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+    `SELECT s.*, u.email AS owner_email, u.full_name AS owner_name
+       FROM stores s
+       JOIN users u ON u.id = s.owner_id
+      ORDER BY s.created_at DESC, s.id LIMIT $1 OFFSET $2`,
     [pagination.limit, offset],
   );
   const count = await db.query("SELECT COUNT(*)::int AS count FROM stores");
@@ -121,7 +124,9 @@ export async function getGlobalMetrics(_req: Request, res: Response) {
   const [stores, registrations, flaggedItems, suspendedUsers] =
     await Promise.all([
       db.query(
-        "SELECT COUNT(*)::int AS count FROM stores WHERE is_suspended = false",
+        `SELECT COUNT(*)::int AS count FROM stores s
+           JOIN users u ON u.id = s.owner_id
+          WHERE s.is_suspended = false AND u.is_suspended = false`,
       ),
       db.query(
         "SELECT COUNT(*)::int AS count FROM users WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'",
@@ -148,8 +153,11 @@ export async function listAuditLogs(req: Request, res: Response) {
 
   const offset = (pagination.page - 1) * pagination.limit;
   const result = await db.query(
-    `SELECT id, admin_id, action, target_id, target_type, reason, snapshot, created_at
-     FROM admin_audit_logs ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+    `SELECT l.id, l.admin_id, a.email AS admin_email, l.action, l.target_id,
+            l.target_type, l.reason, l.snapshot, l.created_at
+       FROM admin_audit_logs l
+       LEFT JOIN users a ON a.id = l.admin_id
+      ORDER BY l.created_at DESC, l.id LIMIT $1 OFFSET $2`,
     [pagination.limit, offset],
   );
   const count = await db.query(
