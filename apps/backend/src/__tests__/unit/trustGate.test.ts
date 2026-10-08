@@ -31,13 +31,17 @@ describe("Trust Gate Middleware (Task 3.2.5)", () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it("should call next() for MVP even if email_verified_at is null", async () => {
+  it("should return 403 EMAIL_NOT_VERIFIED if email_verified_at is null", async () => {
     (db.query as jest.Mock).mockResolvedValueOnce({
       rows: [{ email_verified_at: null }],
     });
 
     await requireVerifiedEmail(req, res, next);
-    expect(next).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "EMAIL_NOT_VERIFIED" }),
+    );
+    expect(next).not.toHaveBeenCalled();
   });
 
   it("should return 401 if req.user is undefined", async () => {
@@ -46,12 +50,11 @@ describe("Trust Gate Middleware (Task 3.2.5)", () => {
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
-  it("should call next() for MVP even if user is not found in database", async () => {
-    (db.query as jest.Mock).mockResolvedValueOnce({
-      rows: [],
-    });
+  it("should return 401 if the user no longer exists", async () => {
+    (db.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
     await requireVerifiedEmail(req, res, next);
-    expect(next).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
   });
 });

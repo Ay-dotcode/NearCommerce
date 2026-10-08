@@ -7,3 +7,4 @@ export * from "@/constants/review";
 export * from "@/constants/search";
 export * from "@/constants/store";
 export * from "@/constants/support";
+export * from "@/constants/upload";

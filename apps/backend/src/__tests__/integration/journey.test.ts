@@ -1,6 +1,7 @@
 import { ALWAYS_OPEN } from "@/__tests__/helpers/fixtures";
 import { app } from "@/app";
 import { db } from "@/config/database";
+import { sendVerificationEmail } from "@/utils/email";
 import bcrypt from "bcrypt";
 import request from "supertest";
 
@@ -8,6 +9,17 @@ import request from "supertest";
 // seeding the two admin accounts: onboarding, catalog, browsing, favorites,
 // reviews, household lists and admin controls, with a token refresh in the
 // middle. It exists to catch seams between features that unit tests miss.
+// The emailed verification link is the only place the raw token exists, so read it from
+// the (mocked) mailer.
+jest.mock("@/utils/email", () => ({
+  ...jest.requireActual("@/utils/email"),
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+}));
+const verificationTokenFor = (who: string) => {
+  const calls = (sendVerificationEmail as jest.Mock).mock.calls;
+  return calls.filter(([to]) => to === email(who)).at(-1)![1] as string;
+};
+
 const RUN = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
 const PASSWORD = "journeyPass123";
 const email = (who: string) => `${who}_${RUN}@journey.test`;
@@ -207,6 +219,18 @@ describe("user journey", () => {
   });
 
   it("reviews: write, list, edit, average follows, delete", async () => {
+    const blocked = await request(app)
+      .post("/reviews")
+      .set(auth(shopper))
+      .send({ productId, rating: 5, comment: "Fresh" });
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.code).toBe("EMAIL_NOT_VERIFIED");
+
+    const verified = await request(app)
+      .post("/auth/verify-email")
+      .send({ token: verificationTokenFor("shopper") });
+    expect(verified.status).toBe(200);
+
     const created = await request(app)
       .post("/reviews")
       .set(auth(shopper))

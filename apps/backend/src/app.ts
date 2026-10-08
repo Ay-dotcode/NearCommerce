@@ -4,6 +4,10 @@ import favoriteRouter from "@/features/favorites/api/favorite.routes";
 import listsRouter from "@/features/lists/api/list.routes";
 import searchRouter from "@/features/search/api/search.routes";
 import supportRouter from "@/features/support/api/support.routes";
+import {
+  imageRouter,
+  uploadRouter,
+} from "@/features/uploads/api/upload.routes";
 import adminRouter from "@/routes/admin.routes";
 import productRouter from "@/routes/productRoutes";
 import reviewRouter from "@/routes/reviewRoutes";
@@ -38,5 +42,9 @@ app.use("/api/products", productRouter);
 app.use("/products", productRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/reviews", reviewRouter);
+app.use("/api/uploads", uploadRouter);
+app.use("/uploads", uploadRouter);
+app.use("/api/images", imageRouter);
+app.use("/images", imageRouter);
 app.use("/api/admin", adminRouter);
 app.use("/admin", adminRouter);
