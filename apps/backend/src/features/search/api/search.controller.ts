@@ -1,6 +1,8 @@
 import { db } from "@/config/database";
 import {
   GEMINI_CIRCUIT_BREAKER_TIMEOUT_MS,
+  GEMINI_VISION_TIMEOUT_MS,
+  MAX_IMAGE_SEARCH_BASE64_CHARS,
   SEARCH_RESULTS_LIMIT,
 } from "@/constants";
 import {
@@ -9,6 +11,7 @@ import {
 } from "@/features/search/services/search.queries";
 import { SqlParams } from "@/types/sql";
 import {
+  describeProductImage,
   fetchGeminiEmbedding,
   withCircuitBreaker,
 } from "@/utils/circuitBreaker";
@@ -17,6 +20,8 @@ import { sendValidationError } from "@/utils/http";
 import { storeRatingJoin, toRating } from "@/utils/ratings";
 import { checkIfStoreIsOpen } from "@/utils/timezone";
 import {
+  ImageSearchBodySchema,
+  ProductSearchQueryInput,
   ProductSearchQuerySchema,
   StoreSearchQuerySchema,
 } from "@nearcommerce/api";
@@ -44,6 +49,92 @@ const toProductResult = (row: any) => {
   };
 };
 
+export interface ProductSearchResult {
+  data: ReturnType<typeof toProductResult>[];
+  used_fallback: boolean;
+}
+
+// Runs the product search shared by the text and photo endpoints. `q` is the search text
+// (empty means "nearest visible products"); filters and location come from `query`.
+export async function findProducts(
+  query: ProductSearchQueryInput,
+  q: string | undefined,
+): Promise<ProductSearchResult> {
+  // Nearby, visible products with no text: nearest first.
+  if (!q) {
+    const params = new SqlParams();
+    const where = productVisibilityWhere(params, query);
+    const distance = `earth_distance(ll_to_earth($1, $2), ll_to_earth(s.latitude, s.longitude))`;
+    const limit = params.add(SEARCH_RESULTS_LIMIT);
+    const result = await db.query(
+      `${SELECT_PRODUCT(distance)}
+       WHERE ${where}
+       ORDER BY distance_meters ASC
+       LIMIT ${limit}`,
+      params.values,
+    );
+    return { data: result.rows.map(toProductResult), used_fallback: false };
+  }
+
+  let rows: unknown[] = [];
+  let usedFallback = false;
+
+  // Attempt AI vector search within the circuit breaker's time budget.
+  try {
+    const embedding = await withCircuitBreaker(
+      fetchGeminiEmbedding(q),
+      GEMINI_CIRCUIT_BREAKER_TIMEOUT_MS,
+    );
+    const params = new SqlParams();
+    const where = productVisibilityWhere(params, query);
+    const vector = params.add(`[${embedding.join(",")}]`);
+    const limit = params.add(SEARCH_RESULTS_LIMIT);
+    const distance = `earth_distance(ll_to_earth($1, $2), ll_to_earth(s.latitude, s.longitude))`;
+    rows = (
+      await db.query(
+        `${SELECT_PRODUCT(distance)}
+         WHERE ${where}
+         ORDER BY p.embedding <-> ${vector}::vector ASC, distance_meters ASC
+         LIMIT ${limit}`,
+        params.values,
+      )
+    ).rows;
+  } catch (aiError) {
+    // AI failed or timed out: fall back to trigram + full-text matching.
+    console.warn(
+      `[SEARCH FALLBACK] AI search failed for query "${q}":`,
+      aiError,
+    );
+    usedFallback = true;
+
+    const params = new SqlParams();
+    const where = productVisibilityWhere(params, query);
+    const like = params.add(containsPattern(q));
+    const text = params.add(q);
+    const limit = params.add(SEARCH_RESULTS_LIMIT);
+    const distance = `earth_distance(ll_to_earth($1, $2), ll_to_earth(s.latitude, s.longitude))`;
+    rows = (
+      await db.query(
+        `${SELECT_PRODUCT(distance)}
+         WHERE ${where}
+           AND (
+             p.name ILIKE ${like} OR
+             to_tsvector('english', p.name || ' ' || COALESCE(p.description, '')) @@ plainto_tsquery('english', ${text}) OR
+             p.name % ${text}
+           )
+         ORDER BY distance_meters ASC
+         LIMIT ${limit}`,
+        params.values,
+      )
+    ).rows;
+  }
+
+  return {
+    data: (rows as any[]).map(toProductResult),
+    used_fallback: usedFallback,
+  };
+}
+
 export const searchProducts = async (req: Request, res: Response) => {
   const parsed = ProductSearchQuerySchema.safeParse(req.query);
   if (!parsed.success)
@@ -54,88 +145,57 @@ export const searchProducts = async (req: Request, res: Response) => {
         message: i.message,
       })),
     });
-  const query = parsed.data;
-  const q = query.q?.trim();
 
   try {
-    // Nearby, visible products with no text: nearest first.
-    if (!q) {
-      const params = new SqlParams();
-      const where = productVisibilityWhere(params, query);
-      const distance = `earth_distance(ll_to_earth($1, $2), ll_to_earth(s.latitude, s.longitude))`;
-      const limit = params.add(SEARCH_RESULTS_LIMIT);
-      const result = await db.query(
-        `${SELECT_PRODUCT(distance)}
-         WHERE ${where}
-         ORDER BY distance_meters ASC
-         LIMIT ${limit}`,
-        params.values,
-      );
-      return res.status(200).json({
-        data: result.rows.map(toProductResult),
-        used_fallback: false,
-      });
-    }
-
-    let rows: unknown[] = [];
-    let usedFallback = false;
-
-    // Attempt AI vector search within the circuit breaker's time budget.
-    try {
-      const embedding = await withCircuitBreaker(
-        fetchGeminiEmbedding(q),
-        GEMINI_CIRCUIT_BREAKER_TIMEOUT_MS,
-      );
-      const params = new SqlParams();
-      const where = productVisibilityWhere(params, query);
-      const vector = params.add(`[${embedding.join(",")}]`);
-      const limit = params.add(SEARCH_RESULTS_LIMIT);
-      const distance = `earth_distance(ll_to_earth($1, $2), ll_to_earth(s.latitude, s.longitude))`;
-      rows = (
-        await db.query(
-          `${SELECT_PRODUCT(distance)}
-           WHERE ${where}
-           ORDER BY p.embedding <-> ${vector}::vector ASC, distance_meters ASC
-           LIMIT ${limit}`,
-          params.values,
-        )
-      ).rows;
-    } catch (aiError) {
-      // AI failed or timed out: fall back to trigram + full-text matching.
-      console.warn(
-        `[SEARCH FALLBACK] AI search failed for query "${q}":`,
-        aiError,
-      );
-      usedFallback = true;
-
-      const params = new SqlParams();
-      const where = productVisibilityWhere(params, query);
-      const like = params.add(containsPattern(q));
-      const text = params.add(q);
-      const limit = params.add(SEARCH_RESULTS_LIMIT);
-      const distance = `earth_distance(ll_to_earth($1, $2), ll_to_earth(s.latitude, s.longitude))`;
-      rows = (
-        await db.query(
-          `${SELECT_PRODUCT(distance)}
-           WHERE ${where}
-             AND (
-               p.name ILIKE ${like} OR
-               to_tsvector('english', p.name || ' ' || COALESCE(p.description, '')) @@ plainto_tsquery('english', ${text}) OR
-               p.name % ${text}
-             )
-           ORDER BY distance_meters ASC
-           LIMIT ${limit}`,
-          params.values,
-        )
-      ).rows;
-    }
-
-    return res.status(200).json({
-      data: (rows as any[]).map(toProductResult),
-      used_fallback: usedFallback,
-    });
+    return res
+      .status(200)
+      .json(await findProducts(parsed.data, parsed.data.q?.trim()));
   } catch (error) {
     console.error("Search API Error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// POST /search/image: a photo of a product in, nearby matches out. A vision model names
+// the product, then the normal search runs on that name. When vision is unavailable the
+// app falls back to text search (SRS 3.2.1), so that case is a distinct 503.
+export const searchByImage = async (req: Request, res: Response) => {
+  const parsed = ImageSearchBodySchema.safeParse(req.body);
+  if (!parsed.success)
+    return sendValidationError(
+      res,
+      parsed.error.issues,
+      "Invalid image search request",
+    );
+  const { image, mime_type, ...query } = parsed.data;
+  if (image.length > MAX_IMAGE_SEARCH_BASE64_CHARS)
+    return res.status(413).json({ error: "The photo is too large." });
+
+  let detected: string | null;
+  try {
+    detected = await describeProductImage(
+      image,
+      mime_type,
+      GEMINI_VISION_TIMEOUT_MS,
+    );
+  } catch (error) {
+    console.warn("[IMAGE SEARCH] Vision unavailable:", error);
+    return res.status(503).json({
+      error: "Image search is unavailable right now.",
+      code: "VISION_UNAVAILABLE",
+    });
+  }
+  if (!detected)
+    return res.status(422).json({
+      error: "We couldn't spot a product in that photo.",
+      code: "NO_PRODUCT_DETECTED",
+    });
+
+  try {
+    const result = await findProducts(query, detected);
+    return res.status(200).json({ detected_query: detected, ...result });
+  } catch (error) {
+    console.error("Image search error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

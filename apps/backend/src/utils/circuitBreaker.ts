@@ -1,4 +1,9 @@
-import { EMBEDDING_DIMENSIONS, GEMINI_EMBEDDING_MODEL } from "@/constants";
+import {
+  EMBEDDING_DIMENSIONS,
+  GEMINI_EMBEDDING_MODEL,
+  GEMINI_VISION_MODEL,
+  MAX_DETECTED_QUERY_CHARS,
+} from "@/constants";
 
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -44,25 +49,23 @@ const buildEmbedRequest = (text: string, taskType: EmbeddingTaskType) => ({
 });
 
 async function geminiPost<T>(
-  method: "embedContent" | "batchEmbedContents",
+  model: string,
+  method: "embedContent" | "batchEmbedContents" | "generateContent",
   body: unknown,
   timeoutMs: number,
 ): Promise<T> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
 
-  const response = await fetch(
-    `${GEMINI_API_BASE}/models/${GEMINI_EMBEDDING_MODEL}:${method}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(timeoutMs),
+  const response = await fetch(`${GEMINI_API_BASE}/models/${model}:${method}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
     },
-  );
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
 
   if (!response.ok) {
     const detail = (await response.text()).slice(0, 300);
@@ -86,6 +89,7 @@ export const fetchGeminiEmbedding = async (
   timeoutMs = 10_000,
 ): Promise<number[]> => {
   const data = await geminiPost<{ embedding?: { values?: number[] } }>(
+    GEMINI_EMBEDDING_MODEL,
     "embedContent",
     buildEmbedRequest(text, taskType),
     timeoutMs,
@@ -102,6 +106,7 @@ export const fetchGeminiEmbeddingsBatch = async (
 ): Promise<number[][]> => {
   if (texts.length === 0) return [];
   const data = await geminiPost<{ embeddings?: { values?: number[] }[] }>(
+    GEMINI_EMBEDDING_MODEL,
     "batchEmbedContents",
     { requests: texts.map((t) => buildEmbedRequest(t, taskType)) },
     timeoutMs,
@@ -112,4 +117,51 @@ export const fetchGeminiEmbeddingsBatch = async (
       `Gemini returned ${embeddings.length} embeddings for ${texts.length} inputs`,
     );
   return embeddings.map((e) => l2Normalize(assertDimensions(e.values)));
+};
+
+const VISION_PROMPT =
+  "You help shoppers find products in local stores. Name the single main retail product " +
+  "in this photo as a short search phrase of at most 6 words: the product type, plus brand " +
+  "or flavour only if clearly visible. Reply with ONLY that phrase. If the photo shows no " +
+  "purchasable product, reply with exactly: NONE";
+
+// Turns the model's reply into a search phrase, or null when it saw no product.
+export const parseVisionReply = (reply: string | undefined): string | null => {
+  const firstLine = reply?.split("\n").find((line) => line.trim()) ?? "";
+  const phrase = firstLine
+    .replace(/^["'`\s]+|["'`\s.]+$/g, "")
+    .slice(0, MAX_DETECTED_QUERY_CHARS)
+    .trim();
+  return !phrase || /^none$/i.test(phrase) ? null : phrase;
+};
+
+// Asks Gemini what product a photo shows. Resolves null when no product is visible; throws
+// when the model is unreachable, slow, or not configured.
+export const describeProductImage = async (
+  base64: string,
+  mimeType: string,
+  timeoutMs: number,
+): Promise<string | null> => {
+  const data = await geminiPost<{
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  }>(
+    GEMINI_VISION_MODEL,
+    "generateContent",
+    {
+      contents: [
+        {
+          parts: [
+            { text: VISION_PROMPT },
+            { inline_data: { mime_type: mimeType, data: base64 } },
+          ],
+        },
+      ],
+      generationConfig: { temperature: 0, maxOutputTokens: 40 },
+    },
+    timeoutMs,
+  );
+  const text = data.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text ?? "")
+    .join("");
+  return parseVisionReply(text);
 };

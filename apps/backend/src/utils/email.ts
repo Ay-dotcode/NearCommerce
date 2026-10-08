@@ -22,7 +22,7 @@ export async function sendVerificationEmail(
     process.env.FRONTEND_URL ||
     process.env.WEB_APP_URL ||
     "http://localhost:3001";
-  const verificationUrl = `${frontendUrl}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
+  const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(rawToken)}`;
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || "noreply@nearcommerce.local",

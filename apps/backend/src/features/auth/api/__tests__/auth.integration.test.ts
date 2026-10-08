@@ -48,7 +48,7 @@ describe("Auth Integration Tests", () => {
       const response = await request(app).post("/auth/register").send(testUser);
 
       expect(response.status).toBe(201);
-      expect(response.body.message).toMatch(/registered successfully/i);
+      expect(response.body.message).toMatch(/verify your address/i);
 
       // Verify database state
       const userResult = await db.query(
@@ -58,8 +58,13 @@ describe("Auth Integration Tests", () => {
       expect(userResult.rows.length).toBe(1);
       expect(userResult.rows[0].role).toBe("CUSTOMER");
 
-      // MVP: user is auto-verified on registration — email_verified_at is set immediately
-      expect(userResult.rows[0].email_verified_at).not.toBeNull();
+      // The account stays unverified until the emailed link is followed
+      expect(userResult.rows[0].email_verified_at).toBeNull();
+      const tokens = await db.query(
+        "SELECT expires_at FROM email_verification_tokens WHERE user_id = $1",
+        [userResult.rows[0].id],
+      );
+      expect(tokens.rows).toHaveLength(1);
     });
 
     it("creates a STORE_OWNER when the store portal asks for one", async () => {
@@ -102,30 +107,6 @@ describe("Auth Integration Tests", () => {
 
       expect(response.status).toBe(409);
       expect(response.body.error).toBe("Email already in use");
-    });
-  });
-
-  // MVP: email verification is disabled — the endpoint always returns 200
-  describe("POST /auth/verify-email", () => {
-    it("should always return 200 with MVP disabled message", async () => {
-      const response = await request(app)
-        .post("/auth/verify-email")
-        .send({ token: "any-token" });
-
-      expect(response.status).toBe(200);
-      expect(response.body.message).toMatch(/disabled in the MVP/i);
-    });
-  });
-
-  // MVP: resend verification is disabled — the endpoint always returns 200
-  describe("POST /auth/resend-verification", () => {
-    it("should always return 200 with MVP disabled message", async () => {
-      const response = await request(app)
-        .post("/auth/resend-verification")
-        .send({ email: testUser.email });
-
-      expect(response.status).toBe(200);
-      expect(response.body.message).toMatch(/disabled in the MVP/i);
     });
   });
 
@@ -432,7 +413,11 @@ describe("Auth Integration Tests", () => {
       expect(response.status).toBe(200);
       expect(response.body.access_token).toBeDefined();
       expect(response.body.refresh_token).toBeDefined();
-      expect(response.body.user).toEqual({ id: userId, role: "CUSTOMER" });
+      expect(response.body.user).toEqual({
+        id: userId,
+        role: "CUSTOMER",
+        email_verified: false,
+      });
 
       // Verify user_sessions table has hashed refresh token
       const sessionResult = await db.query(

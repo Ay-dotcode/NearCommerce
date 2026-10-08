@@ -16,7 +16,14 @@ export async function requireVerifiedEmail(
       [userId],
     );
 
-    // Verification disabled for MVP
+    if (result.rows.length === 0)
+      return res.status(401).json({ error: "Unauthorized" });
+    if (result.rows[0].email_verified_at === null)
+      return res.status(403).json({
+        error: "Please verify your email address first.",
+        code: "EMAIL_NOT_VERIFIED",
+      });
+
     next();
   } catch (error) {
     console.error("[TRUST GATE] Error verifying email status:", error);

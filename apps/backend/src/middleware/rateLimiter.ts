@@ -1,4 +1,5 @@
 import {
+  IMAGE_SEARCH_RATE_LIMIT_MAX,
   JOIN_LIST_RATE_LIMIT_MAX,
   RATE_LIMIT_MAX_REQUESTS,
   RATE_LIMIT_WINDOW_MINUTES,
@@ -6,6 +7,7 @@ import {
   REFRESH_RATE_LIMIT_MAX,
   REGISTER_RATE_LIMIT_MAX,
   RESEND_RATE_LIMIT_MAX_REQUESTS,
+  UPLOAD_RATE_LIMIT_MAX,
 } from "@/constants";
 import rateLimit from "express-rate-limit";
 
@@ -74,4 +76,24 @@ export const registerLimiter = rateLimit({
   message: {
     error: "Too many registration attempts, please try again later.",
   },
+});
+
+// Image uploads are stored in the database, so cap how fast one client can add them.
+export const uploadLimiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: UPLOAD_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test",
+  message: { error: "Too many uploads, please try again later." },
+});
+
+// Every photo search is a paid vision call, so cap how many one client can make.
+export const imageSearchLimiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: IMAGE_SEARCH_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test",
+  message: { error: "Too many photo searches, please try again later." },
 });

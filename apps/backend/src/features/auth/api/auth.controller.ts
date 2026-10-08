@@ -1,6 +1,10 @@
 import { db } from "@/config/database";
 import { BCRYPT_SALT_ROUNDS, PASSWORD_RESET_TOKEN_TTL_MS } from "@/constants";
 import {
+  confirmEmailVerification,
+  issueEmailVerification,
+} from "@/features/auth/services/emailVerification.service";
+import {
   clearLoginFailures,
   getLoginLockout,
   recordLoginFailure,
@@ -21,7 +25,9 @@ import {
   LogoutSchema,
   RefreshTokenSchema,
   RegisterSchema,
+  ResendVerificationSchema,
   ResetPasswordSchema,
+  VerifyEmailSchema,
 } from "@nearcommerce/api";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -62,10 +68,10 @@ export const registerUser = async (req: Request, res: Response) => {
       BCRYPT_SALT_ROUNDS,
     );
 
-    // 4. Insert the user. MVP: auto-verified, no verification email or token.
-    await db.query(
-      `INSERT INTO users (email, password_hash, full_name, role, email_verified_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
+    // 4. Insert the user, unverified until they follow the emailed link
+    const inserted = await db.query(
+      `INSERT INTO users (email, password_hash, full_name, role)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
       [
         validatedData.email,
         passwordHash,
@@ -74,10 +80,17 @@ export const registerUser = async (req: Request, res: Response) => {
       ],
     );
 
-    // 5. Return success – account is ready to use immediately
+    // 5. Email the verification link. A failure here is logged, not fatal; the user can resend.
+    await issueEmailVerification(
+      inserted.rows[0].id,
+      validatedData.email,
+    ).catch((error) =>
+      console.error("Failed to issue verification token:", error),
+    );
+
     return res.status(201).json({
       message:
-        "User registered successfully. Email verification is disabled in the MVP.",
+        "Account created. Check your email for a link to verify your address.",
     });
   } catch (error) {
     if (
@@ -93,18 +106,47 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 };
 
-export const verifyEmail = async (_req: Request, res: Response) => {
-  // Email verification is disabled for MVP — always returns success
-  return res
-    .status(200)
-    .json({ message: "Email verification is disabled in the MVP." });
+export const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const { token } = VerifyEmailSchema.parse(req.body);
+    if (!(await confirmEmailVerification(token)))
+      return res
+        .status(400)
+        .json({ error: "Invalid or expired verification token" });
+    return res.status(200).json({ message: "Email verified successfully." });
+  } catch (error) {
+    if (error instanceof ZodError)
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.issues });
+    console.error("Verify email error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-export const resendVerification = async (_req: Request, res: Response) => {
-  // Email verification is disabled for MVP — always returns success
-  return res
-    .status(200)
-    .json({ message: "Email verification is disabled in the MVP." });
+export const resendVerification = async (req: Request, res: Response) => {
+  // Same answer whether or not the address exists or is already verified, so this cannot
+  // be used to probe which emails are registered.
+  const generic = {
+    message:
+      "If that account exists and is not yet verified, a new link has been sent.",
+  };
+  try {
+    const { email } = ResendVerificationSchema.parse(req.body);
+    const { rows } = await db.query(
+      `SELECT id FROM users WHERE email = $1 AND email_verified_at IS NULL`,
+      [email],
+    );
+    if (rows.length > 0) await issueEmailVerification(rows[0].id, email);
+    return res.status(200).json(generic);
+  } catch (error) {
+    if (error instanceof ZodError)
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.issues });
+    console.error("Resend verification error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const forgotPassword = async (req: Request, res: Response) => {
@@ -262,7 +304,8 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     const userResult = await db.query(
-      `SELECT id, password_hash, role, is_suspended FROM users WHERE email = $1`,
+      `SELECT id, password_hash, role, is_suspended, email_verified_at FROM users
+        WHERE email = $1`,
       [email],
     );
 
@@ -295,6 +338,7 @@ export const loginUser = async (req: Request, res: Response) => {
       user: {
         id: user.id,
         role: user.role,
+        email_verified: user.email_verified_at !== null,
         ...(storeId ? { store_id: storeId } : {}),
       },
     });
