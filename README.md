@@ -20,19 +20,19 @@ Shared code lives in `packages/` (`@nearcommerce/api` for the HTTP client, schem
 - **Discovery:** geospatial product and store search with distance, stock status and freshness badges, category browsing, favorites, and store operating-hours awareness.
 - **Search:** semantic search using Gemini embeddings in `pgvector`, with automatic fallback to PostgreSQL full-text and trigram matching when Gemini is unavailable or slower than 2 seconds.
 - **Inventory:** product CRUD, one-click "Confirm still in stock", stale-listing flagging (30 days), and a CSV importer that creates or updates products (rows with an image URL are published, rows without become drafts).
+- **Product photos:** owners choose a photo, crop it (auto-detected by an in-browser YOLO model, with manual cropping as a fallback), and upload it. Images are stored in PostgreSQL and served from the API, so no separate storage service is needed. Pasting an image URL still works.
+- **Photo search:** shoppers can search by taking or choosing a photo. A Gemini vision model names the product and the normal nearby search runs on that name. If the vision service is unavailable the app hides photo search and text search carries on.
 - **Household lists:** shared shopping lists with invite codes, owner and member roles, and live updates over Socket.IO.
 - **Reviews:** store and product ratings with editing and deletion by their author. Store owners cannot review their own store or products.
 - **Moderation:** admins suspend or delete users and stores, delete reviews, and every action is written to an audit log with a pre-change snapshot.
-- **Accounts:** role-based access (`CUSTOMER`, `STORE_OWNER`, `SYSTEM_ADMIN`), refresh-token sessions, password reset by email, progressive login lockout, and account deletion.
+- **Accounts:** role-based access (`CUSTOMER`, `STORE_OWNER`, `SYSTEM_ADMIN`), email verification, refresh-token sessions, password reset by email, progressive login lockout, and account deletion. Unverified users can sign in but cannot post reviews; the apps prompt them to verify and can resend the link.
 - **Directions:** hand off to the phone's native maps app from a store or product (the "avoid tolls" preference is honoured on Android).
 
-### Known gaps
+### Good to know
 
-These are described in the SRS but are not finished:
-
-- **Image search:** the mobile search bar shows the SRS fallback ("Image search is unavailable") because vision search is not implemented.
-- **Image cropper:** `EdgeImageCropper` (ONNX YOLO in a Web Worker) exists and is tested but is not used by the product form yet. Products currently take an image URL, and there is no image upload or hosting.
-- **Email verification:** disabled for the MVP. New accounts are verified on registration.
+- Photo search and semantic search need a `GEMINI_API_KEY`. Without one, search uses text matching only and photo search reports itself unavailable.
+- Uploaded images are stored in the database (up to 2 MB each) and unused ones are pruned after an hour. For very large catalogues, consider moving them to object storage behind the same `/api/images/:id` URLs.
+- The bundled cropper model (`apps/web/public/models/yolo.onnx`) is an Ultralytics YOLOv8n export. Ultralytics models are AGPL-3.0 licensed, so check that this suits your distribution plans.
 
 ## Repository structure
 
@@ -73,7 +73,7 @@ This is a `pnpm` workspace managed by Turborepo:
 - PostgreSQL 15 or newer with the `vector` (pgvector) extension available. Creating the extensions needs a role that is allowed to run `CREATE EXTENSION`.
 - Redis 6 or newer
 - A Gemini API key (optional; without it, search uses text matching only)
-- SMTP credentials (optional in development; outside production the backend also prints the password-reset token to its console)
+- SMTP credentials (optional in development; outside production the backend also prints password-reset and email-verification tokens to its console, so you can finish those flows without a mail server)
 - Expo Go or an emulator/simulator to run the mobile app
 
 ## Getting started
@@ -93,7 +93,7 @@ This is a `pnpm` workspace managed by Turborepo:
    cp .env.example .env
    ```
 
-   Fill in `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` at minimum. The backend and both web portals read this root `.env` (the portals only see `VITE_`-prefixed keys). Never commit real credentials.
+   Fill in `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` at minimum. In production also set `FRONTEND_URL` (the links in emails) and `PUBLIC_API_URL` (the links to uploaded images). The backend and both web portals read this root `.env` (the portals only see `VITE_`-prefixed keys). Never commit real credentials.
 
 3. Create the database schema. There is no migration runner yet; apply the SQL files in order:
 
@@ -102,6 +102,8 @@ This is a `pnpm` workspace managed by Turborepo:
      psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
    done
    ```
+
+   Upgrading an existing database? Run only the migration files you haven't applied yet (for example `006_uploaded_images.sql` for product photo uploads). Accounts created while verification was off are already marked verified, so no data fix is needed.
 
 4. Seed demo data (optional):
 
@@ -131,6 +133,8 @@ This is a `pnpm` workspace managed by Turborepo:
    echo 'EXPO_PUBLIC_API_URL=http://localhost:4000' > apps/mobile/.env
    pnpm --filter @nearcommerce/mobile start
    ```
+
+   Photo search uses the camera and photo library through `expo-image-picker`. Expo Go works as is; in a development or production build, add the `expo-image-picker` plugin (with your permission texts) to the Expo config.
 
    `localhost` only works in an emulator or simulator on the same machine. On a physical device use your computer's LAN address (for example `http://192.168.1.20:4000`).
 
