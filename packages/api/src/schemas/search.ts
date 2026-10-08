@@ -28,6 +28,23 @@ export const ProductSearchQuerySchema = SearchQuerySchema.extend({
     .optional(),
 });
 
+// Photo search: the app sends a small base64 JPEG/PNG/WebP, the server asks a vision model
+// what product it shows, then searches for that. `q` is not accepted; the photo is the query.
+export const IMAGE_SEARCH_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+export const ImageSearchBodySchema = ProductSearchQuerySchema.omit({
+  q: true,
+}).extend({
+  image: z
+    .string()
+    .min(1, "image is required")
+    .regex(/^[A-Za-z0-9+/]+={0,2}$/, "image must be plain base64"),
+  mime_type: z.enum(IMAGE_SEARCH_MIME_TYPES),
+});
+
 // Nearby stores for the home screen. `q` narrows by store name.
 export const StoreSearchQuerySchema = SearchQuerySchema.pick({
   lat: true,
@@ -38,5 +55,6 @@ export const StoreSearchQuerySchema = SearchQuerySchema.pick({
 });
 
 export type ProductSearchQueryInput = z.infer<typeof ProductSearchQuerySchema>;
+export type ImageSearchBodyInput = z.infer<typeof ImageSearchBodySchema>;
 export type StoreSearchQueryInput = z.infer<typeof StoreSearchQuerySchema>;
 export type SearchQueryInput = z.infer<typeof SearchQuerySchema>;
