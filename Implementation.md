@@ -28,14 +28,14 @@ Every new feature or service built must include:
 
 ### Phase 3: Backend API & Micro-Services
 
-#### Task 3.1: Core Auth (MVP — Email Verification Disabled)
+#### Task 3.1: Core Auth & Email Verification
 
-- **3.1.1 Registration (`/auth/register`):** Accept `RegisterSchema` (strictly `CUSTOMER` or `STORE_OWNER`, blocking `SYSTEM_ADMIN` escalation), hash passwords with `bcrypt`, insert user, and immediately set `email_verified_at = NOW()`. No verification email is sent. Rate-limit registration per IP/email.
-- **3.1.2 Email Verification (`/auth/verify-email`):** **Disabled for MVP.** Stub returning `200 OK`.
-- **3.1.3 Resend Verification (`/auth/resend-verification`):** **Disabled for MVP.** Stub returning `200 OK`.
+- **3.1.1 Registration (`/auth/register`):** Accept `RegisterSchema` (strictly `CUSTOMER` or `STORE_OWNER`, blocking `SYSTEM_ADMIN` escalation), hash passwords with `bcrypt`, insert the user unverified, issue a hashed 24h token and email the link (a send failure is logged, not fatal). Rate-limit registration per IP.
+- **3.1.2 Email Verification (`/auth/verify-email`):** Validates the emailed token, sets `email_verified_at`, deletes the user's tokens. Web page at `/verify-email`.
+- **3.1.3 Resend Verification (`/auth/resend-verification`):** Replaces the token and re-sends. Same response for unknown or verified addresses. Web (banner and register screen) and mobile (Settings) can request it.
 - **3.1.4 Support Endpoint (`/support`):** Standardized route providing official support channels for users and store owners.
 - **3.1.5 Password Reset Flow:** Implement `/auth/forgot-password` (1h expiry, hashed token in DB) and `/auth/reset-password` (validates token, updates `password_hash`, and revokes all active `user_sessions`). Includes password reset UI screens in web and mobile apps.
-- **3.1.6 Trust Gate (`requireVerifiedEmail` middleware):** **Bypassed for MVP.** Calls `next()` unconditionally.
+- **3.1.6 Trust Gate (`requireVerifiedEmail` middleware):** Returns `403 EMAIL_NOT_VERIFIED` for unverified users; guards reviews. `GET /users/me` reports `email_verified`.
 
 #### Task 3.2: Domain Micro-Services & Schema Refinements
 
@@ -59,7 +59,7 @@ Every new feature or service built must include:
 - **Task 4.2 Store Owner Dashboard & Operations:**
   - Product CRUD forms with automatic freshness verification on edit.
   - Store creation onboarding modal for new store owners with zero stores, plus a multi-store switcher component.
-  - Dual-mode CSV importer (auto-drafts if image URL missing) and Edge-AI image cropper running ONNX YOLO in a Web Worker (with 3s fallback).
+  - Dual-mode CSV importer (auto-drafts if image URL missing) and Edge-AI image cropper running ONNX YOLO in a Web Worker (with 3s fallback), wired into the product form with owner-only image upload and hosting.
   - Add explicit Logout, Store Deletion, and Support buttons to the dashboard layout.
 - **Task 4.3 System Admin Dashboard:**
   - Global metrics hub, user/store moderation grids (with User Demote button), review moderation grid, and read-only audit log ledger with pre-deletion snapshots.
@@ -88,4 +88,4 @@ Every new feature or service built must include:
 
 When starting your next chat session, copy and paste this message:
 
-> _"We are building NearCommerce, a modular local commerce platform using a pnpm/Turborepo monorepo, Node.js/Express, Neon PostgreSQL, and Upstash Redis. Our SRS and Implementation Blueprint have been reconciled for our MVP plan (auto-verified registration, bypassed email sending). All test suites across the monorepo pass cleanly. Let me know where we should begin on our remaining backlog!"_
+> _"We are building NearCommerce, a modular local commerce platform using a pnpm/Turborepo monorepo, Node.js/Express, Neon PostgreSQL, and Upstash Redis. Our SRS and Implementation Blueprint have been reconciled with the implemented behaviour (email verification, photo upload and hosting, photo search). All test suites across the monorepo pass cleanly. Let me know where we should begin on our remaining backlog!"_

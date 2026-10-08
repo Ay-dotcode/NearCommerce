@@ -64,12 +64,12 @@
 
 **Task 3.1: Core API, Auth, & Email Verification (MVP Alignment)**
 
-- _Sub-task 3.1.1 (Registration):_ Accept `RegisterSchema`, hash passwords with bcrypt, insert user, and immediately set `email_verified_at = CURRENT_TIMESTAMP` for MVP mode. No verification email is sent. Users can log in immediately after registration.
-- _Sub-task 3.1.2 (Email Verification Endpoint - Disabled for MVP):_ Endpoint (`/auth/verify-email`) is a stub returning 200 OK. Restored when custom email domain is configured.
-- _Sub-task 3.1.3 (Resend Verification Endpoint - Disabled for MVP):_ Endpoint (`/auth/resend-verification`) is a stub returning 200 OK.
+- _Sub-task 3.1.1 (Registration):_ Accept `RegisterSchema`, hash passwords with bcrypt, insert the user with `email_verified_at = NULL`, issue a hashed 24-hour token in `email_verification_tokens`, and email the verification link. Users can log in immediately; unverified users cannot post reviews. A failed email send never fails registration. Rate-limit registration per IP.
+- _Sub-task 3.1.2 (Email Verification Endpoint):_ `/auth/verify-email` accepts the emailed token, sets `email_verified_at`, and deletes the user's tokens. Unknown, expired and reused tokens return 400. The link opens the store-owner portal's `/verify-email` page.
+- _Sub-task 3.1.3 (Resend Verification Endpoint):_ `/auth/resend-verification` replaces any earlier token with a fresh one and re-sends the link. It answers identically for unknown and already-verified addresses so it cannot be used to probe registered emails, and is rate-limited.
 - _Sub-task 3.1.4 (Support Endpoint):_ Expose a standardized `/support` endpoint providing users and store owners direct access to official support channels.
 - _Sub-task 3.1.5 (Password Reset):_ Build `/auth/forgot-password` (issues a hashed token in `password_reset_tokens`, 1h expiry, invalidating any prior unexpired token for that user) and `/auth/reset-password` (validates the token, updates `password_hash`, and revokes all of that user's active `user_sessions`).
-- _Sub-task 3.1.6 (Trust Gate Middleware - Bypassed for MVP):_ `requireVerifiedEmail` calls `next()` unconditionally for MVP since users are auto-verified upon registration.
+- _Sub-task 3.1.6 (Trust Gate Middleware):_ `requireVerifiedEmail` rejects users whose `email_verified_at` is NULL with `403` and code `EMAIL_NOT_VERIFIED`. It guards community reviews. `GET /users/me` exposes `email_verified` so clients can prompt for verification.
 
 **Task 3.2: Domain Micro-Services**
 
@@ -90,7 +90,7 @@
 
 - _Sub-task 4.2.1:_ Product CRUD forms with `quantity` input and a single-click "Confirm Still In Stock" button.
 - _Sub-task 4.2.2 (Dual-Mode CSV Importer):_ Supports both creation and updates. If a CSV row contains a public image URL, the product is published immediately. If omitted, it is created as `is_published = false` (Draft) and remains hidden until an image is manually uploaded.
-- _Sub-task 4.2.3:_ Edge-AI Image Cropper running ONNX YOLO in a Web Worker, with a graceful 3-second fallback to manual cropping.
+- _Sub-task 4.2.3:_ Edge-AI Image Cropper running ONNX YOLO in a Web Worker, with a graceful 3-second fallback to manual cropping. The product form lets owners choose a photo, crop it, and upload it (`POST /uploads/images`, owner-only, JPEG/PNG/WebP up to 2 MB, validated by file signature). Images are stored in Postgres (`uploaded_images`) and served publicly and cacheably from `GET /images/:id`; the resulting URL becomes the product's `image_url`. Unused uploads are pruned after one hour. Owners can still paste an image URL instead.
 
 **Task 4.3: System Admin Dashboard (Master Oversight)**
 
@@ -109,7 +109,7 @@
 
 **Task 5.2: Search & Product Discovery**
 
-- _Sub-task 5.2.1:_ Unified Search bar. Disables visual tools gracefully upon AI service failure.
+- _Sub-task 5.2.1:_ Unified Search bar with text and photo search. A photo (camera or library, shrunk on-device) is sent to `POST /search/image`; a Gemini vision model names the product and the normal semantic search runs on that name. If the vision service is unavailable the server answers `503 VISION_UNAVAILABLE` and the app hides photo search and falls back to text search.
 - _Sub-task 5.2.2:_ Product Cards displaying price, distance, stock status (derived purely from `quantity > 0`), and Freshness Badge.
 
 **Task 5.3: Real-Time Shared Household Lists**
