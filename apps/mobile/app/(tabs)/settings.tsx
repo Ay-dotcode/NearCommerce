@@ -1,5 +1,6 @@
 import { apiErrorMessage } from "@/api/errors";
 import LocationFallbackModal from "@/components/LocationFallbackModal";
+import VerifyEmailPrompt from "@/components/VerifyEmailPrompt";
 import { AVOID_TOLLS_KEY } from "@/constants";
 import { useAuth } from "@/src/context/AuthContext";
 import { useManualLocation } from "@/src/hooks/useManualLocation";
@@ -56,6 +57,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      <VerifyEmailPrompt />
       <Text style={styles.title}>Routing Preferences</Text>
       <View style={styles.settingRow}>
         <Text style={styles.label}>Avoid Tolls on Route</Text>

@@ -17,3 +17,7 @@ export type SearchResponse = {
   data: SearchResult[];
   used_fallback: boolean;
 };
+
+export type ImageSearchResponse = SearchResponse & {
+  detected_query: string;
+};

@@ -256,11 +256,20 @@ describe("ReviewScreen", () => {
   });
 
   it.each([
-    [403, /verify your email/i],
-    [409, /already reviewed/i],
-  ])("explains a %s response", async (status, message) => {
+    [403, "EMAIL_NOT_VERIFIED", /verify your email/i],
+    [403, undefined, /own store/i],
+    [409, undefined, /already reviewed/i],
+  ])("explains a %s response (%s)", async (status, code, message) => {
     useLocalSearchParams.mockReturnValue({ storeId: "s1" });
-    api.post.mockRejectedValue({ response: { status, data: { error: "x" } } });
+    api.post.mockRejectedValue({
+      response: {
+        status,
+        data: {
+          error: "You can't review your own store or its products.",
+          code,
+        },
+      },
+    });
     const { getByText, getByLabelText, findByText } = renderWithClient(
       <ReviewScreen />,
     );

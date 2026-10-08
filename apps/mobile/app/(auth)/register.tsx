@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 interface RegisterResponse {
   access_token: string;
@@ -37,7 +38,7 @@ export default function RegisterScreen() {
     }
     setIsSubmitting(true);
     try {
-      // Register — backend auto-verifies email in MVP
+      // Register; the backend emails a verification link
       await apiClient.post("/auth/register", {
         full_name: fullName.trim(),
         email: email.trim().toLowerCase(),
@@ -49,6 +50,11 @@ export default function RegisterScreen() {
         password,
       });
       await login(res.data.access_token, res.data.refresh_token);
+      Toast.show({
+        type: "info",
+        text1: "Check your email",
+        text2: "Tap the link we sent to verify your account.",
+      });
       router.replace("/(tabs)");
     } catch (err: any) {
       const msg =

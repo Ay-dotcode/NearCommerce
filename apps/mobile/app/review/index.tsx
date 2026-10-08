@@ -64,11 +64,15 @@ export default function ReviewScreen() {
       router.back();
     },
     onError: (err) => {
-      const status = (err as { response?: { status?: number } })?.response
-        ?.status;
+      const response = (
+        err as {
+          response?: { status?: number; data?: { code?: string } };
+        }
+      )?.response;
+      const status = response?.status;
       setError(
-        status === 403
-          ? "You must verify your email to submit reviews."
+        response?.data?.code === "EMAIL_NOT_VERIFIED"
+          ? "Verify your email to submit reviews. You can resend the link from Settings."
           : status === 409
             ? "You've already reviewed this. Open your review and choose Edit."
             : apiErrorMessage(err, "Couldn't save your review."),

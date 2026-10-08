@@ -1,8 +1,9 @@
-import { searchProducts } from "@/api/client";
+import { searchByImage, searchProducts } from "@/api/client";
 import ProductCard from "@/components/ProductCard";
 import { useSessionCoords } from "@/src/hooks/useSessionCoords";
+import { pickPhoto, type PhotoSource } from "@/utils/photo";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
@@ -16,11 +17,26 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const VISION_UNAVAILABLE_NOTICE =
+  "Image search is unavailable right now. Text search is still working.";
+
+// Maps a failed photo search to what the shopper should read.
+function photoErrorMessage(error: unknown): string {
+  const code = (error as { response?: { data?: { code?: string } } })?.response
+    ?.data?.code;
+  if (code === "NO_PRODUCT_DETECTED")
+    return "We couldn't spot a product in that photo. Try another angle.";
+  return "Photo search failed. Please try again.";
+}
+
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ q?: string }>();
   const [searchQuery, setSearchQuery] = useState(params.q ?? "");
   const location = useSessionCoords();
-  const [isVisionAvailable] = useState(false);
+  // Set once the server reports the vision model is down; photo search is then hidden
+  // and text search carries on (SRS 3.2.1).
+  const [visionUnavailable, setVisionUnavailable] = useState(false);
+  const [photoNotice, setPhotoNotice] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ["search", searchQuery, location],
@@ -33,7 +49,41 @@ export default function SearchScreen() {
     enabled: searchQuery.trim().length > 2 && location !== null,
   });
 
-  const results = query.data?.data ?? [];
+  const photoSearch = useMutation({
+    mutationFn: async (source: PhotoSource) => {
+      const photo = await pickPhoto(source);
+      if (photo === "denied")
+        throw Object.assign(new Error("denied"), { denied: true });
+      if (photo === null) return null; // backed out of the picker
+      return searchByImage(photo, location!.latitude, location!.longitude);
+    },
+    onMutate: () => setPhotoNotice(null),
+    onError: (error) => {
+      const code = (error as { response?: { data?: { code?: string } } })
+        ?.response?.data?.code;
+      if (code === "VISION_UNAVAILABLE") setVisionUnavailable(true);
+      else if ((error as { denied?: boolean }).denied)
+        setPhotoNotice(
+          "Camera access is off. Allow it in Settings to search by photo.",
+        );
+      else setPhotoNotice(photoErrorMessage(error));
+    },
+  });
+
+  const startPhotoSearch = (source: PhotoSource) => {
+    if (!location) {
+      setPhotoNotice("We need your location to search nearby.");
+      return;
+    }
+    setSearchQuery("");
+    photoSearch.mutate(source);
+  };
+
+  const photoResult = photoSearch.data ?? null;
+  const showingPhoto = photoResult !== null && searchQuery.trim() === "";
+  const results = showingPhoto ? photoResult.data : (query.data?.data ?? []);
+  const typed = searchQuery.trim().length > 2;
+  const busy = query.isLoading || photoSearch.isPending;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,41 +100,63 @@ export default function SearchScreen() {
             placeholder="Search nearby products"
             placeholderTextColor="#9aa7b5"
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              setPhotoNotice(null);
+            }}
             returnKeyType="search"
           />
-          {isVisionAvailable ? (
-            <Pressable accessibilityLabel="Search by image">
-              <Ionicons name="camera-outline" size={24} color="#2563eb" />
-            </Pressable>
-          ) : (
-            <Ionicons name="image-outline" size={22} color="#b6c0ca" />
+          {!visionUnavailable && (
+            <>
+              <Pressable
+                accessibilityLabel="Search by photo"
+                accessibilityRole="button"
+                disabled={photoSearch.isPending}
+                onPress={() => startPhotoSearch("camera")}
+              >
+                <Ionicons name="camera-outline" size={24} color="#2563eb" />
+              </Pressable>
+              <Pressable
+                accessibilityLabel="Choose a photo from your library"
+                accessibilityRole="button"
+                disabled={photoSearch.isPending}
+                onPress={() => startPhotoSearch("library")}
+              >
+                <Ionicons name="image-outline" size={22} color="#2563eb" />
+              </Pressable>
+            </>
           )}
         </View>
-        {!isVisionAvailable && searchQuery.length > 0 && (
-          <Text style={styles.notice}>
-            Image search is unavailable right now. Text search is still working.
+        {visionUnavailable && (
+          <Text style={styles.notice}>{VISION_UNAVAILABLE_NOTICE}</Text>
+        )}
+        {photoNotice && (
+          <Text accessibilityRole="alert" style={styles.notice}>
+            {photoNotice}
+          </Text>
+        )}
+        {showingPhoto && (
+          <Text style={styles.detected}>
+            Results for “{photoResult.detected_query}”
           </Text>
         )}
       </View>
 
-      {query.isLoading && (
-        <ActivityIndicator color="#2563eb" style={styles.loader} />
-      )}
-      {query.isError && (
+      {busy && <ActivityIndicator color="#2563eb" style={styles.loader} />}
+      {!busy && !showingPhoto && query.isError && (
         <Text style={styles.message}>
           Search is unavailable. Please try again.
         </Text>
       )}
-      {!query.isLoading && !query.isError && searchQuery.trim().length <= 2 && (
+      {!busy && !showingPhoto && !query.isError && !typed && !photoNotice && (
         <Text style={styles.message}>
           Type at least 3 characters to search nearby.
         </Text>
       )}
-      {!query.isLoading &&
+      {!busy &&
         !query.isError &&
-        searchQuery.trim().length > 2 &&
-        results.length === 0 && (
+        results.length === 0 &&
+        (typed || showingPhoto) && (
           <Text style={styles.message}>
             No nearby products matched that search.
           </Text>
@@ -128,21 +200,13 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, color: "#123047", fontSize: 16 },
   notice: { color: "#718096", fontSize: 12, marginTop: 10 },
+  detected: {
+    color: "#123047",
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 12,
+  },
   loader: { marginTop: 24 },
   message: { color: "#718096", textAlign: "center", margin: 24 },
   results: { padding: 20, paddingTop: 8 },
-  result: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-  },
-  resultIcon: { backgroundColor: "#dbeafe", borderRadius: 10, padding: 10 },
-  resultCopy: { flex: 1 },
-  resultName: { color: "#123047", fontSize: 15, fontWeight: "800" },
-  storeName: { color: "#718096", fontSize: 12, marginTop: 4 },
-  price: { color: "#123047", fontWeight: "800" },
 });
