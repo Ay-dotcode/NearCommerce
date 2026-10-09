@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 // Maximum characters allowed in a review comment (mirrors REVIEW_COMMENT_MAX on the API).
 export const COMMENT_MAX = 1000;
 
@@ -14,6 +16,8 @@ export const AVOID_TOLLS_KEY = "@routing_avoid_tolls";
 export const METERS_PER_MILE = 1609.34;
 
 // Backend base URL. Expo only inlines a direct `process.env.EXPO_PUBLIC_*` read, so keep it
-// exactly in this form. Set it in apps/mobile/.env (use your computer's LAN IP on a real device).
-export const API_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
+// exactly in this form.
+const defaultApiUrl =
+  Platform.OS === "android" ? "http://10.0.2.2:4000" : "http://localhost:4000";
+
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? defaultApiUrl;
