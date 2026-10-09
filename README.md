@@ -141,10 +141,11 @@ This is a `pnpm` workspace managed by Turborepo:
 ## Common commands
 
 ```bash
-pnpm dev      # Start development tasks
-pnpm build    # Build all applications and packages
-pnpm lint     # Type-check all configured workspaces
-pnpm test     # Run tests in workspaces that provide them
+pnpm dev       # Start development tasks
+pnpm build     # Build all applications and packages
+pnpm lint      # Type-check all configured workspaces
+pnpm test      # Run tests in workspaces that provide them
+pnpm clear-db  # Clear PostgreSQL & Redis cache, re-run migrations, and seed fresh data
 ```
 
 Per-app commands:

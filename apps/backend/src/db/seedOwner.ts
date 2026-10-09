@@ -12,7 +12,8 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-async function seed() {
+export async function seedOwner(poolInstance?: Pool) {
+  const activePool = poolInstance || pool;
   console.log("Seeding store owner user and store...");
 
   // 1. Create STORE_OWNER user
@@ -26,7 +27,7 @@ async function seed() {
   const passwordHash = await bcrypt.hash(password ?? "Password12++", 12);
 
   // Upsert user
-  const userResult = await pool.query(
+  const userResult = await activePool.query(
     `INSERT INTO users (email, password_hash, full_name, role, email_verified_at, is_suspended)
      VALUES ($1, $2, $3, 'STORE_OWNER', NOW(), false)
      ON CONFLICT (email) DO UPDATE 
@@ -43,14 +44,14 @@ async function seed() {
   console.log("Seeded user:", user);
 
   // 2. Create store for this owner
-  const storeResult = await pool.query(
+  const storeResult = await activePool.query(
     `SELECT id, name FROM stores WHERE owner_id = $1 LIMIT 1`,
     [user.id],
   );
 
   let storeId: string;
   if (storeResult.rows.length === 0) {
-    const newStore = await pool.query(
+    const newStore = await activePool.query(
       `INSERT INTO stores (owner_id, name, description, address, latitude, longitude, timezone, opening_hours, is_suspended)
        VALUES ($1, 'Downtown Fresh Market', 'Local organic groceries & pantry essentials', '123 Market St, San Francisco, CA', 37.7749, -122.4194, 'America/Los_Angeles', '{"monday": {"open": "08:00", "close": "20:00"}}'::jsonb, false)
        RETURNING id, name`,
@@ -64,7 +65,7 @@ async function seed() {
   }
 
   // 3. Create initial sample products
-  const productsResult = await pool.query(
+  const productsResult = await activePool.query(
     `SELECT id, name FROM products WHERE store_id = $1`,
     [storeId],
   );
@@ -108,7 +109,7 @@ async function seed() {
     ];
 
     for (const prod of productsToInsert) {
-      await pool.query(
+      await activePool.query(
         `INSERT INTO products (store_id, name, price, quantity, is_published, image_url, last_verified_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
@@ -129,12 +130,16 @@ async function seed() {
     console.log(`Store already has ${productsResult.rows.length} products.`);
   }
 
-  await pool.end();
+  if (!poolInstance) {
+    await pool.end();
+  }
   console.log("Seeding completed successfully!");
 }
 
-seed().catch((err) => {
-  console.error("Seeding failed:", err);
-  pool.end();
-  process.exit(1);
-});
+if (require.main === module) {
+  seedOwner().catch((err) => {
+    console.error("Seeding failed:", err);
+    pool.end();
+    process.exit(1);
+  });
+}

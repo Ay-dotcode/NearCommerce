@@ -1,7 +1,9 @@
+import { db } from "@/config/database";
+import redisClient, { connectRedis } from "@/config/redis";
+import { seedAdmin } from "@/db/seedAdmin";
+import { seedOwner } from "@/db/seedOwner";
 import fs from "fs";
 import path from "path";
-import { db } from "../config/database";
-import redisClient, { connectRedis } from "../config/redis";
 
 async function clearDbAndCache() {
   console.log("🧹 Clearing database and Redis cache...");
@@ -16,6 +18,8 @@ async function clearDbAndCache() {
     await db.query("DROP SCHEMA public CASCADE;");
     await db.query("CREATE SCHEMA public;");
     await db.query("GRANT ALL ON SCHEMA public TO public;");
+    await db.query("DROP TYPE IF EXISTS user_role CASCADE;");
+    await db.query("DROP TYPE IF EXISTS member_role CASCADE;");
     console.log("✅ PostgreSQL public schema reset.");
 
     // 3. Re-run Migrations
@@ -32,7 +36,13 @@ async function clearDbAndCache() {
     }
     console.log("✅ Migrations applied successfully.");
 
-    console.log("🎉 Database and cache cleared completely!");
+    // 4. Run Seeders Automatically
+    console.log("🌱 Seeding default database records...");
+    await seedAdmin(db);
+    await seedOwner(db);
+    console.log("✅ Database seeded successfully.");
+
+    console.log("🎉 Database and cache cleared & seeded completely!");
   } catch (error) {
     console.error("❌ Error while clearing database and cache:", error);
     process.exitCode = 1;

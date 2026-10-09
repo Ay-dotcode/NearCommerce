@@ -12,7 +12,8 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-async function seedAdmin() {
+export async function seedAdmin(poolInstance?: Pool) {
+  const activePool = poolInstance || pool;
   console.log("Seeding system admin users...");
 
   const email = process.env.SEED_ADMIN_EMAIL;
@@ -32,7 +33,7 @@ async function seedAdmin() {
 
   for (const admin of adminUsers) {
     const passwordHash = await bcrypt.hash(admin.password, 12);
-    const result = await pool.query(
+    const result = await activePool.query(
       `INSERT INTO users (email, password_hash, full_name, role, email_verified_at, is_suspended)
        VALUES ($1, $2, $3, 'SYSTEM_ADMIN', NOW(), false)
        ON CONFLICT (email) DO UPDATE 
@@ -46,12 +47,16 @@ async function seedAdmin() {
     console.log("Seeded admin user:", result.rows[0]);
   }
 
-  await pool.end();
+  if (!poolInstance) {
+    await pool.end();
+  }
   console.log("Admin seeding completed successfully!");
 }
 
-seedAdmin().catch((err) => {
-  console.error("Admin seeding failed:", err);
-  pool.end();
-  process.exit(1);
-});
+if (require.main === module) {
+  seedAdmin().catch((err) => {
+    console.error("Admin seeding failed:", err);
+    pool.end();
+    process.exit(1);
+  });
+}
