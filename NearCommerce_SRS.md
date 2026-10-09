@@ -22,9 +22,9 @@
 - **Backend Server:** Node.js, Express, Socket.io, TypeScript. Hosted on Render.
 - **Database & Cache:** PostgreSQL with `pgvector`, `earthdistance`/`cube`, & `pg_trgm` extensions (Neon) and Redis (Upstash).
 - **AI Engine & Fallback Pipeline:**
-  - _Primary Text Search:_ Google Gemini 1.5 Flash generates vector embeddings for semantic search in `pgvector`.
+  - _Primary Text Search:_ Google Gemini (`gemini-embedding-001`, truncated to 768 dimensions and re-normalised) generates vector embeddings for semantic search in `pgvector`.
   - _Fallback Text Search:_ If Gemini is unavailable, rate-limited, or exceeds a 2000ms response timeout, text search automatically degrades to PostgreSQL Full-Text Search (`tsvector`) and trigram matching (`pg_trgm`).
-  - _Image Search Fallback:_ If Gemini Vision is unavailable, visual search is gracefully disabled in the mobile UI, falling back strictly to text search.
+  - _Image Search Fallback:_ Photo search uses a Gemini vision model (`gemini-2.5-flash` by default). If it is unavailable, visual search is gracefully disabled in the mobile UI, falling back strictly to text search.
 
 ---
 
@@ -73,8 +73,8 @@
 
 **Task 3.2: Domain Micro-Services**
 
-- _Sub-task 3.2.1 (Resilient Search & Detail Service):_ Build vector search route utilizing `earthdistance` for <50ms proximity filtering. Implement 2000ms circuit breaker. **Crucial:** Search queries MUST join to `stores` and `users` to explicitly filter `WHERE is_published = true AND quantity > 0 AND stores.is_suspended = false AND users.is_suspended = false`. The same filter applies to direct store/product detail lookups. Automatically generate vector embeddings via Gemini `text-embedding-004` on product creation, edit, and CSV import.
-- _Sub-task 3.2.2 (Real-Time Household List Service):_ Implement Socket.io server with Redis pub/sub. List item additions use PostgreSQL `ON CONFLICT (list_id, product_id) DO UPDATE SET quantity = household_list_items.quantity + EXCLUDED.quantity, is_checked = false`. Supports custom items, member removal, list renaming/deletion, and list owner invite code regeneration (`regenerate-invite-code`).
+- _Sub-task 3.2.1 (Resilient Search & Detail Service):_ Build vector search route utilizing `earthdistance` for <50ms proximity filtering. Implement 2000ms circuit breaker. **Crucial:** Search queries MUST join to `stores` and `users` to explicitly filter `WHERE is_published = true AND quantity > 0 AND stores.is_suspended = false AND users.is_suspended = false`. The same filter applies to direct store/product detail lookups. Automatically generate 768-dimension vector embeddings via Gemini `gemini-embedding-001` on product creation, edit, and CSV import (a Gemini outage never fails the write; search falls back to text matching).
+- _Sub-task 3.2.2 (Real-Time Household List Service):_ Implement Socket.io server with Redis pub/sub. List item additions are serialised per list (`SELECT ... FOR UPDATE` on the list row inside a transaction). Adding a product already on the list adds to its quantity (capped) and sets `is_checked = false`, which is equivalent to `ON CONFLICT (list_id, product_id) DO UPDATE SET quantity = quantity + EXCLUDED.quantity, is_checked = false`; the response carries `already_on_list` so clients can show the toast. Custom items match case-insensitively by name. Supports custom items, member removal, list renaming/deletion, and list owner invite code regeneration (`regenerate-invite-code`).
 - _Sub-task 3.2.3 (Store Operating Hours & Timezone Service):_ Store operating hours evaluate against the store's explicit IANA timezone column.
 - _Sub-task 3.2.4 (Product Freshness Engine):_ Automatically flag products unverified for > 30 days (`last_verified_at`). Expose a "Confirm In-Stock" endpoint for store owners; price/quantity edits automatically refresh `last_verified_at`.
 - _Sub-task 3.2.5 (Community Ratings Service & Gating):_ Build endpoints for submitting store/product ratings (1-5), listing reviews per target, and shopper review management (edit/delete).
@@ -149,6 +149,10 @@ CREATE TABLE users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Emails are stored lowercase and unique case-insensitively
+CREATE UNIQUE INDEX idx_users_email_lower ON users (LOWER(email));
+CREATE INDEX idx_users_created_at ON users (created_at DESC);
+
 CREATE TABLE user_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -218,11 +222,31 @@ CREATE TABLE products (
     image_url VARCHAR(512),
     is_published BOOLEAN NOT NULL DEFAULT false, -- True when ready & image exists
     embedding vector(768),
+    search_tsv tsvector GENERATED ALWAYS AS (
+        to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))
+    ) STORED, -- Full-text fallback when Gemini is unavailable
     last_verified_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT publish_image_check CHECK (is_published = false OR image_url IS NOT NULL)
 );
+
+-- Search indexes: trigram and full-text fallbacks plus the vector index
+CREATE INDEX idx_products_name_trgm ON products USING gin (name gin_trgm_ops);
+CREATE INDEX idx_products_search_tsv ON products USING gin (search_tsv);
+CREATE INDEX idx_products_embedding ON products USING hnsw (embedding vector_l2_ops);
+
+-- Product photos uploaded by store owners (served from GET /images/:id)
+CREATE TABLE uploaded_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content_type VARCHAR(32) NOT NULL,
+    byte_size INTEGER NOT NULL CHECK (byte_size > 0),
+    data BYTEA NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_uploaded_images_owner ON uploaded_images(owner_id, created_at);
 
 -- Shared Household Lists
 CREATE TYPE member_role AS ENUM ('OWNER', 'MEMBER');
@@ -248,6 +272,7 @@ CREATE TABLE household_list_items (
     list_id UUID NOT NULL REFERENCES household_lists(id) ON DELETE CASCADE,
     product_id UUID REFERENCES products(id) ON DELETE SET NULL,
     custom_item_name VARCHAR(255),
+    item_name VARCHAR(255) NOT NULL, -- Display name; copied from the product so it survives product deletion
     quantity INT NOT NULL DEFAULT 1,
     is_checked BOOLEAN NOT NULL DEFAULT false,
     added_by UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -264,6 +289,7 @@ CREATE TABLE reviews (
     rating INT CHECK (rating >= 1 AND rating <= 5) NOT NULL,
     comment TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE, -- NULL means never edited
     CONSTRAINT review_target_check CHECK (
         (store_id IS NOT NULL AND product_id IS NULL) OR
         (store_id IS NULL AND product_id IS NOT NULL)
@@ -296,6 +322,8 @@ CREATE TABLE admin_audit_logs (
     action VARCHAR(50) NOT NULL, -- e.g., 'SUSPEND_USER', 'DELETE_STORE', 'DELETE_REVIEW'
     target_id UUID NOT NULL,
     target_type VARCHAR(50) NOT NULL, -- e.g., 'USER', 'STORE', 'REVIEW'
+    admin_email VARCHAR(255), -- Added by migration 002; not currently written (the ledger joins users for the admin's email)
+    admin_name VARCHAR(100),  -- Added by migration 002; not currently written
     reason TEXT,
     snapshot JSONB, -- Pre-mutation copy of the affected row(s); populated on any destructive action
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

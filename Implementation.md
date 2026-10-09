@@ -40,14 +40,14 @@ Every new feature or service built must include:
 #### Task 3.2: Domain Micro-Services & Schema Refinements
 
 - **3.2.1 Resilient Search & Detail Service:** Vector search route utilizing `earthdistance` for <50ms proximity filtering with 2000ms Gemini circuit breaker fallback (`pg_trgm` & `tsvector`). **Filter Enforcement:** Explicitly filter `WHERE p.is_published = true AND p.quantity > 0 AND s.is_suspended = false AND u.is_suspended = false` by joining `users u` on `s.owner_id = u.id` so suspending a user hides all owned stores and products.
-- **3.2.2 Product Embeddings Pipeline:** Automatically invoke Gemini `text-embedding-004` (768 dimensions) to update `products.embedding` on product creation, update, and CSV import.
+- **3.2.2 Product Embeddings Pipeline:** Automatically invoke Gemini `gemini-embedding-001` (truncated to 768 dimensions and re-normalised) to update `products.embedding` on product creation, update, and CSV import.
 - **3.2.3 Real-Time Household List Operations:** Socket.io server with Redis pub/sub.
   - Implement custom item addition (`custom_item_name`), item deletion, list renaming, list deletion, member removal, and owner invite code regeneration (`regenerate-invite-code`).
   - **Orphan Item Prevention:** When adding a product to a list, copy `product.name` into `custom_item_name` so deletion of a product preserves item visibility.
 - **3.2.4 Store Timezones & Freshness Engine:** Evaluate operating hours against explicit store IANA timezone. Automatically reset `last_verified_at = NOW()` whenever price or quantity is edited.
 - **3.2.5 Community Ratings & Review Management:** Endpoints for store/product reviews (1-5), per-target listing, and shopper review edit/delete endpoints.
 - **3.2.6 System Admin Operations:** Admin endpoints for user/store suspension, hard deletion with `admin_audit_logs.snapshot` pre-deletion serialization, and an **Admin Demotion Endpoint** (demoting `SYSTEM_ADMIN` to `CUSTOMER` to satisfy the audit log ON DELETE RESTRICT safeguard).
-- **3.2.7 Search Database Indexes:** Add GIN trigram indexes (`CREATE INDEX idx_products_name_trgm ON products USING gist (name pg_trgm_ops)`) and HNSW vector index for performance targets.
+- **3.2.7 Search Database Indexes:** Add a GIN trigram index (`CREATE INDEX idx_products_name_trgm ON products USING gin (name gin_trgm_ops)`), a GIN index on the generated `search_tsv` column, and an HNSW vector index (`vector_l2_ops`) for performance targets.
 
 ---
 
