@@ -1,5 +1,10 @@
 {
-  "plugins": [
-    "expo-router"
-  ]
+  "expo": {
+    "name": "NearCommerce",
+    "slug": "nearcommerce",
+    "scheme": "nearcommerce",
+    "plugins": [
+      "expo-router"
+    ]
+  }
 }
