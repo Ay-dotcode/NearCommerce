@@ -57,7 +57,7 @@ describe("ProductForm", () => {
       render(<ProductForm storeId="s1" onSuccess={jest.fn()} />);
       const published = screen.getByRole("checkbox", { name: /Published/ });
       expect(published).toBeDisabled();
-      expect(screen.getByText(/Add an image URL to publish/)).toBeInTheDocument();
+      expect(screen.getByText(/Add an image to publish/)).toBeInTheDocument();
 
       set(/Image URL/, "https://cdn.test/a.jpg");
       expect(published).toBeEnabled();
@@ -145,7 +145,7 @@ describe("ProductForm", () => {
       render(<ProductForm storeId="s1" product={product} onSuccess={jest.fn()} />);
       set(/Image URL/, "");
       save(/save changes/i);
-      expect(await screen.findByText("Add an image URL before publishing")).toBeInTheDocument();
+      expect(await screen.findByText("Add an image before publishing")).toBeInTheDocument();
       expect(updateMock).not.toHaveBeenCalled();
     });
 

@@ -8,6 +8,12 @@ interface BoundingBox {
   height: number;
 }
 
+// Phone photos can be 4000px+; the model only needs a fraction of that.
+const MAX_WORKING_DIMENSION = 1600;
+// Longest side of the exported crop; product thumbnails never need more.
+const MAX_OUTPUT_DIMENSION = 1024;
+const OUTPUT_QUALITY = 0.85;
+
 interface EdgeImageCropperProps {
   imageUrl: string;
   onCropComplete: (croppedDataUrl: string) => void;
@@ -20,6 +26,7 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
   const [loading, setLoading] = useState(true);
   const [manualMode, setManualMode] = useState(false);
   const [box, setBox] = useState<BoundingBox | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -35,12 +42,23 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
     img.crossOrigin = "Anonymous";
     img.src = imageUrl;
 
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
+    img.onerror = () => {
+      setLoading(false);
+      setLoadFailed(true);
+    };
 
-      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+    img.onload = () => {
+      const ratio = Math.min(
+        1,
+        MAX_WORKING_DIMENSION / Math.max(img.width, img.height),
+      );
+      const width = Math.max(1, Math.round(img.width * ratio));
+      const height = Math.max(1, Math.round(img.height * ratio));
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const imageData = ctx.getImageData(0, 0, width, height);
 
       // Spawn the YOLO Web Worker via the isolated factory
       workerRef.current = createYoloWorker();
@@ -51,10 +69,10 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
         setLoading(false);
         setManualMode(true);
         setBox({
-          x: img.width * 0.1,
-          y: img.height * 0.1,
-          width: img.width * 0.8,
-          height: img.height * 0.8,
+          x: width * 0.1,
+          y: height * 0.1,
+          width: width * 0.8,
+          height: height * 0.8,
         });
       }, 3000);
 
@@ -68,10 +86,10 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
           setManualMode(true);
           setLoading(false);
           setBox({
-            x: img.width * 0.1,
-            y: img.height * 0.1,
-            width: img.width * 0.8,
-            height: img.height * 0.8,
+            x: width * 0.1,
+            y: height * 0.1,
+            width: width * 0.8,
+            height: height * 0.8,
           });
         }
       };
@@ -79,8 +97,8 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
       // Dispatch the image tensor data to the worker
       workerRef.current.postMessage({
         imageData,
-        width: img.width,
-        height: img.height,
+        width: width,
+        height: height,
       });
     };
 
@@ -130,21 +148,30 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
 
   const handleConfirmCrop = () => {
     if (!canvasRef.current || !box) return;
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
 
-    const croppedImageData = ctx.getImageData(
-      box.x,
-      box.y,
-      box.width,
-      box.height,
+    // Draw the selection onto a fresh canvas, shrunk to the export size.
+    const ratio = Math.min(
+      1,
+      MAX_OUTPUT_DIMENSION / Math.max(box.width, box.height),
     );
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = box.width;
-    tempCanvas.height = box.height;
-    tempCanvas.getContext("2d")?.putImageData(croppedImageData, 0, 0);
+    const out = document.createElement("canvas");
+    out.width = Math.max(1, Math.round(box.width * ratio));
+    out.height = Math.max(1, Math.round(box.height * ratio));
+    out
+      .getContext("2d")
+      ?.drawImage(
+        canvasRef.current,
+        box.x,
+        box.y,
+        box.width,
+        box.height,
+        0,
+        0,
+        out.width,
+        out.height,
+      );
 
-    onCropComplete(tempCanvas.toDataURL("image/jpeg"));
+    onCropComplete(out.toDataURL("image/jpeg", OUTPUT_QUALITY));
   };
 
   return (
@@ -161,7 +188,13 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
           style={{ cursor: manualMode ? "crosshair" : "default" }}
         />
 
-        {loading && (
+        {loadFailed && (
+          <p role="alert" className="mt-2 text-sm text-red-600">
+            This image couldn't be opened. Choose a different file.
+          </p>
+        )}
+
+        {loading && !loadFailed && (
           <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
             <span className="text-blue-600 font-medium animate-pulse">
               Running Edge AI Detection...
@@ -200,6 +233,7 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
         )}
         {!loading && box && (
           <button
+            type="button"
             onClick={handleConfirmCrop}
             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
           >

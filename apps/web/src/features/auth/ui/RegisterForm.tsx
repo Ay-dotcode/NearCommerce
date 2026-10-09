@@ -1,5 +1,6 @@
 import { Button, TextField } from "@/components/ui";
 import { AppRoutes } from "@/constants/routes";
+import { useResendVerification } from "@/features/auth/api/useEmailVerification";
 import { useRegister } from "@/features/auth/api/useRegister";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
 import { UserRole } from "@nearcommerce/api";
@@ -14,6 +15,8 @@ export const RegisterForm: React.FC = () => {
   const registerMutation = useRegister();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const resend = useResendVerification();
 
   const formik = useFormik({
     initialValues: { full_name: "", email: "", password: "" },
@@ -42,6 +45,7 @@ export const RegisterForm: React.FC = () => {
         },
         {
           onSuccess: (data) => {
+            setRegisteredEmail(values.email);
             setSuccessMessage(data.message);
             setSubmitting(false);
           },
@@ -72,6 +76,22 @@ export const RegisterForm: React.FC = () => {
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
           <h2 className="font-semibold">Account created</h2>
           <p className="mt-1 text-sm">{successMessage}</p>
+          <p className="mt-2 text-sm">
+            Didn't get it?{" "}
+            <button
+              type="button"
+              className="font-medium underline disabled:opacity-60"
+              disabled={resend.isPending}
+              onClick={() => resend.mutate(registeredEmail)}
+            >
+              Resend verification email
+            </button>
+          </p>
+          {resend.isSuccess && (
+            <p role="status" className="mt-1 text-sm">
+              {resend.data.message}
+            </p>
+          )}
           <Link
             to={AppRoutes.login}
             className="mt-3 inline-block text-sm font-medium underline"

@@ -1,5 +1,6 @@
 import { createProduct, updateProduct } from "@/api/products";
 import { Button, SelectField, TextAreaField, TextField } from "@/components/ui";
+import { ProductImagePicker } from "@/features/products/ui/ProductImagePicker";
 import type { Category } from "@/types/categories";
 import type { StoreProduct } from "@/types/products";
 import { parseApiError } from "@nearcommerce/api";
@@ -45,7 +46,7 @@ const ProductSchema = Yup.object().shape({
     ),
   isPublished: Yup.boolean().test(
     "needs-image",
-    "Add an image URL before publishing",
+    "Add an image before publishing",
     function (v) {
       return !v || Boolean(this.parent.imageUrl?.trim());
     },
@@ -228,25 +229,26 @@ export const ProductForm = ({
       )}
 
       <div className="space-y-3">
-        <TextField
-          label="Image URL"
-          type="url"
-          inputMode="url"
-          placeholder="https://"
-          {...formik.getFieldProps("imageUrl")}
-          error={error("imageUrl")}
-          hint="Products need an image before they can be published."
+        <ProductImagePicker
+          value={imagePreview ?? ""}
+          onChange={(url) => formik.setFieldValue("imageUrl", url)}
         />
-        {imagePreview && (
-          <img
-            src={imagePreview}
-            alt="Product preview"
-            className="h-24 w-24 rounded-lg border border-slate-200 object-cover"
-            onError={(e) =>
-              ((e.currentTarget as HTMLImageElement).style.display = "none")
-            }
-          />
-        )}
+        <details className="text-sm" open={Boolean(error("imageUrl"))}>
+          <summary className="cursor-pointer text-slate-600">
+            Or use an image URL
+          </summary>
+          <div className="mt-2">
+            <TextField
+              label="Image URL"
+              type="url"
+              inputMode="url"
+              placeholder="https://"
+              {...formik.getFieldProps("imageUrl")}
+              error={error("imageUrl")}
+              hint="Products need an image before they can be published."
+            />
+          </div>
+        </details>
       </div>
 
       <div>
@@ -266,7 +268,7 @@ export const ProductForm = ({
             <span className="block text-sm text-slate-500">
               {canPublish
                 ? "Visible to shoppers in search once it's in stock."
-                : "Add an image URL to publish. Until then it stays a draft."}
+                : "Add an image to publish. Until then it stays a draft."}
             </span>
           </span>
         </label>

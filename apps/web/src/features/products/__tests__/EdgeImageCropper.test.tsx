@@ -1,6 +1,6 @@
 import { EdgeImageCropper } from "@/features/products/ui/EdgeImageCropper";
 import { createYoloWorker } from "@/workers/workerFactory";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("@/workers/workerFactory", () => ({
   createYoloWorker: jest.fn(),
@@ -118,5 +118,110 @@ describe("EdgeImageCropper (Task 4.2.3)", () => {
 
     expect(screen.getByTestId("manual-mode-alert")).toBeInTheDocument();
     expect(screen.getByTestId("manual-crop-box")).toBeInTheDocument();
+  });
+
+  const stubImage = (width: number, height: number, fail = false) => {
+    global.Image = class {
+      crossOrigin = "";
+      width = width;
+      height = height;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) {
+        setTimeout(() => (fail ? this.onerror?.() : this.onload?.()), 0);
+      }
+    } as any;
+  };
+  const ctx = () => (HTMLCanvasElement.prototype.getContext as jest.Mock)();
+
+  it("downsizes very large photos before running detection", async () => {
+    stubImage(4000, 2000);
+    const { container } = render(
+      <EdgeImageCropper imageUrl="blob:big" onCropComplete={jest.fn()} />,
+    );
+    await act(async () => {
+      jest.advanceTimersByTime(10);
+    });
+
+    const canvas = container.querySelector("canvas")!;
+    expect([canvas.width, canvas.height]).toEqual([1600, 800]);
+    expect(ctx().drawImage).toHaveBeenCalledWith(
+      expect.anything(),
+      0,
+      0,
+      1600,
+      800,
+    );
+    expect(mockWorker.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ width: 1600, height: 800 }),
+    );
+  });
+
+  it("exports the selected area as a compact JPEG", async () => {
+    stubImage(2000, 1000);
+    const toDataURL = jest.fn().mockReturnValue("data:image/jpeg;base64,AAA");
+    HTMLCanvasElement.prototype.toDataURL = toDataURL;
+    const onCropComplete = jest.fn();
+    render(
+      <EdgeImageCropper imageUrl="blob:ok" onCropComplete={onCropComplete} />,
+    );
+    await act(async () => {
+      jest.advanceTimersByTime(10);
+    });
+    act(() => {
+      mockWorker.onmessage?.({
+        data: {
+          success: true,
+          boundingBox: { x: 100, y: 50, width: 2000, height: 1000 },
+        },
+      } as MessageEvent);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /confirm crop/i }));
+
+    // The 2000x1000 selection is shrunk to a 1024px long side before export.
+    expect(ctx().drawImage).toHaveBeenLastCalledWith(
+      expect.anything(),
+      100,
+      50,
+      2000,
+      1000,
+      0,
+      0,
+      1024,
+      512,
+    );
+    expect(toDataURL).toHaveBeenCalledWith("image/jpeg", 0.85);
+    expect(onCropComplete).toHaveBeenCalledWith("data:image/jpeg;base64,AAA");
+  });
+
+  it("never submits a surrounding form when confirming", async () => {
+    render(<EdgeImageCropper imageUrl="blob:ok" onCropComplete={jest.fn()} />);
+    await act(async () => {
+      jest.advanceTimersByTime(10);
+    });
+    act(() => {
+      mockWorker.onmessage?.({
+        data: {
+          success: true,
+          boundingBox: { x: 0, y: 0, width: 5, height: 5 },
+        },
+      } as MessageEvent);
+    });
+    expect(
+      screen.getByRole("button", { name: /confirm crop/i }),
+    ).toHaveAttribute("type", "button");
+  });
+
+  it("tells the user when the image cannot be opened", async () => {
+    stubImage(10, 10, true);
+    render(
+      <EdgeImageCropper imageUrl="blob:broken" onCropComplete={jest.fn()} />,
+    );
+    await act(async () => {
+      jest.advanceTimersByTime(10);
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(/couldn't be opened/i);
+    expect(screen.queryByRole("button", { name: /confirm crop/i })).toBeNull();
   });
 });

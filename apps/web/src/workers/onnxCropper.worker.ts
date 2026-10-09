@@ -1,4 +1,11 @@
-import * as ort from "onnxruntime-web";
+import {
+  decodeBestBox,
+  letterboxToTensor,
+  YOLO_INPUT_SIZE,
+} from "@/workers/yoloDecode";
+// The wasm-only build: half the download of the default (WebGPU) one, and the CPU runtime
+// is all this small model needs.
+import * as ort from "onnxruntime-web/wasm";
 
 ort.env.wasm.numThreads = 1;
 
@@ -11,28 +18,6 @@ const loadModel = async () => {
   return session;
 };
 
-const preprocess = (imageData: ImageData, width: number, height: number) => {
-  const values = new Float32Array(3 * width * height);
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const sourceX = Math.min(
-        imageData.width - 1,
-        Math.floor((x * imageData.width) / width),
-      );
-      const sourceY = Math.min(
-        imageData.height - 1,
-        Math.floor((y * imageData.height) / height),
-      );
-      const source = (sourceY * imageData.width + sourceX) * 4;
-      const target = y * width + x;
-      values[target] = imageData.data[source] / 255;
-      values[width * height + target] = imageData.data[source + 1] / 255;
-      values[2 * width * height + target] = imageData.data[source + 2] / 255;
-    }
-  }
-  return values;
-};
-
 self.onmessage = async (event: MessageEvent) => {
   const { imageData, width, height, id } = event.data as {
     imageData: ImageData;
@@ -42,28 +27,28 @@ self.onmessage = async (event: MessageEvent) => {
   };
   try {
     const model = await loadModel();
-    const inputShape = (
-      model.inputMetadata[0] as
-        | { dimensions?: Array<number | string> }
-        | undefined
-    )?.dimensions;
-    const inputHeight = Number(inputShape?.[2]) || 640;
-    const inputWidth = Number(inputShape?.[3]) || 640;
-    const tensor = new ort.Tensor(
-      "float32",
-      preprocess(imageData, inputWidth, inputHeight),
-      [1, 3, inputHeight, inputWidth],
-    );
+    const { data, letterbox } = letterboxToTensor(imageData, YOLO_INPUT_SIZE);
+    const tensor = new ort.Tensor("float32", data, [
+      1,
+      3,
+      YOLO_INPUT_SIZE,
+      YOLO_INPUT_SIZE,
+    ]);
     const result = await model.run({ [model.inputNames[0]]: tensor });
     const output = result[model.outputNames[0]];
-    const data = output?.data as Float32Array | undefined;
-    const score = data?.[4] ?? 0;
-    const detected = score > 0.25;
+    // Output is [1, 4 + classes, anchors].
+    const box = decodeBestBox(
+      output.data as Float32Array,
+      output.dims[2],
+      letterbox,
+      width,
+      height,
+    );
     self.postMessage({
       id,
-      success: detected,
-      boundingBox: detected ? { x: 0, y: 0, width, height, score } : undefined,
-      error: detected ? undefined : "No object detected",
+      success: box !== null,
+      boundingBox: box ?? undefined,
+      error: box ? undefined : "No object detected",
     });
   } catch (error) {
     self.postMessage({

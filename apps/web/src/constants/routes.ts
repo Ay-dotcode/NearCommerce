@@ -4,6 +4,7 @@ export const AppRoutes = {
   register: "/register",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
+  verifyEmail: "/verify-email",
   onboarding: "/owner/onboarding",
   storeOwnerDashboard: "/owner/dashboard",
   storeProfile: "/owner/profile",

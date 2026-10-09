@@ -1,13 +1,6 @@
 import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { AppRoutes } from "@/constants/routes";
-import { ForgotPasswordForm } from "@/features/auth/ui/ForgotPasswordForm";
-import { LoginForm } from "@/features/auth/ui/LoginForm";
-import { RegisterForm } from "@/features/auth/ui/RegisterForm";
-import { ResetPasswordForm } from "@/features/auth/ui/ResetPasswordForm";
-import { StoreProfile } from "@/pages/owner/StoreProfile";
-import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
-import { StoreOnboardingPage } from "@/pages/store-owner/StoreOnboardingPage";
 import { UserRole } from "@nearcommerce/api";
 import {
   createBrowserRouter,
@@ -15,23 +8,46 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
+const lazyPage = <T extends Record<string, React.ComponentType>>(
+  load: () => Promise<T>,
+  name: keyof T,
+) => ({
+  lazy: async () => ({ Component: (await load())[name] }),
+});
+
 const router = createBrowserRouter(
   [
     {
       path: AppRoutes.login,
-      element: <LoginForm />,
+      ...lazyPage(() => import("@/features/auth/ui/LoginForm"), "LoginForm"),
     },
     {
       path: AppRoutes.register,
-      element: <RegisterForm />,
+      ...lazyPage(
+        () => import("@/features/auth/ui/RegisterForm"),
+        "RegisterForm",
+      ),
     },
     {
       path: AppRoutes.forgotPassword,
-      element: <ForgotPasswordForm />,
+      ...lazyPage(
+        () => import("@/features/auth/ui/ForgotPasswordForm"),
+        "ForgotPasswordForm",
+      ),
     },
     {
       path: AppRoutes.resetPassword,
-      element: <ResetPasswordForm />,
+      ...lazyPage(
+        () => import("@/features/auth/ui/ResetPasswordForm"),
+        "ResetPasswordForm",
+      ),
+    },
+    {
+      path: AppRoutes.verifyEmail,
+      ...lazyPage(
+        () => import("@/features/auth/ui/VerifyEmailPage"),
+        "VerifyEmailPage",
+      ),
     },
     {
       path: AppRoutes.home,
@@ -42,18 +58,27 @@ const router = createBrowserRouter(
       children: [
         {
           path: AppRoutes.onboarding,
-          element: <StoreOnboardingPage />,
+          ...lazyPage(
+            () => import("@/pages/store-owner/StoreOnboardingPage"),
+            "StoreOnboardingPage",
+          ),
         },
         {
           element: <StoreOwnerLayout />,
           children: [
             {
               path: AppRoutes.storeOwnerDashboard,
-              element: <StoreOwnerDashboard />,
+              lazy: async () => ({
+                Component: (await import("@/pages/store-owner/Dashboard"))
+                  .default,
+              }),
             },
             {
               path: AppRoutes.storeProfile,
-              element: <StoreProfile />,
+              ...lazyPage(
+                () => import("@/pages/owner/StoreProfile"),
+                "StoreProfile",
+              ),
             },
           ],
         },
@@ -75,4 +100,13 @@ const router = createBrowserRouter(
   },
 );
 
-export const AppRouter = () => <RouterProvider router={router} />;
+export const AppRouter = () => (
+  <RouterProvider
+    router={router}
+    fallbackElement={
+      <p role="status" className="p-6 text-sm text-slate-500">
+        Loading…
+      </p>
+    }
+  />
+);
