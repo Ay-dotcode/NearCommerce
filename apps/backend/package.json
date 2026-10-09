@@ -9,7 +9,8 @@
     "embeddings:backfill": "tsx src/db/backfillEmbeddings.ts",
     "seed:admin": "tsx src/db/seedAdmin.ts",
     "seed:owner": "tsx src/db/seedOwner.ts",
-    "seed": "tsx src/db/seedAdmin.ts && tsx src/db/seedOwner.ts"
+    "seed": "tsx src/db/seedAdmin.ts && tsx src/db/seedOwner.ts",
+    "db:clear": "tsx src/db/clearDb.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
