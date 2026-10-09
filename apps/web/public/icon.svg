@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Brand Background (Squircle) -->
+  <rect width="512" height="512" rx="112" fill="#2563EB"/>
+  
+  <!-- Location Pin -->
+  <path d="M256 112C185.308 112 128 169.308 128 240C128 336 256 432 256 432C256 432 384 336 384 240C384 169.308 326.692 112 256 112Z" fill="white"/>
+  
+  <!-- Shopping Bag Cutout -->
+  <path d="M216 200V184C216 161.909 233.909 144 256 144C278.091 144 296 161.909 296 184V200H320L304 296H208L192 200H216ZM240 200H272V184C272 175.163 264.837 168 256 168C247.163 168 240 175.163 240 184V200Z" fill="#2563EB"/>
+</svg>
