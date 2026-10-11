@@ -17,64 +17,151 @@ Shared code lives in `packages/` (`@nearcommerce/api` for the HTTP client, schem
 
 ### Features
 
-- **Discovery:** geospatial product and store search with distance, stock status and freshness badges, category browsing, favorites, and store operating-hours awareness.
-- **Search:** semantic search using Gemini embeddings in `pgvector`, with automatic fallback to PostgreSQL full-text and trigram matching when Gemini is unavailable or slower than 2 seconds.
-- **Inventory:** product CRUD, one-click "Confirm still in stock", stale-listing flagging (30 days), and a CSV importer that creates or updates products (rows with an image URL are published, rows without become drafts).
-- **Product photos:** owners choose a photo, crop it (auto-detected by an in-browser YOLO model, with manual cropping as a fallback), and upload it. Images are stored in PostgreSQL and served from the API, so no separate storage service is needed. Pasting an image URL still works.
-- **Photo search:** shoppers can search by taking or choosing a photo. A Gemini vision model names the product and the normal nearby search runs on that name. If the vision service is unavailable the app hides photo search and text search carries on.
-- **Household lists:** shared shopping lists with invite codes, owner and member roles, and live updates over Socket.IO.
-- **Reviews:** store and product ratings with editing and deletion by their author. Store owners cannot review their own store or products.
-- **Moderation:** admins suspend or delete users and stores, delete reviews, and every action is written to an audit log with a pre-change snapshot.
-- **Accounts:** role-based access (`CUSTOMER`, `STORE_OWNER`, `SYSTEM_ADMIN`), email verification, refresh-token sessions, password reset by email, progressive login lockout, and account deletion. Unverified users can sign in but cannot post reviews; the apps prompt them to verify and can resend the link.
-- **Directions:** hand off to the phone's native maps app from a store or product (the "avoid tolls" preference is honoured on Android).
+- **Discovery & Geolocation:** Proximity-based product and store discovery powered by PostgreSQL `earthdistance` (`<50ms` target). Results display distance (km), stock status badges, store hours status (Open/Closed calculated via store IANA timezone), and 30-day freshness indicators. Filter by category, subcategory, and radius. Includes manual ZIP/postal code and coordinate fallback when GPS permission is denied.
+- **Hybrid AI & Semantic Search:** Natural-language search using Google Gemini embeddings (`gemini-embedding-001` or model override) normalized and indexed via `pgvector` HNSW index. Employs a 2-second circuit breaker automatically falling back to PostgreSQL full-text (`tsvector`) and trigram (`pg_trgm`) matching if Gemini is slow or unavailable. Suspended stores or owners are automatically filtered out from search results.
+- **Multimodal Visual Photo Search:** Shoppers can capture or upload photos from the mobile app (via `expo-image-picker`). Google Gemini Vision analyzes the image, identifies the product name, and transparently initiates geospatial proximity discovery. Gracefully falls back to text search if the vision service is unavailable.
+- **Inventory Management:** Full product CRUD, image URL management, stock level tracking, and one-click "Confirm still in stock" verification (updates `last_verified_at = NOW()`). Stale listings (>30 days without stock confirmation) display warning badges to encourage shopper trust.
+- **Dual-Mode CSV Catalog Importer:** Batch product upload via CSV (`PapaParse`). Products with valid image URLs are directly published (`is_published: true`), while rows missing images are imported safely as drafts (`is_published: false`).
+- **Edge AI Image Cropper & PostgreSQL Image Hosting:** In-browser intelligent product cropping powered by ONNX Runtime Web (`onnxruntime-web`) running YOLOv8n object detection in a dedicated Web Worker (with manual crop fallback). Store owners upload cropped photos directly via binary stream (`/api/uploads/images`), stored safely as `BYTEA` in PostgreSQL with public serving (`/api/images/:id`), avoiding third-party object storage dependencies. Unreferenced uploads are automatically cleaned up.
+- **Real-Time Collaborative Household Lists:** Shared shopping lists powered by Socket.IO with Redis pub/sub adapter. Supports unique 6-character alphanumeric invite codes, real-time item check/uncheck sync, custom grocery items (`custom_item_name`), item deletion, list renaming, ownership transfer, member removal, leaving lists, and invite code regeneration. Deleting catalog products preserves custom item visibility (orphan item prevention).
+- **Ratings & Reviews System:** 1-to-5 star ratings and written reviews for both stores and individual products. Includes shopper review management (edit/delete own reviews) and trust gating (only email-verified accounts can post). Store owners are prohibited from reviewing their own stores or products.
+- **System Administration & Moderation:** Comprehensive admin portal featuring global platform analytics and metrics (total users, stores, active products, reviews), user and store suspension toggles (real-time Redis lockout), account hard deletion with pre-deletion state snapshots in `admin_audit_logs`, admin self-demotion (`SYSTEM_ADMIN` to `CUSTOMER`), review moderation, and full category/subcategory taxonomy CRUD.
+- **User Authentication, RBAC & Security:** Role-based access control (`CUSTOMER`, `STORE_OWNER`, `SYSTEM_ADMIN`). Secure password hashing (`bcrypt`), JWT access tokens (15-min expiry) paired with SHA-256 hashed refresh tokens in PostgreSQL, progressive IP and account login lockout (exponential delay after failed attempts), rate limiting on sensitive routes, email verification via Nodemailer, password reset tokens (1h expiry), and customer account deletion (`DELETE /api/users/me`).
+- **Turn-by-Turn Directions & Native Maps Handoff:** One-tap navigation launching device-native maps (Apple Maps on iOS, Google Maps on Android) with address/coordinate geocoding and "avoid tolls" preference support.
+- **Official Support Channel:** Standardized `/support` endpoint providing dedicated support channels for shoppers and store owners.
 
 ### Good to know
 
-- Photo search and semantic search need a `GEMINI_API_KEY`. Without one, search uses text matching only and photo search reports itself unavailable.
-- Uploaded images are stored in the database (up to 2 MB each) and unused ones are pruned after an hour. For very large catalogues, consider moving them to object storage behind the same `/api/images/:id` URLs.
-- The bundled cropper model (`apps/web/public/models/yolo.onnx`) is an Ultralytics YOLOv8n export. Ultralytics models are AGPL-3.0 licensed, so check that this suits your distribution plans.
+- Semantic search and visual photo search require a valid `GEMINI_API_KEY`. Without one, text search falls back seamlessly to PostgreSQL full-text and trigram matching, and the mobile photo search button gracefully disables or falls back.
+- Uploaded product images are stored directly in PostgreSQL (up to 2 MB each). For large-scale production deployments, the storage layer can be pointed to S3/Cloud Storage while retaining the same `/api/images/:id` URLs.
+- The bundled cropper model (`apps/web/public/models/yolo.onnx`) is an Ultralytics YOLOv8n export. Note that Ultralytics models are licensed under AGPL-3.0; verify licensing requirements before commercial distribution.
+- In development mode, email verification and password reset tokens are logged to the backend console if SMTP credentials are not configured, enabling full local testing without an external mail provider.
 
 ## Repository structure
 
-This is a `pnpm` workspace managed by Turborepo:
+This monorepo is managed with `pnpm` workspaces and Turborepo:
 
 ```text
 .
 ├── apps/
-│   ├── admin/       # React/Vite system admin portal
-│   ├── backend/     # Express, Socket.IO, and TypeScript API server
-│   ├── mobile/      # React Native / Expo shopper app
-│   └── web/         # React/Vite store owner dashboard
-├── packages/        # Shared libraries and configuration
-├── .env.example     # Environment variable template
-├── Implementation.md
-├── NearCommerce_SRS.md
-├── package.json
+│   ├── admin/       # React 18, Vite, Tailwind CSS, TanStack Query admin portal
+│   ├── backend/     # Express, Socket.IO, TypeScript, PostgreSQL, Redis REST & WebSocket API
+│   ├── mobile/      # React Native, Expo Router, TanStack Query, Expo Image Picker mobile app
+│   └── web/         # React 18, Vite, Tailwind CSS, ONNX Runtime Web store owner dashboard
+├── packages/
+│   ├── api/         # Shared Axios HTTP client, Zod schemas, JWT refresh logic & TypeScript types
+│   ├── config/      # Shared TypeScript configuration (tsconfig.base.json)
+│   └── ui/          # Shared design system components (Button, Card, Table)
+├── .env.example     # Root environment configuration template
+├── Implementation.md# Implementation blueprint, task breakdowns & testing specs
+├── NearCommerce_SRS.md # Software Requirements Specification (data model, system design)
+├── package.json     # Root monorepo scripts & package manager configuration
 ├── pnpm-workspace.yaml
-└── turbo.json
+└── turbo.json       # Turborepo pipeline configuration
 ```
 
 ## Technology stack
 
-- **TypeScript** across the monorepo
-- **React**, **Vite**, and **Tailwind CSS** for the web portals; **TanStack Query** everywhere data is fetched
-- **React Native** with **Expo Router** for the mobile app
-- **Node.js**, **Express**, and **Socket.IO** for the backend
-- **PostgreSQL** with the `pgvector`, `pg_trgm`, `cube`, `earthdistance`, and `uuid-ossp` extensions
-- **Redis** for the real-time suspension flag, login lockout counters, and the Socket.IO adapter
-- **Google Gemini** for embeddings (`gemini-embedding-001` by default)
-- **pnpm workspaces** and **Turborepo** for monorepo management
-- **Jest**, **Supertest**, and **Testing Library** for tests
+- **Languages:** TypeScript across the entire monorepo
+- **Frontend Portals:** React 18, Vite, Tailwind CSS, TanStack Query (React Query), Formik & Yup, Lucide React
+- **Mobile Client:** React Native, Expo (SDK 52), Expo Router, React Native Safe Area Context, React Native Toast Message
+- **Edge AI & Computer Vision:** ONNX Runtime Web (`onnxruntime-web`) for in-browser YOLOv8n object detection, Google Gemini Vision (`@google/generative-ai`)
+- **Backend Services:** Node.js, Express, Socket.IO with `@socket.io/redis-adapter`
+- **Database & Storage:** PostgreSQL 15+ with extensions:
+  - `pgvector` (Vector similarity search using HNSW indexing)
+  - `earthdistance` & `cube` (Fast geospatial proximity queries)
+  - `pg_trgm` (Trigram similarity search and fallback text indexing)
+  - `uuid-ossp` (UUID primary keys)
+  - `BYTEA` table (`uploaded_images`) for transactional image storage
+- **Caching & State:** Redis 6+ / Upstash (Socket.IO pub/sub, real-time suspension enforcement, login rate-limiting)
+- **Email & Auth:** Nodemailer (SMTP), JWT (`jsonwebtoken`), `bcrypt` (12 salt rounds)
+- **Monorepo Tooling:** `pnpm` workspaces, Turborepo
+- **Testing:** Jest, Supertest, React Testing Library, Jest Expo
+
+## API Overview
+
+All backend endpoints support optional `/api` prefixes for reverse-proxy compatibility.
+
+| Domain | Method & Path | Auth / Role | Description |
+| --- | --- | --- | --- |
+| **Auth** | `POST /auth/register` | Public | Create Customer or Store Owner account |
+| | `POST /auth/login` | Public | Authenticate user, return access token & set refresh session |
+| | `POST /auth/refresh` | Public | Exchange refresh token for new access token |
+| | `POST /auth/logout` | Public | Invalidate refresh token session |
+| | `POST /auth/verify-email` | Public | Validate email verification token |
+| | `POST /auth/resend-verification` | Public | Resend verification link with rate limiting |
+| | `POST /auth/forgot-password` | Public | Send password reset token to email |
+| | `POST /auth/reset-password` | Public | Set new password with valid token |
+| **Users** | `GET /api/users/me` | Authenticated | Retrieve current authenticated user profile & verification status |
+| | `DELETE /api/users/me` | Authenticated | Permanently delete authenticated user account |
+| **Discovery** | `GET /search` | Public | Geospatial product search with filters (lat, lng, radius, category, query) |
+| | `GET /search/stores` | Public | Proximity store search (lat, lng, query, radius) |
+| | `POST /search/image` | Public | Multimodal Gemini Vision photo search |
+| | `GET /categories` | Public | Browse full category and subcategory taxonomy tree |
+| **Stores** | `GET /api/stores/:storeId` | Public | Public store profile, distance, operating hours, and rating |
+| | `GET /api/stores/mine` | `STORE_OWNER` | List stores belonging to the authenticated owner |
+| | `POST /api/stores` | `STORE_OWNER` | Create a new store profile |
+| | `GET /api/stores/:storeId/manage` | `STORE_OWNER` | Store management details (requires store ownership) |
+| | `PATCH /api/stores/:storeId` | `STORE_OWNER` | Update store metadata, coordinates, timezone, and hours |
+| | `DELETE /api/stores/:storeId` | `STORE_OWNER` | Delete store and cascade associated products |
+| **Products** | `GET /api/products/:productId` | Public | Public product details, stock, store info, and rating |
+| | `GET /api/products` | `STORE_OWNER` | List store inventory (via `X-Store-ID` header) |
+| | `POST /api/products` | `STORE_OWNER` | Create new product listing |
+| | `POST /api/products/import` | `STORE_OWNER` | Bulk CSV import (image URL = published, no image = draft) |
+| | `PATCH /api/products/:productId` | `STORE_OWNER` | Update product details (auto-refreshes `last_verified_at`) |
+| | `DELETE /api/products/:productId` | `STORE_OWNER` | Remove product listing |
+| | `PATCH /api/products/:productId/confirm-stock` | `STORE_OWNER` / `ADMIN` | One-click stock freshness confirmation |
+| **Uploads** | `POST /api/uploads/images` | `STORE_OWNER` | Upload binary image (`raw` body <= 2MB, JPEG/PNG/WebP) |
+| | `GET /api/images/:id` | Public | Serve stored image binary with appropriate cache headers |
+| **Lists** | `GET /lists` | Authenticated | List all household lists the user belongs to |
+| | `POST /lists` | Authenticated | Create a new household list (assigns `OWNER` role) |
+| | `POST /lists/join` | Authenticated | Join list using 6-character alphanumeric invite code |
+| | `GET /lists/:list_id` | Authenticated | Retrieve list items, members, and details |
+| | `PATCH /lists/:list_id` | `OWNER` | Rename household list |
+| | `DELETE /lists/:list_id` | `OWNER` | Delete household list |
+| | `POST /lists/:list_id/leave` | Authenticated | Leave shared household list |
+| | `POST /lists/:list_id/regenerate-invite-code` | `OWNER` | Invalidate and generate a new invite code |
+| | `DELETE /lists/:list_id/members/:user_id` | `OWNER` | Remove member from list |
+| | `POST /lists/:list_id/items` | Authenticated | Add catalog product or custom item to list |
+| | `PATCH /lists/:list_id/items/:item_id` | Authenticated | Toggle `is_checked` or update quantity |
+| | `DELETE /lists/:list_id/items/:item_id` | Authenticated | Remove item from list |
+| **Favorites** | `GET /api/favorites` | Authenticated | List user's saved stores and products (newest first) |
+| | `POST /api/favorites` | Authenticated | Save store or product to favorites |
+| | `DELETE /api/favorites/:favoriteId` | Authenticated | Remove store or product from favorites |
+| **Reviews** | `GET /api/reviews` | Public / Optional Auth | List reviews for target store or product |
+| | `GET /api/reviews/mine` | Authenticated | List reviews written by authenticated user |
+| | `POST /api/reviews` | Verified Email | Submit 1-5 star review (owner self-review prohibited) |
+| | `PATCH /api/reviews/:reviewId` | Author | Update review rating or comment |
+| | `DELETE /api/reviews/:reviewId` | Author | Delete review |
+| **Admin** | `GET /api/admin/metrics` | `SYSTEM_ADMIN` | Platform aggregate counts (users, stores, products, reviews) |
+| | `GET /api/admin/users` | `SYSTEM_ADMIN` | List and search users with role and suspension filters |
+| | `PATCH /api/admin/users/:userId/suspend` | `SYSTEM_ADMIN` | Toggle user suspension status (syncs to Redis) |
+| | `PATCH /api/admin/users/:userId/demote` | `SYSTEM_ADMIN` | Demote admin user to `CUSTOMER` |
+| | `DELETE /api/admin/users/:userId` | `SYSTEM_ADMIN` | Hard delete user with audit snapshot |
+| | `GET /api/admin/stores` | `SYSTEM_ADMIN` | List stores with suspension status |
+| | `PATCH /api/admin/stores/:storeId/suspend` | `SYSTEM_ADMIN` | Toggle store suspension status |
+| | `DELETE /api/admin/stores/:storeId` | `SYSTEM_ADMIN` | Hard delete store with audit snapshot |
+| | `GET /api/admin/categories` | `SYSTEM_ADMIN` | List category taxonomy for management |
+| | `POST /api/admin/categories` | `SYSTEM_ADMIN` | Create root category |
+| | `PATCH /api/admin/categories/:id` | `SYSTEM_ADMIN` | Rename root category or update icon URL |
+| | `DELETE /api/admin/categories/:id` | `SYSTEM_ADMIN` | Delete category and cascade subcategories |
+| | `POST /api/admin/categories/:id/subcategories`| `SYSTEM_ADMIN` | Add subcategory to category |
+| | `PATCH /api/admin/subcategories/:id` | `SYSTEM_ADMIN` | Update subcategory name |
+| | `DELETE /api/admin/subcategories/:id` | `SYSTEM_ADMIN` | Delete subcategory |
+| | `GET /api/admin/reviews` | `SYSTEM_ADMIN` | List reviews with target filters |
+| | `DELETE /api/admin/reviews/:reviewId` | `SYSTEM_ADMIN` | Remove review with audit trail snapshot |
+| | `GET /api/admin/audit-logs` | `SYSTEM_ADMIN` | Paginated audit log ledger with pre-change JSON snapshots |
+| **Support** | `GET /support` | Public | Retrieve support contact email and official channels |
 
 ## Prerequisites
 
-- Node.js 20 or newer (developed on 22)
-- pnpm 12.4.2 (pinned in `package.json`; `corepack` installs it for you)
-- PostgreSQL 15 or newer with the `vector` (pgvector) extension available. Creating the extensions needs a role that is allowed to run `CREATE EXTENSION`.
-- Redis 6 or newer
-- A Gemini API key (optional; without it, search uses text matching only)
-- SMTP credentials (optional in development; outside production the backend also prints password-reset and email-verification tokens to its console, so you can finish those flows without a mail server)
-- Expo Go or an emulator/simulator to run the mobile app
+- Node.js 20 or newer (developed and tested on Node 22)
+- pnpm 12.4.2 (pinned in `package.json`; managed via `corepack`)
+- PostgreSQL 15 or newer with `pgvector`, `pg_trgm`, `cube`, `earthdistance`, and `uuid-ossp` extensions available. The database user must possess permissions to execute `CREATE EXTENSION`.
+- Redis 6 or newer (local Redis or cloud Upstash instance)
+- Google Gemini API key (optional; search falls back to full-text/trigram matching if omitted)
+- SMTP credentials (optional for local development; verification and reset links log directly to stdout when unset)
+- Expo Go or an Android/iOS emulator to run the shopper mobile application
 
 ## Getting started
 
@@ -87,15 +174,15 @@ This is a `pnpm` workspace managed by Turborepo:
    pnpm install
    ```
 
-2. Create your environment file:
+2. Create your environment configuration file:
 
    ```bash
    cp .env.example .env
    ```
 
-   Fill in `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` at minimum. In production also set `FRONTEND_URL` (the links in emails) and `PUBLIC_API_URL` (the links to uploaded images). The backend and both web portals read this root `.env` (the portals only see `VITE_`-prefixed keys). Never commit real credentials.
+   Fill in `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` at minimum. In production, configure `FRONTEND_URL` (for email links) and `PUBLIC_API_URL` (for image URLs). The backend and web portals consume this root `.env` (portals only expose `VITE_`-prefixed variables).
 
-3. Create the database schema. There is no migration runner yet; apply the SQL files in order:
+3. Initialize the database schema. Execute the migrations sequentially:
 
    ```bash
    for f in apps/backend/src/db/migrations/*.sql; do
@@ -103,17 +190,26 @@ This is a `pnpm` workspace managed by Turborepo:
    done
    ```
 
-   Upgrading an existing database? Run only the migration files you haven't applied yet (for example `006_uploaded_images.sql` for product photo uploads). Accounts created while verification was off are already marked verified, so no data fix is needed.
+   > Upgrading an existing database? Apply only new migration files (e.g. `006_uploaded_images.sql`).
 
-4. Seed demo data (optional):
+4. Seed initial demo data (optional):
 
    ```bash
    pnpm --filter @nearcommerce/backend seed
    ```
 
-   In development this creates `admin@nearcommerce.com` (system admin) and `joseyowolabi@gmail.com` (store owner with a sample store), both with the password `Password12++`. With `NODE_ENV=production` the seeds refuse to run unless you set the `SEED_*` variables from `.env.example`. If you add products before setting `GEMINI_API_KEY`, run `pnpm --filter @nearcommerce/backend embeddings:backfill` afterwards.
+   In development, this provisions:
+   - System Admin: `admin@nearcommerce.com` / `Password12++`
+   - Store Owner: `joseyowolabi@gmail.com` / `Password12++` (with a sample store and demo grocery products)
 
-5. Build the shared packages once, then start everything:
+   In production (`NODE_ENV=production`), seeds require explicit `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_OWNER_EMAIL`, and `SEED_OWNER_PASSWORD` environment variables.
+
+   If products are created prior to configuring `GEMINI_API_KEY`, backfill vector embeddings at any time:
+   ```bash
+   pnpm --filter @nearcommerce/backend embeddings:backfill
+   ```
+
+5. Build the shared workspace packages, then start all services:
 
    ```bash
    pnpm --filter @nearcommerce/api build
@@ -121,61 +217,90 @@ This is a `pnpm` workspace managed by Turborepo:
    pnpm dev
    ```
 
-   | URL                   | App                |
-   | --------------------- | ------------------ |
-   | http://localhost:4000 | API                |
-   | http://localhost:3001 | Store owner portal |
-   | http://localhost:3000 | Admin portal       |
+   | App | URL | Description |
+   | --- | --- | --- |
+   | **Backend API** | `http://localhost:4000` | Express REST & Socket.IO server |
+   | **Store Owner Portal** | `http://localhost:3001` | Dashboard, product management, CSV import, YOLO cropping |
+   | **Admin Portal** | `http://localhost:3000` | System metrics, user/store moderation, categories, audit logs |
 
-6. Run the mobile app. Expo reads its own env file, so create `apps/mobile/.env`:
+6. Launch the mobile app. Expo uses its own environment configuration, so create `apps/mobile/.env`:
 
    ```bash
    echo 'EXPO_PUBLIC_API_URL=http://localhost:4000' > apps/mobile/.env
    pnpm --filter @nearcommerce/mobile start
    ```
 
-   Photo search uses the camera and photo library through `expo-image-picker`. Expo Go works as is; in a development or production build, add the `expo-image-picker` plugin (with your permission texts) to the Expo config.
+   - **Physical Device:** Replace `localhost` with your workstation's LAN IP address (e.g. `http://192.168.1.50:4000`).
+   - **Camera / Photo Search:** Runs via `expo-image-picker`. Compatible directly with Expo Go and custom development builds.
 
-   `localhost` only works in an emulator or simulator on the same machine. On a physical device use your computer's LAN address (for example `http://192.168.1.20:4000`).
+## Database Management & Schema Reset
+
+To completely flush PostgreSQL and Redis, re-run all migrations from scratch, and re-seed clean demo data in a single command:
+
+```bash
+pnpm clear-db
+```
+
+This runs `apps/backend/src/db/clearDb.ts`, which:
+1. Flushes all keys from Redis
+2. Drops and recreates the PostgreSQL `public` schema and ENUM types
+3. Re-applies all migration files in `apps/backend/src/db/migrations/` in order
+4. Seeds default admin and store owner records
 
 ## Common commands
 
 ```bash
-pnpm dev       # Start development tasks
-pnpm build     # Build all applications and packages
-pnpm lint      # Type-check all configured workspaces
-pnpm test      # Run tests in workspaces that provide them
-pnpm clear-db  # Clear PostgreSQL & Redis cache, re-run migrations, and seed fresh data
+pnpm dev       # Start all applications in parallel via Turborepo
+pnpm build     # Build all packages and applications
+pnpm lint      # Type-check all workspaces
+pnpm test      # Run all unit and integration test suites
+pnpm clear-db  # Reset database & cache, re-apply migrations, and re-seed
 ```
 
-Per-app commands:
+Per-app workspace commands:
 
 ```bash
+# Backend API
 pnpm --filter @nearcommerce/backend dev
 pnpm --filter @nearcommerce/backend build
 pnpm --filter @nearcommerce/backend test
+pnpm --filter @nearcommerce/backend embeddings:backfill
 
-pnpm --filter @nearcommerce/web dev        # also: build, lint, test
-pnpm --filter @nearcommerce/admin dev      # also: build, lint, test
+# Store Owner Portal
+pnpm --filter @nearcommerce/web dev
+pnpm --filter @nearcommerce/web build
+pnpm --filter @nearcommerce/web test
+
+# Admin Portal
+pnpm --filter @nearcommerce/admin dev
+pnpm --filter @nearcommerce/admin build
+pnpm --filter @nearcommerce/admin test
+
+# Shopper Mobile App
+pnpm --filter @nearcommerce/mobile start
 pnpm --filter @nearcommerce/mobile test
 ```
 
 ## Testing
 
-- **Web, admin, and mobile** tests run without any services.
-- **Backend** tests are integration tests that talk to a real PostgreSQL and Redis through `DATABASE_URL` and `REDIS_URL`. They create and delete their own rows, but use a **separate, disposable database** (for example `nearcommerce_test`) with the migrations applied, never your development data. Run them with `NODE_ENV=test` (Jest sets this itself); in that mode rate limiters are skipped and no emails are sent.
-- Build `packages/api` before type-checking or testing the backend (`pnpm --filter @nearcommerce/api build`).
+- **Web, Admin, and Mobile Tests:** Fully isolated unit and component tests running via Jest and React Testing Library without requiring external services.
+- **Backend Tests:** Integration tests utilizing Supertest against live PostgreSQL and Redis instances.
+  - Always run integration tests against a **separate test database** (e.g. `DATABASE_URL=postgresql://.../nearcommerce_test`) to prevent mutating development data.
+  - Rate limiting is automatically disabled and email sending is mocked when `NODE_ENV=test`.
+- **Pre-test Build Requirement:** Always ensure shared packages are compiled before running backend tests or type-checking (`pnpm --filter @nearcommerce/api build`).
 
 ## Conventions
 
-- Imports use the `@/` alias (for example `@/features/auth/...`) instead of relative `../` paths. The shared `packages/*` use relative imports because the apps consume their source directly.
-- One- and two-line comments use `//`.
+- **Module Aliases:** Application imports utilize the `@/` alias (e.g., `@/features/auth/...`) rather than deep relative `../../` paths.
+- **Shared Packages:** Shared packages in `packages/*` use relative imports internally and export typed APIs consumed directly by the applications.
+- **Comments:** Clean inline comments use `//` for concise explanations of non-obvious business rules and safeguards.
 
 ## Documentation
 
-- [Software Requirements Specification](./NearCommerce_SRS.md): product scope, architecture, data model, and planned capabilities
-- [Implementation Blueprint](./Implementation.md): implementation phases, testing strategy, and engineering rules
+- [Software Requirements Specification (SRS)](./NearCommerce_SRS.md): Complete product requirements, data models, architectural boundaries, and performance benchmarks.
+- [Implementation Blueprint](./Implementation.md): Detailed architectural rules, testing guidelines, and phase-by-phase implementation details.
 
 ## License
 
-The project is intended to be released under the MIT License. See the repository license file for the authoritative terms.
+This project is intended to be released under the MIT License. See the repository license file for authoritative terms.
+
