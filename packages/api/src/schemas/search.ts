@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-// Default proximity search radius (5 km).
+// Default proximity search radius (5 km) and the largest radius a client may ask for (50 km).
 export const SEARCH_DEFAULT_RADIUS_METERS = 5000;
+export const SEARCH_MAX_RADIUS_METERS = 50_000;
 
 export const SearchQuerySchema = z.object({
   q: z.string().optional(), // The search term (e.g., "fresh milk")
@@ -16,6 +17,10 @@ export const SearchQuerySchema = z.object({
   radius_meters: z.coerce
     .number()
     .positive()
+    .max(
+      SEARCH_MAX_RADIUS_METERS,
+      `radius_meters must be at most ${SEARCH_MAX_RADIUS_METERS}`,
+    )
     .default(SEARCH_DEFAULT_RADIUS_METERS),
 });
 

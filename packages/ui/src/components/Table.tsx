@@ -4,43 +4,50 @@ import {
   TdHTMLAttributes,
   ThHTMLAttributes,
 } from "react";
+import { cn } from "@nearcommerce/ui/src/lib/cn";
 
 export const Table = ({
-  className = "",
+  className,
   ...props
 }: TableHTMLAttributes<HTMLTableElement>) => (
-  <table className={`w-full text-left text-sm ${className}`} {...props} />
+  <table
+    className={cn("w-full text-left text-sm text-slate-900", className)}
+    {...props}
+  />
 );
 export const TableHeader = ({
-  className = "",
+  className,
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) => (
   <thead
-    className={`border-b border-slate-800 text-xs uppercase tracking-wider text-slate-400 ${className}`}
+    className={cn(
+      "border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500",
+      className,
+    )}
     {...props}
   />
 );
 export const TableBody = ({
-  className = "",
+  className,
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) => (
-  <tbody className={className} {...props} />
+  <tbody className={cn("divide-y divide-slate-100", className)} {...props} />
 );
 export const TableRow = ({
-  className = "",
+  className,
   ...props
 }: HTMLAttributes<HTMLTableRowElement>) => (
-  <tr className={`border-b border-slate-800/80 ${className}`} {...props} />
+  <tr className={className} {...props} />
 );
 export const TableHead = ({
-  className = "",
+  className,
   ...props
 }: ThHTMLAttributes<HTMLTableCellElement>) => (
-  <th className={`px-4 py-3 font-medium ${className}`} {...props} />
+  <th className={cn("px-4 py-3 font-medium", className)} {...props} />
 );
 export const TableCell = ({
-  className = "",
+  className,
   ...props
 }: TdHTMLAttributes<HTMLTableCellElement>) => (
-  <td className={`px-4 py-3 ${className}`} {...props} />
+  <td className={cn("px-4 py-3", className)} {...props} />
 );

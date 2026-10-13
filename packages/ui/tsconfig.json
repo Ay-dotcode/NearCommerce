@@ -10,7 +10,9 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": { "@nearcommerce/ui/*": ["./*"] },
+    "types": ["jest", "@testing-library/jest-dom"]
   },
   "include": ["src"]
 }

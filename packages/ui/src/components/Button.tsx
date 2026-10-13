@@ -1,27 +1,63 @@
-import * as React from "react";
+import { ButtonHTMLAttributes, forwardRef } from "react";
+import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { Spinner } from "./Spinner";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+export type ButtonSize = "sm" | "md";
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  loading?: boolean;
 }
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className = "", variant = "primary", ...props }, ref) => {
-    const variantStyles = {
-      primary:
-        "border-slate-600 hover:border-cyan-400 hover:text-cyan-300 text-slate-100",
-      secondary:
-        "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700",
-      danger:
-        "border-red-600 bg-red-600/10 text-red-400 hover:bg-red-600/20 hover:border-red-500",
-    }[variant];
+const variants: Record<ButtonVariant, string> = {
+  primary:
+    "bg-brand-600 text-onbrand shadow-card hover:bg-brand-700 focus-visible:ring-brand-500",
+  secondary:
+    "border border-slate-300 bg-white text-slate-700 shadow-card hover:bg-slate-50 focus-visible:ring-brand-500",
+  danger:
+    "bg-red-600 text-onbrand shadow-card hover:bg-red-700 focus-visible:ring-red-500",
+  ghost: "text-slate-600 hover:bg-slate-100 focus-visible:ring-brand-500",
+};
 
-    return (
-      <button
-        ref={ref}
-        className={`rounded border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${variantStyles} ${className}`}
-        {...props}
-      />
-    );
-  },
+const sizes: Record<ButtonSize, string> = {
+  sm: "h-8 px-3 text-sm",
+  md: "h-10 px-4 text-sm",
+};
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      variant = "primary",
+      size = "md",
+      loading = false,
+      disabled,
+      className,
+      children,
+      type = "button",
+      ...rest
+    },
+    ref,
+  ) => (
+    <button
+      ref={ref}
+      type={type}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        "disabled:cursor-not-allowed disabled:opacity-60",
+        variants[variant],
+        sizes[size],
+        className,
+      )}
+      {...rest}
+    >
+      {loading && <Spinner />}
+      {children}
+    </button>
+  ),
 );
 Button.displayName = "Button";

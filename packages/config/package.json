@@ -2,5 +2,25 @@
   "name": "@nearcommerce/config",
   "version": "1.0.0",
   "private": true,
-  "main": "index.js"
+  "main": "palette.cjs",
+  "types": "palette.d.ts",
+  "exports": {
+    ".": {
+      "types": "./palette.d.ts",
+      "default": "./palette.cjs"
+    },
+    "./palette": {
+      "types": "./palette.d.ts",
+      "default": "./palette.cjs"
+    },
+    "./tailwind-preset": "./tailwind-preset.cjs",
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./vite-brand-icon": "./vite-brand-icon.cjs"
+  },
+  "dependencies": {
+    "tailwindcss": "^3.4.19"
+  },
+  "scripts": {
+    "test": "node --test __tests__/*.test.cjs"
+  }
 }

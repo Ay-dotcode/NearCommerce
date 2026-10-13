@@ -1,10 +1,14 @@
 import { HTMLAttributes, forwardRef } from "react";
+import { cn } from "@nearcommerce/ui/src/lib/cn";
 
 export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className = "", ...props }, ref) => (
+  ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={`rounded-lg border border-slate-800 bg-slate-900 ${className}`}
+      className={cn(
+        "rounded-xl border border-slate-200 bg-white shadow-card",
+        className,
+      )}
       {...props}
     />
   ),
@@ -12,22 +16,22 @@ export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 Card.displayName = "Card";
 
 export const CardHeader = ({
-  className = "",
+  className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
-  <div className={`p-5 ${className}`} {...props} />
+  <div className={cn("p-5", className)} {...props} />
 );
 
 export const CardTitle = ({
-  className = "",
+  className,
   ...props
 }: HTMLAttributes<HTMLHeadingElement>) => (
-  <h2 className={`font-semibold ${className}`} {...props} />
+  <h2 className={cn("font-semibold text-slate-900", className)} {...props} />
 );
 
 export const CardContent = ({
-  className = "",
+  className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
-  <div className={`px-5 pb-5 ${className}`} {...props} />
+  <div className={cn("px-5 pb-5", className)} {...props} />
 );
