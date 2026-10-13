@@ -1,5 +1,6 @@
 import { listMyStores } from "@/api/stores";
-import { Button } from "@/components/ui";
+import { PortalPageSkeleton } from "@/app/PageSkeletons";
+import { BrandIcon, Button, cn, Skeleton } from "@nearcommerce/ui";
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes } from "@/constants/routes";
 import {
@@ -12,7 +13,6 @@ import {
   signOutEverywhere,
 } from "@/features/auth/session";
 import { SupportDialog } from "@/features/support/ui/SupportDialog";
-import { cn } from "@/lib/cn";
 import { parseApiError, STORE_KEY } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -79,14 +79,21 @@ export function StoreOwnerLayout() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <div>
-              <p className="text-xs font-semibold text-brand-700">
-                NearCommerce
-              </p>
-              <h1 className="text-lg font-semibold leading-tight">
-                Store Owner Portal
-              </h1>
+            <div className="flex items-center gap-3">
+              <BrandIcon size={36} className="rounded-xl" />
+              <div>
+                <p className="text-xs font-semibold text-brand-700">
+                  NearCommerce
+                </p>
+                <h1 className="text-lg font-semibold leading-tight">
+                  Store Owner Portal
+                </h1>
+              </div>
             </div>
+
+            {storesQuery.isLoading && (
+              <Skeleton className="h-9 w-72 max-w-full" />
+            )}
 
             {ready && (
               <div className="flex items-center gap-2">
@@ -160,6 +167,13 @@ export function StoreOwnerLayout() {
           </div>
         )}
 
+        {storesQuery.isLoading && (
+          <div className="mx-auto flex max-w-7xl gap-1 px-4 sm:px-6">
+            <Skeleton className="my-2.5 h-5 w-20" />
+            <Skeleton className="my-2.5 ml-4 h-5 w-28" />
+          </div>
+        )}
+
         {ready && (
           <nav
             aria-label="Primary"
@@ -200,9 +214,7 @@ export function StoreOwnerLayout() {
       )}
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {storesQuery.isLoading && (
-          <p className="text-sm text-slate-500">Loading your stores…</p>
-        )}
+        {storesQuery.isLoading && <PortalPageSkeleton />}
 
         {error && error.status !== 401 && (
           <div

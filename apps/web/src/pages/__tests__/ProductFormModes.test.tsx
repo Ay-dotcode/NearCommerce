@@ -1,17 +1,28 @@
+import { installImageLoadStub } from "@/testing/image";
 import { createProduct, updateProduct } from "@/api/products";
 import { ProductForm } from "@/pages/owner/ProductForm";
 import type { StoreProduct } from "@/types/products";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-jest.mock("@/api/products", () => ({ createProduct: jest.fn(), updateProduct: jest.fn() }));
+jest.mock("@/api/products", () => ({
+  createProduct: jest.fn(),
+  updateProduct: jest.fn(),
+}));
 const createMock = createProduct as jest.Mock;
 const updateMock = updateProduct as jest.Mock;
 
-const set = (label: RegExp | string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
-const save = (name = /save/i) => fireEvent.click(screen.getByRole("button", { name }));
+const set = (label: RegExp | string, value: string) =>
+  fireEvent.change(screen.getByLabelText(label), { target: { value } });
+const save = (name = /save/i) =>
+  fireEvent.click(screen.getByRole("button", { name }));
 
 describe("ProductForm", () => {
-  beforeEach(() => jest.resetAllMocks());
+  let restoreImage: () => void;
+  beforeEach(() => {
+    jest.resetAllMocks();
+    restoreImage = installImageLoadStub();
+  });
+  afterEach(() => restoreImage());
 
   describe("create", () => {
     it("creates a draft by default, without an image, and reports success", async () => {
@@ -25,7 +36,12 @@ describe("ProductForm", () => {
 
       await waitFor(() => expect(onSuccess).toHaveBeenCalled());
       expect(createMock).toHaveBeenCalledWith("s1", {
-        name: "Olive oil", description: undefined, price: 7.5, quantity: 4, imageUrl: undefined, isPublished: false,
+        name: "Olive oil",
+        description: undefined,
+        price: 7.5,
+        quantity: 4,
+        imageUrl: undefined,
+        isPublished: false,
       });
     });
 
@@ -36,9 +52,15 @@ describe("ProductForm", () => {
       set(/Quantity in Stock/, "-1");
       save();
 
-      expect(await screen.findByText("Enter at least 2 characters")).toBeInTheDocument();
-      expect(screen.getByText("Price must be greater than zero")).toBeInTheDocument();
-      expect(screen.getByText("Quantity can't be negative")).toBeInTheDocument();
+      expect(
+        await screen.findByText("Enter at least 2 characters"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Price must be greater than zero"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Quantity can't be negative"),
+      ).toBeInTheDocument();
       expect(createMock).not.toHaveBeenCalled();
     });
 
@@ -48,7 +70,9 @@ describe("ProductForm", () => {
       set(/^Price/, "1.005");
       set(/Quantity in Stock/, "1.5");
       save();
-      expect(await screen.findByText("Price can have at most 2 decimal places")).toBeInTheDocument();
+      expect(
+        await screen.findByText("Price can have at most 2 decimal places"),
+      ).toBeInTheDocument();
       expect(screen.getByText("Use a whole number")).toBeInTheDocument();
     });
 
@@ -67,7 +91,10 @@ describe("ProductForm", () => {
       set(/Quantity in Stock/, "1");
       save();
       await waitFor(() => expect(createMock).toHaveBeenCalled());
-      expect(createMock.mock.calls[0][1]).toMatchObject({ imageUrl: "https://cdn.test/a.jpg", isPublished: true });
+      expect(createMock.mock.calls[0][1]).toMatchObject({
+        imageUrl: "https://cdn.test/a.jpg",
+        isPublished: true,
+      });
     });
 
     it("rejects non-http image URLs", async () => {
@@ -77,13 +104,21 @@ describe("ProductForm", () => {
       set(/Quantity in Stock/, "1");
       set(/Image URL/, "javascript:alert(1)");
       save();
-      expect(await screen.findByText("Enter a valid http(s) image URL")).toBeInTheDocument();
+      expect(
+        await screen.findByText("Enter a valid http(s) image URL"),
+      ).toBeInTheDocument();
       expect(createMock).not.toHaveBeenCalled();
     });
 
     it("maps server field errors onto the inputs and keeps the entered values", async () => {
       createMock.mockRejectedValue({
-        response: { status: 400, data: { error: "Validation failed", details: [{ path: "price", message: "Price is too large" }] } },
+        response: {
+          status: 400,
+          data: {
+            error: "Validation failed",
+            details: [{ path: "price", message: "Price is too large" }],
+          },
+        },
       });
       const onSuccess = jest.fn();
       render(<ProductForm storeId="s1" onSuccess={onSuccess} />);
@@ -105,20 +140,30 @@ describe("ProductForm", () => {
       set(/^Price/, "1");
       set(/Quantity in Stock/, "1");
       save();
-      await waitFor(() => expect(screen.getByLabelText(/Product Name/)).toHaveValue(""));
+      await waitFor(() =>
+        expect(screen.getByLabelText(/Product Name/)).toHaveValue(""),
+      );
     });
   });
 
   describe("edit", () => {
     const product: StoreProduct = {
-      id: "p1", name: "Milk", description: "Whole", price: 2.5, quantity: 8, image_url: "https://cdn.test/m.jpg",
-      is_published: true, last_verified_at: "2026-10-01T00:00:00Z",
+      id: "p1",
+      name: "Milk",
+      description: "Whole",
+      price: 2.5,
+      quantity: 8,
+      image_url: "https://cdn.test/m.jpg",
+      is_published: true,
+      last_verified_at: "2026-10-01T00:00:00Z",
     };
 
     it("prefills, labels the button Save changes and PATCHes with the store id", async () => {
       updateMock.mockResolvedValue({});
       const onSuccess = jest.fn();
-      render(<ProductForm storeId="s1" product={product} onSuccess={onSuccess} />);
+      render(
+        <ProductForm storeId="s1" product={product} onSuccess={onSuccess} />,
+      );
       expect(screen.getByLabelText(/Product Name/)).toHaveValue("Milk");
       expect(screen.getByLabelText(/^Price/)).toHaveValue(2.5);
       expect(screen.getByRole("checkbox", { name: /Published/ })).toBeChecked();
@@ -126,32 +171,53 @@ describe("ProductForm", () => {
       set(/Quantity in Stock/, "9");
       save(/save changes/i);
       await waitFor(() => expect(onSuccess).toHaveBeenCalled());
-      expect(updateMock).toHaveBeenCalledWith("s1", "p1", expect.objectContaining({ price: 2.5, quantity: 9, isPublished: true }));
+      expect(updateMock).toHaveBeenCalledWith(
+        "s1",
+        "p1",
+        expect.objectContaining({ price: 2.5, quantity: 9, isPublished: true }),
+      );
       expect(createMock).not.toHaveBeenCalled();
     });
 
     it("sends null for cleared optional fields so they are really removed, and unpublishes first", async () => {
       updateMock.mockResolvedValue({});
-      render(<ProductForm storeId="s1" product={product} onSuccess={jest.fn()} />);
+      render(
+        <ProductForm storeId="s1" product={product} onSuccess={jest.fn()} />,
+      );
       set(/Description/, "");
       set(/Image URL/, "");
       fireEvent.click(screen.getByRole("checkbox", { name: /Published/ })); // untick
       save(/save changes/i);
       await waitFor(() => expect(updateMock).toHaveBeenCalled());
-      expect(updateMock.mock.calls[0][2]).toMatchObject({ description: null, imageUrl: null, isPublished: false });
+      expect(updateMock.mock.calls[0][2]).toMatchObject({
+        description: null,
+        imageUrl: null,
+        isPublished: false,
+      });
     });
 
     it("blocks removing the image while the product stays published", async () => {
-      render(<ProductForm storeId="s1" product={product} onSuccess={jest.fn()} />);
+      render(
+        <ProductForm storeId="s1" product={product} onSuccess={jest.fn()} />,
+      );
       set(/Image URL/, "");
       save(/save changes/i);
-      expect(await screen.findByText("Add an image before publishing")).toBeInTheDocument();
+      expect(
+        await screen.findByText("Add an image before publishing"),
+      ).toBeInTheDocument();
       expect(updateMock).not.toHaveBeenCalled();
     });
 
     it("Cancel calls back without saving", () => {
       const onCancel = jest.fn();
-      render(<ProductForm storeId="s1" product={product} onSuccess={jest.fn()} onCancel={onCancel} />);
+      render(
+        <ProductForm
+          storeId="s1"
+          product={product}
+          onSuccess={jest.fn()}
+          onCancel={onCancel}
+        />,
+      );
       fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
       expect(onCancel).toHaveBeenCalled();
       expect(updateMock).not.toHaveBeenCalled();

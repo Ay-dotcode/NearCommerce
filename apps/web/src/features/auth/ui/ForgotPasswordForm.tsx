@@ -1,4 +1,5 @@
-import { Button, TextField } from "@/components/ui";
+import { EMAIL_PATTERN } from "@nearcommerce/api";
+import { Button, TextField } from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useForgotPassword } from "@/features/auth/api/usePasswordReset";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
@@ -6,8 +7,6 @@ import { parseApiError } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import React from "react";
 import { Link } from "react-router-dom";
-
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 
 // Asks for an email and always shows the same confirmation, so the form never reveals which emails are registered.
 export const ForgotPasswordForm: React.FC = () => {

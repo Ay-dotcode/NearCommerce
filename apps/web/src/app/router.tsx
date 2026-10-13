@@ -1,4 +1,5 @@
 import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
+import { AppShellSkeleton } from "@/app/PageSkeletons";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { AppRoutes } from "@/constants/routes";
 import { UserRole } from "@nearcommerce/api";
@@ -101,12 +102,5 @@ const router = createBrowserRouter(
 );
 
 export const AppRouter = () => (
-  <RouterProvider
-    router={router}
-    fallbackElement={
-      <p role="status" className="p-6 text-sm text-slate-500">
-        Loading…
-      </p>
-    }
-  />
+  <RouterProvider router={router} fallbackElement={<AppShellSkeleton />} />
 );

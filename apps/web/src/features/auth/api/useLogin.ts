@@ -1,20 +1,10 @@
 import { persistSession } from "@/features/auth/session";
-import { apiClient, UserRole } from "@nearcommerce/api";
+import { apiClient, UserRole, type AuthResponse } from "@nearcommerce/api";
 import { useMutation } from "@tanstack/react-query";
 
 interface LoginPayload {
   email: string;
   password: string;
-}
-
-interface AuthResponse {
-  access_token: string;
-  refresh_token?: string;
-  user: {
-    id: string;
-    role: UserRole;
-    store_id?: string;
-  };
 }
 
 // TanStack Query mutation for the `/auth/login` endpoint.

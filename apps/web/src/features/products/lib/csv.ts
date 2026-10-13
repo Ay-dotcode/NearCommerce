@@ -1,4 +1,5 @@
 import type { ProductImportRow } from "@/types/products";
+import { hasAtMostTwoDecimals } from "@nearcommerce/api";
 import Papa from "papaparse";
 
 // Keep in step with IMPORT_MAX_ROWS in @nearcommerce/api (the server rejects more).
@@ -48,9 +49,6 @@ export function normaliseHeader(header: string): string {
 }
 
 const REQUIRED_COLUMNS = ["name", "price", "quantity"] as const;
-
-const hasAtMostTwoDecimals = (v: number) =>
-  Math.abs(v * 100 - Math.round(v * 100)) < 1e-6;
 
 // Turns parsed CSV records into import rows, collecting every problem rather than stopping
 // at the first. Mirrors the server's row rules so owners fix everything in one pass.

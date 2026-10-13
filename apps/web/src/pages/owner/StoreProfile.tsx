@@ -1,8 +1,9 @@
 import { deleteStore, getStore, updateStore } from "@/api/stores";
-import { Button, ConfirmDialog, useToast } from "@/components/ui";
+import { Button, ConfirmDialog, useToast } from "@nearcommerce/ui";
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes } from "@/constants/routes";
 import { StoreForm } from "@/features/stores/ui/StoreForm";
+import { StoreSettingsSkeleton } from "@/features/stores/ui/StoreSkeleton";
 import { parseApiError, STORE_KEY } from "@nearcommerce/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -43,8 +44,7 @@ export const StoreProfile = ({
 
   if (!storeId)
     return <p className="text-sm text-red-700">No store is selected.</p>;
-  if (storeQuery.isLoading)
-    return <p className="text-sm text-slate-500">Loading store settings…</p>;
+  if (storeQuery.isLoading) return <StoreSettingsSkeleton />;
   if (storeQuery.isError || !storeQuery.data)
     return (
       <div

@@ -1,5 +1,5 @@
 import { createStore } from "@/api/stores";
-import { useToast } from "@/components/ui";
+import { BrandIcon, useToast } from "@nearcommerce/ui";
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes } from "@/constants/routes";
 import { setActiveStoreId } from "@/features/auth/session";
@@ -17,7 +17,8 @@ export function StoreOnboardingPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-3xl px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-3 sm:px-6">
+          <BrandIcon size={28} className="rounded-lg" />
           <p className="text-xs font-semibold text-brand-700">NearCommerce</p>
         </div>
       </header>

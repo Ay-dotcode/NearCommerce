@@ -1,6 +1,6 @@
-import { getSupportChannels } from "@/api/support";
-import { Button, Modal } from "@/components/ui";
 import { SUPPORT_KEY } from "@/constants";
+import { getSupportChannels, type SupportChannels } from "@nearcommerce/api";
+import { Button, Modal, Skeleton, SkeletonGroup } from "@nearcommerce/ui";
 import { useQuery } from "@tanstack/react-query";
 
 interface Props {
@@ -8,10 +8,48 @@ interface Props {
   onClose: () => void;
 }
 
+function ContactRow({
+  label,
+  href,
+  value,
+}: {
+  label: string;
+  href: string;
+  value: string;
+}) {
+  return (
+    <div>
+      <dt className="text-slate-500">{label}</dt>
+      <dd>
+        <a
+          className="font-medium text-brand-700 underline-offset-2 hover:underline"
+          href={href}
+        >
+          {value}
+        </a>
+      </dd>
+    </div>
+  );
+}
+
+// Placeholder with the same rows (label line + contact line) as the loaded details.
+function SupportSkeleton() {
+  return (
+    <SkeletonGroup label="Support details" className="space-y-4">
+      {[0, 1].map((i) => (
+        <div key={i} className="space-y-1.5">
+          <Skeleton className="h-5 w-12" />
+          <Skeleton className="h-5 w-48" />
+        </div>
+      ))}
+    </SkeletonGroup>
+  );
+}
+
 // Official support channels (SRS 3.1.4), loaded from GET /support so contact details
 // change on the server without a web release.
 export function SupportDialog({ open, onClose }: Props) {
-  const query = useQuery({
+  const query = useQuery<SupportChannels>({
     queryKey: SUPPORT_KEY,
     queryFn: getSupportChannels,
     enabled: open,
@@ -33,9 +71,7 @@ export function SupportDialog({ open, onClose }: Props) {
         </Button>
       }
     >
-      {query.isLoading && (
-        <p className="text-sm text-slate-500">Loading support details…</p>
-      )}
+      {query.isLoading && <SupportSkeleton />}
 
       {query.isError && (
         <div role="alert" className="space-y-3">
@@ -50,34 +86,16 @@ export function SupportDialog({ open, onClose }: Props) {
 
       {data && (
         <dl className="space-y-4 text-sm">
-          <div>
-            <dt className="text-slate-500">Email</dt>
-            <dd>
-              <a
-                className="font-medium text-brand-700 underline-offset-2 hover:underline"
-                href={`mailto:${data.channels.email}`}
-              >
-                {data.channels.email}
-              </a>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Phone</dt>
-            <dd>
-              <a
-                className="font-medium text-brand-700 underline-offset-2 hover:underline"
-                href={`tel:${data.channels.phone}`}
-              >
-                {data.channels.phone}
-              </a>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Hours</dt>
-            <dd className="font-medium text-slate-900">
-              {data.operating_hours}
-            </dd>
-          </div>
+          <ContactRow
+            label="Email"
+            href={`mailto:${data.channels.email}`}
+            value={data.channels.email}
+          />
+          <ContactRow
+            label="Phone"
+            href={`tel:${data.channels.phone}`}
+            value={data.channels.phone}
+          />
         </dl>
       )}
     </Modal>

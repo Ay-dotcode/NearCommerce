@@ -1,4 +1,5 @@
-import { Button, TextField } from "@/components/ui";
+import { EMAIL_PATTERN } from "@nearcommerce/api";
+import { Button, TextField } from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useResendVerification } from "@/features/auth/api/useEmailVerification";
 import { useRegister } from "@/features/auth/api/useRegister";
@@ -7,8 +8,6 @@ import { UserRole } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 
 // Accounts created in the store portal are always store owners; shoppers register in the mobile app.
 export const RegisterForm: React.FC = () => {

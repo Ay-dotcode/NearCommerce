@@ -4,9 +4,6 @@ export interface OpeningDay {
   isClosed: boolean;
 }
 
-export type DayState = OpeningDay;
-export type HoursState = Record<string, DayState>;
-
 export type OpeningHours = Record<string, OpeningDay | null>;
 
 export interface Store {

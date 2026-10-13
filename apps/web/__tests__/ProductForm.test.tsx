@@ -4,6 +4,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react";
 
 // Mock shared API client
 jest.mock("@nearcommerce/api", () => ({
+  ...jest.requireActual("@nearcommerce/api"),
   apiClient: { post: jest.fn() },
 }));
 

@@ -1,10 +1,9 @@
-import { Button } from "@/components/ui";
+import { Button, cn } from "@nearcommerce/ui";
 import {
   DAY_LABELS,
   type DayState,
   type HoursState,
 } from "@/features/stores/lib/hours";
-import { cn } from "@/lib/cn";
 import { WEEKDAYS, type Weekday } from "@nearcommerce/api";
 
 interface Props {

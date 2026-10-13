@@ -11,11 +11,10 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 jest.mock("@/api/stores", () => ({
   listMyStores: jest.fn(),
 }));
-jest.mock("@/api/support", () => ({
-  SUPPORT_KEY: ["support-channels"],
+jest.mock("@nearcommerce/api", () => ({
+  ...jest.requireActual("@nearcommerce/api"),
   getSupportChannels: jest.fn().mockResolvedValue({
     channels: { email: "help@example.com", phone: "+90555" },
-    operating_hours: "24/7",
   }),
 }));
 jest.mock("@/features/auth/api/useEmailVerification", () => ({

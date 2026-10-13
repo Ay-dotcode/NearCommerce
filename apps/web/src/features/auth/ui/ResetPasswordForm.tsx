@@ -1,4 +1,4 @@
-import { Button, TextField } from "@/components/ui";
+import { Button, TextField } from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useResetPassword } from "@/features/auth/api/usePasswordReset";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";

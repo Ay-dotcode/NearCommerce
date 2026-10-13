@@ -1,5 +1,5 @@
 import { uploadProductImage } from "@/api/uploads";
-import { Button } from "@/components/ui";
+import { Button, Skeleton } from "@nearcommerce/ui";
 import {
   ACCEPTED_IMAGE_TYPES,
   dataUrlToBlob,
@@ -72,9 +72,7 @@ export const ProductImagePicker: React.FC<Props> = ({ value, onChange }) => {
 
       {source ? (
         <div className="space-y-2">
-          <Suspense
-            fallback={<p className="text-sm text-slate-500">Loading editor…</p>}
-          >
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
             <EdgeImageCropper imageUrl={source} onCropComplete={upload} />
           </Suspense>
           {uploading && (
@@ -102,7 +100,7 @@ export const ProductImagePicker: React.FC<Props> = ({ value, onChange }) => {
               }
             />
           )}
-          <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus-within:ring-2 focus-within:ring-brand-500">
             {value ? "Replace photo" : "Upload photo"}
             <input
               type="file"

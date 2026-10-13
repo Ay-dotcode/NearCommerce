@@ -5,21 +5,17 @@ import {
   persistSession,
   signOutEverywhere,
 } from "@/features/auth/session";
-import { apiClient, configureTokenRefresh } from "@nearcommerce/api";
+import { apiClient } from "@nearcommerce/api";
+import * as tokenRefresh from "@nearcommerce/api/src/tokenRefresh";
 
-jest.mock("@nearcommerce/api", () => ({
-  UserRole: { STORE_OWNER: "STORE_OWNER" },
-  STORE_KEY: "x-store-id",
-  apiClient: {
-    post: jest.fn(),
-    defaults: { headers: { common: {} as Record<string, string> } },
-  },
-  configureTokenRefresh: jest.fn(),
-}));
-const post = apiClient.post as jest.Mock;
+const post = jest.spyOn(apiClient, "post");
+const configureTokenRefresh = jest
+  .spyOn(tokenRefresh, "configureTokenRefresh")
+  .mockImplementation(() => undefined);
 
 beforeEach(() => {
   jest.clearAllMocks();
+  post.mockResolvedValue({} as never);
   localStorage.clear();
   clearSession();
 });
@@ -58,7 +54,7 @@ it("signOutEverywhere skips the server call when there is no refresh token", asy
 });
 
 describe("installTokenRefresh", () => {
-  const handlers = () => (configureTokenRefresh as jest.Mock).mock.calls[0][0];
+  const handlers = () => configureTokenRefresh.mock.calls[0][0] as any;
 
   it("saves rotated tokens", () => {
     installTokenRefresh(jest.fn());

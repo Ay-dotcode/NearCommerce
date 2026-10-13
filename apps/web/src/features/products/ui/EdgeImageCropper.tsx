@@ -1,3 +1,4 @@
+import { Button, Skeleton } from "@nearcommerce/ui";
 import { createYoloWorker } from "@/workers/workerFactory";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -175,13 +176,15 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center border p-4 bg-gray-50 rounded-lg">
-      <h3 className="font-semibold mb-4">Product Image Cropper</h3>
+    <div className="flex flex-col items-center rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <h3 className="mb-4 font-semibold text-slate-900">
+        Product Image Cropper
+      </h3>
 
       <div className="relative">
         <canvas
           ref={canvasRef}
-          className="max-w-full h-auto border shadow-sm"
+          className="h-auto max-w-full border border-slate-200 shadow-card"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -195,20 +198,22 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
         )}
 
         {loading && !loadFailed && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
-            <span className="text-blue-600 font-medium animate-pulse">
-              Running Edge AI Detection...
-            </span>
+          <div
+            role="status"
+            aria-label="Detecting the product in the photo"
+            className="absolute inset-0"
+          >
+            <Skeleton className="h-full w-full rounded-none opacity-60" />
           </div>
         )}
 
         {/* Overlay the AI-detected bounding box */}
         {!loading && box && (
           <div
-            className={`absolute border-4 bg-opacity-20 pointer-events-none ${
+            className={`pointer-events-none absolute border-4 ${
               manualMode
-                ? "border-yellow-500 bg-yellow-500"
-                : "border-green-500 bg-green-500"
+                ? "border-yellow-500 bg-yellow-500/20"
+                : "border-emerald-500 bg-emerald-500/20"
             }`}
             style={{
               left: `${(box.x / (canvasRef.current?.width || 1)) * 100}%`,
@@ -224,7 +229,7 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
       <div className="mt-4 flex gap-4 items-center">
         {manualMode && (
           <p
-            className="text-sm text-yellow-600 font-medium"
+            className="text-sm font-medium text-yellow-700"
             data-testid="manual-mode-alert"
           >
             AI detection timed out or failed. Drag on the image to adjust the
@@ -232,13 +237,7 @@ export const EdgeImageCropper: React.FC<EdgeImageCropperProps> = ({
           </p>
         )}
         {!loading && box && (
-          <button
-            type="button"
-            onClick={handleConfirmCrop}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Confirm Crop
-          </button>
+          <Button onClick={handleConfirmCrop}>Confirm Crop</Button>
         )}
       </div>
     </div>

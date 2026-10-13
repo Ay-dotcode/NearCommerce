@@ -5,20 +5,27 @@ import {
   listProducts,
 } from "@/api/products";
 import CsvImporter from "@/components/store-owner/CsvImporter";
+import { CATEGORIES_KEY, PRODUCTS_KEY } from "@/constants";
+import { applyVerified } from "@/features/products/lib/cache";
 import {
   Badge,
   Button,
+  cn,
   ConfirmDialog,
   EmptyState,
+  formatPrice,
   Modal,
+  Skeleton,
+  timeAgo,
+  useDebouncedValue,
   useToast,
-} from "@/components/ui";
-import { CATEGORIES_KEY, PRODUCTS_KEY } from "@/constants";
-import { formatPrice, timeAgo } from "@/features/products/lib/format";
-import { cn } from "@/lib/cn";
-import { useDebouncedValue } from "@/lib/useDebouncedValue";
+} from "@nearcommerce/ui";
+import { ProductsTableSkeleton } from "@/features/products/ui/InventorySkeleton";
+import { ProductDetailsModal } from "@/features/products/ui/ProductDetailsModal";
+import { ProductImage } from "@/features/products/ui/ProductImage";
 import { ProductForm } from "@/pages/owner/ProductForm";
 import type {
+  ProductListResponse,
   ProductStatusFilter,
   ProductSummary,
   StoreProduct,
@@ -60,6 +67,7 @@ export default function StoreOwnerDashboard() {
   const [page, setPage] = useState(1);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [deleting, setDeleting] = useState<StoreProduct | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
   const params = { q: debouncedSearch, status, page, pageSize: PAGE_SIZE };
   const productsQuery = useQuery({
@@ -79,6 +87,7 @@ export default function StoreOwnerDashboard() {
   });
 
   const products = productsQuery.data?.data ?? [];
+  const viewing = products.find((p) => p.id === viewingId) ?? null;
   const meta = productsQuery.data?.meta;
   const summary: ProductSummary | undefined = meta?.summary;
   const totalPages = meta?.totalPages ?? 1;
@@ -91,12 +100,36 @@ export default function StoreOwnerDashboard() {
       setPage(meta.totalPages);
   }, [meta, page]);
 
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: PRODUCTS_KEY });
+  // Refetch every cached inventory list (not only the one on screen) so counts such as the
+  // "needs verification" banner never come back from a stale cache after a filter change.
+  const refresh = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: PRODUCTS_KEY,
+      refetchType: "active",
+    });
+    // The lists for other filters refetch quietly in the background.
+    void queryClient.invalidateQueries({
+      queryKey: PRODUCTS_KEY,
+      refetchType: "inactive",
+    });
+  };
 
   const confirmStock = useMutation({
     mutationFn: confirmProductStock,
-    onSuccess: async () => {
+    onSuccess: async (_data, productId) => {
+      // Update the screen straight away; the refetch below then confirms the real numbers.
+      const target = products.find((p) => p.id === productId);
+      const verifiedAt = new Date().toISOString();
+      queryClient.setQueriesData<ProductListResponse>(
+        { queryKey: PRODUCTS_KEY },
+        (old) =>
+          applyVerified(
+            old,
+            productId,
+            target ? isStale(target) : false,
+            verifiedAt,
+          ),
+      );
       await refresh();
       toast.success("Stock confirmed");
     },
@@ -190,9 +223,13 @@ export default function StoreOwnerDashboard() {
                 <span className="block text-xs font-medium text-slate-500">
                   {tile.label}
                 </span>
-                <span className="mt-0.5 block text-2xl font-semibold tabular-nums">
-                  {tile.value ?? "–"}
-                </span>
+                {tile.value === undefined && productsQuery.isLoading ? (
+                  <Skeleton className="mt-1 h-8 w-10" />
+                ) : (
+                  <span className="mt-0.5 block text-2xl font-semibold tabular-nums">
+                    {tile.value ?? "–"}
+                  </span>
+                )}
               </button>
             </li>
           ))}
@@ -254,9 +291,7 @@ export default function StoreOwnerDashboard() {
         </div>
       </div>
 
-      {productsQuery.isLoading && (
-        <p className="text-sm text-slate-500">Loading inventory…</p>
-      )}
+      {productsQuery.isLoading && <ProductsTableSkeleton />}
 
       {productsQuery.isError && (
         <div
@@ -347,26 +382,32 @@ export default function StoreOwnerDashboard() {
                   confirmStock.isPending &&
                   confirmStock.variables === product.id;
                 return (
-                  <tr key={product.id} className="align-top">
+                  <tr
+                    key={product.id}
+                    className="cursor-pointer align-top hover:bg-slate-50"
+                    onClick={(e) => {
+                      // Row click opens details, except for clicks on its own buttons.
+                      if (!(e.target as HTMLElement).closest("button, a"))
+                        setViewingId(product.id);
+                    }}
+                  >
                     <th scope="row" className="px-4 py-3 font-normal">
                       <div className="flex items-start gap-3">
-                        {product.image_url ? (
-                          <img
-                            src={product.image_url}
-                            alt=""
-                            loading="lazy"
-                            className="h-10 w-10 shrink-0 rounded-md border border-slate-200 object-cover"
-                          />
-                        ) : (
-                          <div
-                            aria-hidden="true"
-                            className="h-10 w-10 shrink-0 rounded-md bg-slate-100"
-                          />
-                        )}
+                        <ProductImage
+                          src={product.image_url}
+                          alt=""
+                          className="h-10 w-10 shrink-0 rounded-md border border-slate-200"
+                          imgClassName="object-cover"
+                        />
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-slate-900">
+                          <button
+                            type="button"
+                            onClick={() => setViewingId(product.id)}
+                            aria-label={`View details: ${product.name}`}
+                            className="block max-w-full truncate rounded text-left font-medium text-slate-900 hover:text-brand-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                          >
                             {product.name}
-                          </p>
+                          </button>
                           <p className="mt-0.5 text-xs text-slate-500 sm:hidden">
                             Qty {product.quantity} ·{" "}
                             {formatPrice(product.price)}
@@ -495,6 +536,21 @@ export default function StoreOwnerDashboard() {
           />
         )}
       </Modal>
+
+      <ProductDetailsModal
+        product={viewing}
+        categories={categoriesQuery.data}
+        stale={viewing ? isStale(viewing) : false}
+        confirming={
+          confirmStock.isPending && confirmStock.variables === viewing?.id
+        }
+        onClose={() => setViewingId(null)}
+        onEdit={(product) => {
+          setViewingId(null);
+          setEditor({ mode: "edit", product });
+        }}
+        onConfirmStock={(product) => confirmStock.mutate(product.id)}
+      />
 
       <ConfirmDialog
         open={deleting !== null}

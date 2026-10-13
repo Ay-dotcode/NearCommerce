@@ -2,6 +2,7 @@ import { AppRoutes } from "@/constants/routes";
 import { useVerifyEmail } from "@/features/auth/api/useEmailVerification";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
 import { parseApiError } from "@nearcommerce/api";
+import { Skeleton, SkeletonGroup } from "@nearcommerce/ui";
 import React, { useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
@@ -79,10 +80,12 @@ export const VerifyEmailPage: React.FC = () => {
     );
 
   return (
-    <AuthLayout title="Verifying your email…">
-      <p role="status" className="text-sm text-slate-600">
-        Hold on while we confirm your address.
-      </p>
+    <AuthLayout title="Email verification">
+      <SkeletonGroup label="Confirming your email" className="space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="mt-3 h-4 w-24" />
+      </SkeletonGroup>
     </AuthLayout>
   );
 };

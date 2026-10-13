@@ -1,4 +1,5 @@
-import { ToastProvider } from "@/components/ui";
+import { installImageLoadStub } from "@/testing/image";
+import { ToastProvider } from "@nearcommerce/ui";
 import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -84,16 +85,23 @@ function renderDashboard() {
 }
 
 describe("StoreOwnerDashboard", () => {
+  let restoreImage: () => void;
   beforeEach(() => {
+    restoreImage = installImageLoadStub();
     jest.clearAllMocks();
     localStorage.setItem("x-store-id", "store-123");
     get.mockResolvedValue(listResponse([product()]));
   });
 
-  it("shows a loading state first", () => {
+  afterEach(() => restoreImage());
+
+  it("shows a skeleton (and no loading text) while products load", () => {
     get.mockReturnValue(new Promise(() => {}));
     renderDashboard();
-    expect(screen.getByText(/loading inventory/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("status", { name: "Inventory" }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
   });
 
   it("guides a store with no store id selected", () => {
@@ -380,5 +388,106 @@ describe("StoreOwnerDashboard", () => {
     get.mockResolvedValue(listResponse([product()]));
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("Whole Milk")).toBeInTheDocument();
+  });
+});
+
+describe("StoreOwnerDashboard: details and stale banner", () => {
+  let restoreImage: () => void;
+  beforeEach(() => {
+    restoreImage = installImageLoadStub();
+    jest.clearAllMocks();
+    localStorage.setItem("x-store-id", "store-123");
+  });
+  afterEach(() => restoreImage());
+
+  it("opens a details dialog with the big product photo when a product is clicked", async () => {
+    get.mockResolvedValue(
+      listResponse([
+        product({ description: "Fresh and cold", price: 2.49, quantity: 5 }),
+      ]),
+    );
+    renderDashboard();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /view details: whole milk/i }),
+    );
+
+    const dialog = await screen.findByRole("dialog", { name: "Whole Milk" });
+    expect(within(dialog).getByAltText("Whole Milk")).toHaveAttribute(
+      "src",
+      "https://example.com/milk.jpg",
+    );
+    expect(within(dialog).getByText("Fresh and cold")).toBeInTheDocument();
+    expect(within(dialog).getByText("2.49")).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Whole Milk" })).toBeNull(),
+    );
+  });
+
+  it("opens the same dialog when anywhere else on the row is clicked", async () => {
+    get.mockResolvedValue(listResponse([product()]));
+    renderDashboard();
+    const row = (await screen.findByText("Whole Milk")).closest("tr")!;
+    fireEvent.click(row.querySelector("td")!);
+    expect(
+      await screen.findByRole("dialog", { name: "Whole Milk" }),
+    ).toBeInTheDocument();
+  });
+
+  it("lets the owner edit from the details dialog", async () => {
+    get.mockResolvedValue(listResponse([product()]));
+    renderDashboard();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /view details: whole milk/i }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Edit product" }),
+    );
+    expect(
+      await screen.findByRole("dialog", { name: "Edit product" }),
+    ).toBeInTheDocument();
+  });
+
+  it("drops the 'not verified recently' banner as soon as the last stale product is confirmed", async () => {
+    let verified = false;
+    get.mockImplementation(
+      async (_url: string, config: { params: { status?: string } }) => {
+        const status = config.params.status;
+        // Once verified, a refetch of the unfiltered list never resolves, so the screen can only
+        // be right if the cached lists were updated in place.
+        if (verified && status === undefined) return new Promise(() => {});
+        const stale = verified ? 0 : 1;
+        const items =
+          verified && status === "stale"
+            ? []
+            : [product({ isStale: !verified })];
+        return listResponse(items, { stale });
+      },
+    );
+    patch.mockImplementation(async () => {
+      verified = true;
+      return { data: { success: true } };
+    });
+
+    renderDashboard();
+    expect(
+      await screen.findByText(/hasn't been verified recently/i),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Review them" }));
+    await waitFor(() => expect(lastListParams().status).toBe("stale"));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /confirm still in stock/i }),
+    );
+    await screen.findByText("Stock confirmed");
+
+    // Back to everything: the banner must not reappear from the old cached count.
+    fireEvent.click(screen.getByRole("button", { name: /^Total products/ }));
+    await waitFor(() => expect(lastListParams().status).toBeUndefined());
+    expect(screen.queryByText(/verified recently/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^Needs verification/ }),
+    ).toHaveTextContent("0");
   });
 });

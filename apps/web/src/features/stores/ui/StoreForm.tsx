@@ -1,4 +1,3 @@
-import { Button, TextAreaField, TextField } from "@/components/ui";
 import {
   defaultHours,
   hoursFromApi,
@@ -7,8 +6,14 @@ import {
 } from "@/features/stores/lib/hours";
 import { OpeningHoursEditor } from "@/features/stores/ui/OpeningHoursEditor";
 import type { Store, StorePayload } from "@/types/stores";
-import { CreateStoreSchema, parseApiError, WEEKDAYS, type Weekday } from "@nearcommerce/api";
-import { FormEvent, ReactNode, useMemo, useState } from "react";
+import {
+  CreateStoreSchema,
+  parseApiError,
+  type Weekday,
+} from "@nearcommerce/api";
+import { Button, FormTextAreaField, FormTextField } from "@nearcommerce/ui";
+import { FormikErrors, FormikProvider, useFormik } from "formik";
+import { ReactNode, useMemo, useState } from "react";
 
 interface Props {
   initial?: Store;
@@ -19,7 +24,17 @@ interface Props {
   extraActions?: ReactNode;
 }
 
-type FieldErrors = Record<string, string>;
+interface StoreFormValues {
+  name: string;
+  description: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  timezone: string;
+  hours: HoursState;
+}
+
+type HourErrors = Partial<Record<Weekday, string>>;
 
 const browserTimezone = () => {
   try {
@@ -37,7 +52,39 @@ const listTimezones = (): string[] => {
   }
 };
 
-// Shared by onboarding (create) and store settings (edit). Validates with the same zod schema the API uses.
+// Turns the form values into the shape the API's zod schema validates.
+const toSchemaInput = (values: StoreFormValues) => ({
+  name: values.name,
+  description: values.description.trim() || undefined,
+  address: values.address,
+  latitude: values.latitude.trim() === "" ? NaN : Number(values.latitude),
+  longitude: values.longitude.trim() === "" ? NaN : Number(values.longitude),
+  timezone: values.timezone,
+  openingHours: hoursToPayload(values.hours),
+});
+
+// Validates with the same zod schema the API uses. Opening-hour problems are grouped per
+// weekday under `hours` so the editor can show them next to the right row.
+function validateStore(values: StoreFormValues): FormikErrors<StoreFormValues> {
+  const parsed = CreateStoreSchema.safeParse(toSchemaInput(values));
+  if (parsed.success) return {};
+  const errors: Record<string, string> = {};
+  const hours: HourErrors = {};
+  for (const issue of parsed.error.issues) {
+    // Empty or non-numeric coordinates surface as "Expected number, received nan".
+    const message = /nan|expected number/i.test(issue.message)
+      ? "Enter a valid number"
+      : issue.message;
+    const [root, day] = issue.path.map(String);
+    if (root === "openingHours" && day) hours[day as Weekday] ??= message;
+    else errors[root] ??= message;
+  }
+  if (Object.keys(hours).length > 0)
+    (errors as Record<string, unknown>).hours = hours;
+  return errors as FormikErrors<StoreFormValues>;
+}
+
+// Shared by onboarding (create) and store settings (edit).
 export function StoreForm({
   initial,
   submitLabel,
@@ -46,25 +93,51 @@ export function StoreForm({
   extraActions,
 }: Props) {
   const timezones = useMemo(listTimezones, []);
-  const [values, setValues] = useState({
-    name: initial?.name ?? "",
-    description: initial?.description ?? "",
-    address: initial?.address ?? "",
-    latitude: initial ? String(initial.latitude) : "",
-    longitude: initial ? String(initial.longitude) : "",
-    timezone: initial?.timezone ?? browserTimezone(),
-  });
-  const [hours, setHours] = useState<HoursState>(
-    initial ? hoursFromApi(initial.opening_hours) : defaultHours(),
-  );
-  const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
 
-  const set =
-    (key: keyof typeof values) => (e: { target: { value: string } }) =>
-      setValues((v) => ({ ...v, [key]: e.target.value }));
+  const formik = useFormik<StoreFormValues>({
+    initialValues: {
+      name: initial?.name ?? "",
+      description: initial?.description ?? "",
+      address: initial?.address ?? "",
+      latitude: initial ? String(initial.latitude) : "",
+      longitude: initial ? String(initial.longitude) : "",
+      timezone: initial?.timezone ?? browserTimezone(),
+      hours: initial ? hoursFromApi(initial.opening_hours) : defaultHours(),
+    },
+    validate: validateStore,
+    validateOnChange: false,
+    onSubmit: async (values, helpers) => {
+      setFormError(null);
+      const parsed = CreateStoreSchema.parse(toSchemaInput(values));
+      try {
+        await onSubmit({
+          ...parsed,
+          openingHours: hoursToPayload(values.hours),
+        } as StorePayload);
+      } catch (err) {
+        const apiError = parseApiError(
+          err,
+          "We couldn't save the store. Please try again.",
+        );
+        const fieldErrors: Record<string, string> = {};
+        const hours: HourErrors = {};
+        for (const d of apiError.details) {
+          const [root, day] = d.path.split(".");
+          if (root === "openingHours" && day)
+            hours[day as Weekday] ??= d.message;
+          else fieldErrors[d.path] = d.message;
+        }
+        if (Object.keys(hours).length > 0)
+          (fieldErrors as Record<string, unknown>).hours = hours;
+        helpers.setErrors(fieldErrors as FormikErrors<StoreFormValues>);
+        setFormError(apiError.message);
+      }
+    },
+  });
+
+  const hourErrors = (formik.errors.hours ?? {}) as unknown as HourErrors;
 
   const useMyLocation = () => {
     setFormError(null);
@@ -75,11 +148,8 @@ export function StoreForm({
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setValues((v) => ({
-          ...v,
-          latitude: pos.coords.latitude.toFixed(6),
-          longitude: pos.coords.longitude.toFixed(6),
-        }));
+        formik.setFieldValue("latitude", pos.coords.latitude.toFixed(6));
+        formik.setFieldValue("longitude", pos.coords.longitude.toFixed(6));
         setLocating(false);
       },
       () => {
@@ -92,192 +162,124 @@ export function StoreForm({
     );
   };
 
-  const hourErrors = useMemo(() => {
-    const out: Partial<Record<Weekday, string>> = {};
-    for (const day of WEEKDAYS) {
-      const message =
-        errors[`openingHours.${day}.close`] ??
-        errors[`openingHours.${day}.open`];
-      if (message) out[day] = message;
-    }
-    return out;
-  }, [errors]);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-
-    const lat = values.latitude.trim() === "" ? NaN : Number(values.latitude);
-    const lng = values.longitude.trim() === "" ? NaN : Number(values.longitude);
-    const parsed = CreateStoreSchema.safeParse({
-      name: values.name,
-      description: values.description.trim() || undefined,
-      address: values.address,
-      latitude: lat,
-      longitude: lng,
-      timezone: values.timezone,
-      openingHours: hoursToPayload(hours),
-    });
-
-    if (!parsed.success) {
-      const next: FieldErrors = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join(".");
-        // Empty or non-numeric coordinates surface as "Expected number, received nan".
-        next[key] ??= /nan|expected number/i.test(issue.message)
-          ? "Enter a valid number"
-          : issue.message;
-      }
-      setErrors(next);
-      return;
-    }
-    setErrors({});
-
-    setBusy(true);
-    try {
-      await onSubmit({
-        ...parsed.data,
-        openingHours: hoursToPayload(hours),
-      } as StorePayload);
-    } catch (err) {
-      const apiError = parseApiError(
-        err,
-        "We couldn't save the store. Please try again.",
-      );
-      if (apiError.details.length > 0)
-        setErrors(
-          Object.fromEntries(apiError.details.map((d) => [d.path, d.message])),
-        );
-      setFormError(apiError.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-8">
-      <section aria-labelledby="store-details-heading" className="space-y-4">
-        <h2
-          id="store-details-heading"
-          className="text-base font-semibold text-slate-900"
-        >
-          Store details
-        </h2>
-        <TextField
-          label="Store name"
-          required
-          value={values.name}
-          onChange={set("name")}
-          error={errors.name}
-          autoComplete="organization"
-        />
-        <TextAreaField
-          label="Description"
-          rows={3}
-          value={values.description}
-          onChange={set("description")}
-          error={errors.description}
-          hint="Shown to shoppers on your store page."
-        />
-        <TextField
-          label="Street address"
-          required
-          value={values.address}
-          onChange={set("address")}
-          error={errors.address}
-          autoComplete="street-address"
-        />
-      </section>
-
-      <section aria-labelledby="store-location-heading" className="space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2
-              id="store-location-heading"
-              className="text-base font-semibold text-slate-900"
-            >
-              Location
-            </h2>
-            <p className="text-sm text-slate-500">
-              Used to place your store in nearby search results.
-            </p>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={useMyLocation}
-            loading={locating}
+    <FormikProvider value={formik}>
+      <form onSubmit={formik.handleSubmit} noValidate className="space-y-8">
+        <section aria-labelledby="store-details-heading" className="space-y-4">
+          <h2
+            id="store-details-heading"
+            className="text-base font-semibold text-slate-900"
           >
-            Use my location
-          </Button>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField
-            label="Latitude"
+            Store details
+          </h2>
+          <FormTextField
+            name="name"
+            label="Store name"
             required
-            inputMode="decimal"
-            value={values.latitude}
-            onChange={set("latitude")}
-            error={errors.latitude}
-            placeholder="35.1856"
+            autoComplete="organization"
           />
-          <TextField
-            label="Longitude"
+          <FormTextAreaField
+            name="description"
+            label="Description"
+            rows={3}
+            hint="Shown to shoppers on your store page."
+          />
+          <FormTextField
+            name="address"
+            label="Street address"
             required
-            inputMode="decimal"
-            value={values.longitude}
-            onChange={set("longitude")}
-            error={errors.longitude}
-            placeholder="33.3823"
+            autoComplete="street-address"
           />
-        </div>
-        <div>
-          <TextField
-            label="Timezone"
-            required
-            list="timezone-options"
-            value={values.timezone}
-            onChange={set("timezone")}
-            error={errors.timezone}
-            hint="Start typing to search, for example Europe/London."
-            autoComplete="off"
+        </section>
+
+        <section aria-labelledby="store-location-heading" className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2
+                id="store-location-heading"
+                className="text-base font-semibold text-slate-900"
+              >
+                Location
+              </h2>
+              <p className="text-sm text-slate-500">
+                Used to place your store in nearby search results.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={useMyLocation}
+              loading={locating}
+            >
+              Use my location
+            </Button>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormTextField
+              name="latitude"
+              label="Latitude"
+              required
+              inputMode="decimal"
+              placeholder="35.1856"
+            />
+            <FormTextField
+              name="longitude"
+              label="Longitude"
+              required
+              inputMode="decimal"
+              placeholder="33.3823"
+            />
+          </div>
+          <div>
+            <FormTextField
+              name="timezone"
+              label="Timezone"
+              required
+              list="timezone-options"
+              hint="Start typing to search, for example Europe/London."
+              autoComplete="off"
+            />
+            <datalist id="timezone-options">
+              {timezones.map((tz) => (
+                <option key={tz} value={tz} />
+              ))}
+            </datalist>
+          </div>
+        </section>
+
+        <section>
+          <OpeningHoursEditor
+            value={formik.values.hours}
+            onChange={(next) => formik.setFieldValue("hours", next)}
+            errors={formik.submitCount > 0 ? hourErrors : {}}
           />
-          <datalist id="timezone-options">
-            {timezones.map((tz) => (
-              <option key={tz} value={tz} />
-            ))}
-          </datalist>
-        </div>
-      </section>
+        </section>
 
-      <section>
-        <OpeningHoursEditor
-          value={hours}
-          onChange={setHours}
-          errors={hourErrors}
-        />
-      </section>
-
-      {formError && (
-        <div
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-        >
-          {formError}
-        </div>
-      )}
-
-      <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-end">
-        {extraActions}
-        {onCancel && (
-          <Button variant="secondary" onClick={onCancel} disabled={busy}>
-            Cancel
-          </Button>
+        {formError && (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
+            {formError}
+          </div>
         )}
-        <Button type="submit" loading={busy}>
-          {submitLabel}
-        </Button>
-      </div>
-    </form>
+
+        <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-end">
+          {extraActions}
+          {onCancel && (
+            <Button
+              variant="secondary"
+              onClick={onCancel}
+              disabled={formik.isSubmitting}
+            >
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" loading={formik.isSubmitting}>
+            {submitLabel}
+          </Button>
+        </div>
+      </form>
+    </FormikProvider>
   );
 }

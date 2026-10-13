@@ -1,10 +1,13 @@
 import { SupportDialog } from "@/features/support/ui/SupportDialog";
-import { apiClient } from "@nearcommerce/api";
+import { getSupportChannels } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-jest.mock("@nearcommerce/api", () => ({ apiClient: { get: jest.fn() } }));
-const get = apiClient.get as jest.Mock;
+jest.mock("@nearcommerce/api", () => {
+  const actual = jest.requireActual("@nearcommerce/api");
+  return { ...actual, getSupportChannels: jest.fn() };
+});
+const get = getSupportChannels as jest.Mock;
 
 const renderDialog = (open = true, onClose = jest.fn()) => {
   const client = new QueryClient({
@@ -27,12 +30,9 @@ describe("SupportDialog", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("shows email, phone and hours as working links", async () => {
+  it("shows email and phone as working links, with no opening hours", async () => {
     get.mockResolvedValue({
-      data: {
-        channels: { email: "help@example.com", phone: "+905551112233" },
-        operating_hours: "24/7",
-      },
+      channels: { email: "help@example.com", phone: "+905551112233" },
     });
     renderDialog();
     expect(
@@ -42,8 +42,8 @@ describe("SupportDialog", () => {
       "href",
       "tel:+905551112233",
     );
-    expect(screen.getByText("24/7")).toBeInTheDocument();
-    expect(get).toHaveBeenCalledWith("/support");
+    expect(screen.queryByText(/24\/7|hours/i)).not.toBeInTheDocument();
+    expect(get).toHaveBeenCalled();
   });
 
   it("offers a retry when loading fails", async () => {
@@ -53,14 +53,11 @@ describe("SupportDialog", () => {
       await screen.findByText(/couldn't load the support details/i),
     ).toBeInTheDocument();
 
-    get.mockResolvedValue({
-      data: {
-        channels: { email: "a@b.co", phone: "1" },
-        operating_hours: "9-5",
-      },
-    });
+    get.mockResolvedValue({ channels: { email: "a@b.co", phone: "1" } });
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByText("9-5")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "a@b.co" }),
+    ).toBeInTheDocument();
   });
 
   it("closes from the footer button", async () => {

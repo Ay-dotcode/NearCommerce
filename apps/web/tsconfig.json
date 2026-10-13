@@ -15,7 +15,11 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "@nearcommerce/api/*": ["../../packages/api/*"],
+      "@nearcommerce/ui/*": ["../../packages/ui/*"]
+    }
   },
   "include": ["src", "__tests__"]
 }

@@ -1,5 +1,5 @@
 import { importProducts } from "@/api/products";
-import { Button, Modal, useToast } from "@/components/ui";
+import { Button, cn, Modal, useToast } from "@nearcommerce/ui";
 import { PRODUCTS_KEY } from "@/constants";
 import {
   CSV_MAX_ROWS,
@@ -7,7 +7,6 @@ import {
   parseProductCsv,
   type CsvIssue,
 } from "@/features/products/lib/csv";
-import { cn } from "@/lib/cn";
 import type { ImportResult } from "@/types/products";
 import { parseApiError } from "@nearcommerce/api";
 import { useQueryClient } from "@tanstack/react-query";

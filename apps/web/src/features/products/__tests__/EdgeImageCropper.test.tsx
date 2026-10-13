@@ -90,7 +90,9 @@ describe("EdgeImageCropper (Task 4.2.3)", () => {
       jest.advanceTimersByTime(10);
     });
 
-    expect(screen.getByText(/running edge ai/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("status", { name: /detecting the product/i }),
+    ).toBeInTheDocument();
 
     act(() => {
       jest.advanceTimersByTime(3000);

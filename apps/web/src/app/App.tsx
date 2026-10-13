@@ -1,5 +1,5 @@
 import { AppRouter } from "@/app/router";
-import { ToastProvider } from "@/components/ui";
+import { ToastProvider } from "@nearcommerce/ui";
 import { restoreSession } from "@/features/auth/session";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 

@@ -1,11 +1,7 @@
-import type { OpeningHours } from "@/types/stores";
+import type { OpeningDay, OpeningHours } from "@/types/stores";
 import { WEEKDAYS, type Weekday } from "@nearcommerce/api";
 
-export interface DayState {
-  open: string;
-  close: string;
-  isClosed: boolean;
-}
+export type DayState = OpeningDay;
 export type HoursState = Record<Weekday, DayState>;
 
 export const DAY_LABELS: Record<Weekday, string> = {
@@ -29,12 +25,18 @@ export const defaultHours = (): HoursState => ({
 });
 
 // API -> editor state. Missing or null days are shown as closed.
-export function hoursFromApi(hours: OpeningHours | undefined | null): HoursState {
+export function hoursFromApi(
+  hours: OpeningHours | undefined | null,
+): HoursState {
   const base = defaultHours();
   for (const day of WEEKDAYS) {
     const value = hours?.[day];
     base[day] = value
-      ? { open: value.open, close: value.close, isClosed: Boolean(value.isClosed || (value as any).closed) }
+      ? {
+          open: value.open,
+          close: value.close,
+          isClosed: Boolean(value.isClosed || (value as any).closed),
+        }
       : { ...base[day], isClosed: true };
   }
   return base;
@@ -42,5 +44,7 @@ export function hoursFromApi(hours: OpeningHours | undefined | null): HoursState
 
 // Editor state -> API payload (all seven days, explicit isClosed).
 export function hoursToPayload(hours: HoursState) {
-  return Object.fromEntries(WEEKDAYS.map((day) => [day, { ...hours[day] }])) as Record<Weekday, DayState>;
+  return Object.fromEntries(
+    WEEKDAYS.map((day) => [day, { ...hours[day] }]),
+  ) as Record<Weekday, DayState>;
 }
