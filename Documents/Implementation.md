@@ -60,10 +60,18 @@ Every new feature or service built must include:
   - Product CRUD forms with automatic freshness verification on edit.
   - Store creation onboarding modal for new store owners with zero stores, plus a multi-store switcher component.
   - Dual-mode CSV importer (auto-drafts if image URL missing) and Edge-AI image cropper running ONNX YOLO in a Web Worker (with 3s fallback), wired into the product form with owner-only image upload and hosting.
-  - Add explicit Logout, Store Deletion, and Support buttons to the dashboard layout.
+  - Add explicit Logout, Store Deletion, and Support buttons to the dashboard layout. The support dialog shows only the official email and phone.
+  - Clicking a product opens a details modal with the photo shown large (edit and confirm-in-stock actions included). Confirming stock updates every cached inventory list so the "not verified recently" banner is always current.
+  - A typed product image URL must load as a real image (checked in the browser) before the form saves or publishes it.
 - **Task 4.3 System Admin Dashboard:**
   - Global metrics hub, user/store moderation grids (with User Demote button), review moderation grid, and read-only audit log ledger with pre-deletion snapshots.
-  - Category & Subcategory CRUD administration panel.
+  - Category & Subcategory CRUD administration panel. Categories are auto-generated: an empty catalog is seeded on first start, **Generate default catalog** adds anything missing, and a custom category needs only a name (its icon is derived from it).
+  - Dashboard: platform totals, users-by-role and catalog-health bars, a 14-day activity chart and recent moderation activity (`GET /admin/metrics`). Clicking a user opens a details modal (`GET /admin/users/:id`).
+- **Task 4.4 Shared UI, Theme & Loading States:**
+  - One component set in `@nearcommerce/ui` for both portals (Button, Modal, Drawer, ConfirmDialog, fields with Formik bindings, Toast, Skeleton, BrandIcon). Modals and drawers blur the page behind them.
+  - Light and dark mode follow the browser through the shared Tailwind preset in `@nearcommerce/config`; no manual toggle.
+  - Pages show skeleton placeholders shaped like the real content instead of loading text.
+  - Web and admin share one session manager from `@nearcommerce/api` (only the token storage differs).
 
 ---
 
@@ -77,6 +85,9 @@ Every new feature or service built must include:
 - **Task 5.3 Real-Time Household Lists:**
   - Household list UI supporting item deletion, custom items, list rename/delete, leave list, and member management.
 - **Task 5.4 Shopper Reviews & Settings:**
+  - Settings is a left-hand drawer (reusable `Drawer`) opened from the app bar, not a tab. It holds the search distance slider (1 to 25 miles, sent as `radius_meters`), avoid tolls, ZIP code location, a Contact support bottom sheet, sign out and account deletion.
+  - Light and dark mode follow the device (`userInterfaceStyle: automatic`, theme from the shared palette); skeleton placeholders replace spinners; sheets and drawers blur the page behind them; page and tab changes are animated.
+  - All forms use Formik and show errors inline in error mode, never in pop-ups.
   - Product review submission and review listing UI on product/store detail screens.
   - Shopper review edit/delete controls.
   - Account deletion confirmation flow calling `/users/me` delete endpoint.

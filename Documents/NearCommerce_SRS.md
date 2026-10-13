@@ -52,8 +52,10 @@
 
 **Task 2.1: UI Component Library (`@nearcommerce/ui`)**
 
-- _Sub-task 2.1.1:_ Build atomic visual components (Buttons, Inputs, Badges, Cards, Modals).
-- _Sub-task 2.1.2:_ Create a global design token system (colors, typography, dark mode tokens).
+- _Sub-task 2.1.1:_ Build atomic visual components (Buttons, Inputs, Badges, Cards, Modals, Drawers, Skeletons, Toasts) once, in `@nearcommerce/ui`, and reuse them in the web and admin apps. Modals and drawers blur the page behind them.
+- _Sub-task 2.1.2:_ Create a global design token system (colors, typography, dark mode tokens) in `@nearcommerce/config`. Every app follows the device or browser light/dark setting automatically; there is no manual switch.
+- _Sub-task 2.1.3:_ Loading states use skeleton placeholders that match the size and position of the real content. No page shows loading text.
+- _Sub-task 2.1.4:_ The brand icon lives in one file (`packages/ui/public/icon.svg`) and is used as the favicon, in the apps' headers and as the mobile app icon.
 
 **Task 2.2: Shared API & Validation (`@nearcommerce/api`)**
 
@@ -94,8 +96,8 @@
 
 **Task 4.3: System Admin Dashboard (Master Oversight)**
 
-- _Sub-task 4.3.1 (Global Metrics Hub):_ Top-level dashboard displaying platform health, total active stores, total flagged items, and new registrations.
-- _Sub-task 4.3.2 (User Moderation Panel):_ Searchable data grid (using TanStack Table and Shadcn UI) to view all users. Includes action menus to **Suspend User** (enforced in real time per 1.3.2, not just at login) or **Force Delete Account** (blocked for `SYSTEM_ADMIN` targets per 1.3.3 until demoted).
+- _Sub-task 4.3.1 (Global Metrics Hub):_ Top-level dashboard displaying platform health: total active stores, flagged items, new registrations, suspended users, platform totals, a users-by-role breakdown, catalog health, a 14-day activity chart (new users, stores and reviews) and the latest moderation actions. Served by `GET /admin/metrics`.
+- _Sub-task 4.3.2 (User Moderation Panel):_ Searchable data grid (using TanStack Table and Shadcn UI) to view all users. Clicking a user opens a details modal (profile, stores, review and list activity from `GET /admin/users/:id`). Includes action menus to **Suspend User** (enforced in real time per 1.3.2, not just at login) or **Force Delete Account** (blocked for `SYSTEM_ADMIN` targets per 1.3.3 until demoted).
 - _Sub-task 4.3.3 (Store Moderation Panel):_ Data grid listing all stores. Includes action menus to **Suspend Store** (instantly hiding it from search _and_ direct-link access, per 3.2.1) or **Delete Store** (snapshotted to `admin_audit_logs`, then wiping all associated inventory).
 - _Sub-task 4.3.4 (Content & Review Moderation):_ Interface to view all community reviews. Admins can permanently delete defamatory or fraudulent reviews; the review's content is preserved in the audit snapshot even after deletion.
 - _Sub-task 4.3.5 (Audit Logs):_ A read-only ledger displaying `admin_audit_logs`, including the pre-deletion `snapshot`, tracking exactly which admin performed what suspension or deletion and what was affected.
@@ -104,7 +106,9 @@
 
 **Task 5.1: Navigation & Home Experience**
 
-- _Sub-task 5.1.1:_ Expo Router layout featuring Category Browse, Search Bar, Household Lists, Favorites, and Settings.
+- _Sub-task 5.1.1:_ Expo Router layout featuring Category Browse, Search Bar, Household Lists and Favorites as bottom tabs. Settings is a left-hand drawer opened from the app bar. Page changes and tab switches are animated.
+- _Sub-task 5.1.3:_ Settings drawer: search distance slider (1 to 25 miles, saved on the device and sent as `radius_meters`), avoid tolls, location by ZIP code, contact support (bottom sheet with the official email and phone), sign out and account deletion.
+- _Sub-task 5.1.4:_ Forms (sign in, register, password reset, review, lists) use Formik and show problems inline, in error mode, instead of in pop-ups.
 - _Sub-task 5.1.2:_ Store Cards displaying "Open Now / Closed" status badge computed in the store's timezone, and average community review score.
 
 **Task 5.2: Search & Product Discovery**
@@ -200,7 +204,7 @@ CREATE INDEX idx_stores_earthdistance ON stores USING gist (ll_to_earth(latitude
 CREATE TABLE categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL UNIQUE,
-    icon_url VARCHAR(512)
+    icon_url VARCHAR(512) -- Optional override; clients derive an icon from the name when empty
 );
 
 CREATE TABLE subcategories (
