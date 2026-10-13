@@ -11,7 +11,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "@nearcommerce/api/*": ["../../packages/api/*"],
+      "@nearcommerce/ui/*": ["../../packages/ui/*"]
+    }
   },
   "include": ["src"]
 }

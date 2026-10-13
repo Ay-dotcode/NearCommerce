@@ -6,3 +6,4 @@ export const ADMIN_CATEGORIES_KEY = ["admin-categories"] as const;
 export const MIN_REASON_LENGTH = 5;
 export const ADMIN_STORES_KEY = ["admin-stores"] as const;
 export const ADMIN_AUDIT_LOGS_KEY = ["admin-audit-logs"] as const;
+export const ADMIN_USER_KEY = ["admin-user"] as const;

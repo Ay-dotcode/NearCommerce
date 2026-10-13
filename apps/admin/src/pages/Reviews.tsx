@@ -1,4 +1,5 @@
 import { deleteReview, getReviews } from "@/api/admin";
+import { CardListSkeleton } from "@/components/PageSkeletons";
 import { ReasonDialog } from "@/components/ReasonDialog";
 import type { AdminReview } from "@/types/admin";
 import { Button } from "@nearcommerce/ui";
@@ -39,7 +40,7 @@ export default function Reviews() {
   return (
     <section>
       <div className="mb-6">
-        <p className="text-sm uppercase tracking-[0.2em] text-cyan-400">
+        <p className="text-sm uppercase tracking-[0.2em] text-brand-700">
           Content moderation
         </p>
         <h2 className="mt-1 text-3xl font-bold">Reviews</h2>
@@ -48,20 +49,20 @@ export default function Reviews() {
       {notice && (
         <p
           role="status"
-          className="mb-4 rounded border border-emerald-800 bg-emerald-950 px-4 py-2 text-sm text-emerald-300"
+          className="mb-4 rounded border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700"
         >
           {notice}
         </p>
       )}
 
       {query.isLoading ? (
-        <p className="text-slate-400">Loading reviews…</p>
+        <CardListSkeleton label="Reviews" />
       ) : query.isError ? (
-        <p role="alert" className="text-red-400">
+        <p role="alert" className="text-red-600">
           Unable to load reviews.
         </p>
       ) : reviews.length === 0 ? (
-        <p className="rounded-lg border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">
+        <p className="rounded-lg border border-slate-200 bg-white p-8 text-center text-slate-500">
           No reviews yet.
         </p>
       ) : (
@@ -69,14 +70,14 @@ export default function Reviews() {
           {reviews.map((review) => (
             <article
               key={review.id}
-              className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-slate-800 bg-slate-900 p-4"
+              className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4"
             >
               <div className="min-w-0 flex-1">
                 <p className="font-medium">
                   <span
                     role="img"
                     aria-label={`${review.rating} out of 5 stars`}
-                    className="text-amber-400"
+                    className="text-amber-700"
                   >
                     {"★".repeat(review.rating)}
                     <span className="text-slate-700">
@@ -87,7 +88,7 @@ export default function Reviews() {
                     by {review.reviewer_name} ({review.reviewer_email})
                   </span>
                 </p>
-                <p className="mt-2 whitespace-pre-wrap break-words text-slate-300">
+                <p className="mt-2 whitespace-pre-wrap break-words text-slate-700">
                   {review.comment ?? "No comment"}
                 </p>
                 <p className="mt-2 text-xs text-slate-500">
@@ -112,13 +113,14 @@ export default function Reviews() {
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
         <span>
           Page {page} of {totalPages}
         </span>
         <div className="flex gap-2">
           <Button
             type="button"
+            variant="secondary"
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
           >
@@ -126,6 +128,7 @@ export default function Reviews() {
           </Button>
           <Button
             type="button"
+            variant="secondary"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
           >

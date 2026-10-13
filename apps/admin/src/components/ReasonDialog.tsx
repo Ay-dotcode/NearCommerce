@@ -1,8 +1,8 @@
-import { Dialog, FormField, inputClass } from "@/components/Dialog";
 import { MIN_REASON_LENGTH } from "@/constants";
 import { parseApiError } from "@nearcommerce/api";
-import { Button } from "@nearcommerce/ui";
-import { FormEvent, useEffect, useId, useState } from "react";
+import { Button, FormTextAreaField, Modal } from "@nearcommerce/ui";
+import { FormikProvider, useFormik } from "formik";
+import { useEffect, useId } from "react";
 
 interface ReasonDialogProps {
   open: boolean;
@@ -12,13 +12,14 @@ interface ReasonDialogProps {
   confirmLabel: string;
   busyLabel?: string;
   tone?: "danger" | "primary";
+  hint?: string;
   onClose: () => void;
   // Throw to keep the dialog open and show the server's message.
   onConfirm: (reason: string) => Promise<unknown>;
 }
 
-// Asks for the written reason every moderation action needs (the API rejects
-// anything under 5 characters) and runs the action once it is given.
+// Asks for the written reason every moderation action needs (the API rejects anything under
+// 5 characters) and runs the action once it is given. Used for suspend, demote and every delete.
 export function ReasonDialog({
   open,
   title,
@@ -26,51 +27,48 @@ export function ReasonDialog({
   confirmLabel,
   busyLabel = "Working…",
   tone = "danger",
+  hint = "Recorded in the audit log.",
   onClose,
   onConfirm,
 }: ReasonDialogProps) {
   const formId = useId();
-  const fieldId = `${formId}-reason`;
-  const [reason, setReason] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const formik = useFormik({
+    initialValues: { reason: "" },
+    validate: ({ reason }) =>
+      reason.trim().length >= MIN_REASON_LENGTH
+        ? {}
+        : {
+            reason: `Give a reason of at least ${MIN_REASON_LENGTH} characters.`,
+          },
+    validateOnChange: false,
+    onSubmit: async ({ reason }, helpers) => {
+      try {
+        await onConfirm(reason.trim());
+      } catch (err) {
+        helpers.setFieldError(
+          "reason",
+          parseApiError(err, "That didn't work. Please try again.").message,
+        );
+      }
+    },
+  });
 
+  const { resetForm } = formik;
   useEffect(() => {
-    if (open) {
-      setReason("");
-      setError(null);
-    }
-  }, [open]);
+    if (open) resetForm();
+  }, [open, resetForm]);
 
-  const trimmed = reason.trim();
-  const valid = trimmed.length >= MIN_REASON_LENGTH;
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!valid)
-      return setError(
-        `Give a reason of at least ${MIN_REASON_LENGTH} characters.`,
-      );
-    setBusy(true);
-    setError(null);
-    try {
-      await onConfirm(trimmed);
-    } catch (err) {
-      setError(
-        parseApiError(err, "That didn't work. Please try again.").message,
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
+  const busy = formik.isSubmitting;
+  const valid = formik.values.reason.trim().length >= MIN_REASON_LENGTH;
 
   return (
-    <Dialog
+    <Modal
       open={open}
       onClose={onClose}
       dismissible={!busy}
       title={title}
       description={description}
+      size="sm"
       footer={
         <>
           <Button
@@ -85,36 +83,31 @@ export function ReasonDialog({
             type="submit"
             form={formId}
             variant={tone}
-            disabled={busy || !valid}
+            disabled={!valid}
+            loading={busy}
           >
             {busy ? busyLabel : confirmLabel}
           </Button>
         </>
       }
     >
-      <form
-        id={formId}
-        onSubmit={handleSubmit}
-        noValidate
-        className="space-y-4"
-      >
-        <FormField
-          id={fieldId}
-          label="Reason"
-          hint="Recorded in the audit log."
-          error={error ?? undefined}
+      <FormikProvider value={formik}>
+        <form
+          id={formId}
+          onSubmit={formik.handleSubmit}
+          noValidate
+          className="space-y-4"
         >
-          <textarea
-            id={fieldId}
-            data-autofocus
+          <FormTextAreaField
+            name="reason"
+            label="Reason"
             rows={3}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            aria-invalid={Boolean(error) || undefined}
-            className={inputClass(Boolean(error))}
+            data-autofocus
+            hint={hint}
+            error={formik.errors.reason}
           />
-        </FormField>
-      </form>
-    </Dialog>
+        </form>
+      </FormikProvider>
+    </Modal>
   );
 }

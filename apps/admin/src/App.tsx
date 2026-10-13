@@ -1,4 +1,5 @@
 import { AdminLayout, ProtectedRoute } from "@/components/AdminLayout";
+import { AdminShellSkeleton } from "@/components/PageSkeletons";
 import { restoreSession } from "@/session";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
@@ -22,13 +23,7 @@ export default function App() {
       <BrowserRouter
         future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
       >
-        <Suspense
-          fallback={
-            <p role="status" className="p-6 text-sm text-slate-400">
-              Loading…
-            </p>
-          }
-        >
+        <Suspense fallback={<AdminShellSkeleton />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute />}>

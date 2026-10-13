@@ -3,19 +3,19 @@ import {
   createSubcategory,
   deleteCategory,
   deleteSubcategory,
+  generateDefaultCatalog,
   getCategories,
   updateCategory,
   updateSubcategory,
 } from "@/api/admin";
+import { CategoriesSkeleton } from "@/components/PageSkeletons";
+import { ReasonDialog } from "@/components/ReasonDialog";
 import { ADMIN_CATEGORIES_KEY } from "@/constants";
-import {
-  CategoryFormDialog,
-  DeleteReasonDialog,
-  SubcategoryFormDialog,
-} from "@/pages/categories/CategoryDialogs";
+import { NameFormDialog } from "@/pages/categories/NameFormDialog";
 import type { AdminCategory, AdminSubcategory } from "@/types/admin";
-import { Button } from "@nearcommerce/ui";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { categoryEmoji, parseApiError } from "@nearcommerce/api";
+import { Button, EmptyState } from "@nearcommerce/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 type CategoryForm =
@@ -42,6 +42,23 @@ export default function Categories() {
   const [subForm, setSubForm] = useState<SubForm | null>(null);
   const [deleting, setDeleting] = useState<Deleting | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const generate = useMutation({
+    mutationFn: generateDefaultCatalog,
+    onSuccess: async (result) => {
+      const { categories_created: c, subcategories_created: s } = result;
+      setNotice(
+        c + s === 0
+          ? result.message
+          : `Added ${plural(c, "category", "categories")} and ${plural(s, "subcategory", "subcategories")}.`,
+      );
+      await refresh();
+    },
+    onError: (err) =>
+      setNotice(
+        parseApiError(err, "We couldn't generate the default catalog.").message,
+      ),
+  });
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: ADMIN_CATEGORIES_KEY });
@@ -76,48 +93,58 @@ export default function Categories() {
     <section>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-cyan-400">
+          <p className="text-sm uppercase tracking-[0.2em] text-brand-700">
             Catalog
           </p>
           <h2 className="mt-1 text-3xl font-bold">Categories</h2>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-slate-500">
             The browse tree shoppers see, and the options store owners pick for
             their products.
           </p>
         </div>
-        <Button
-          type="button"
-          onClick={() => setCategoryForm({ mode: "create" })}
-        >
-          Add category
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            loading={generate.isPending}
+            onClick={() => generate.mutate()}
+          >
+            Generate default catalog
+          </Button>
+          <Button
+            type="button"
+            onClick={() => setCategoryForm({ mode: "create" })}
+          >
+            Add category
+          </Button>
+        </div>
       </div>
 
       {notice && (
         <div
           role="status"
-          className="mb-4 flex items-start justify-between gap-3 rounded border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300"
+          className="mb-4 flex items-start justify-between gap-3 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
         >
           <span>{notice}</span>
           <button
             type="button"
             onClick={() => setNotice(null)}
             aria-label="Dismiss message"
-            className="text-emerald-400 hover:text-emerald-200"
+            className="text-emerald-600 hover:text-emerald-800"
           >
             ×
           </button>
         </div>
       )}
 
-      {query.isLoading && <p className="text-slate-400">Loading categories…</p>}
+      {query.isLoading && <CategoriesSkeleton />}
 
       {query.isError && (
         <div
           role="alert"
-          className="rounded border border-red-800 bg-red-950/40 p-4"
+          className="rounded border border-red-200 bg-red-50 p-4"
         >
-          <p className="text-red-300">Unable to load categories.</p>
+          <p className="text-red-700">Unable to load categories.</p>
           <Button
             type="button"
             variant="secondary"
@@ -130,20 +157,28 @@ export default function Categories() {
       )}
 
       {query.isSuccess && categories.length === 0 && (
-        <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900 px-6 py-12 text-center">
-          <h3 className="text-lg font-semibold">No categories yet</h3>
-          <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
-            Add your first category, such as Groceries, then give it
-            subcategories like Dairy or Bakery.
-          </p>
-          <Button
-            type="button"
-            className="mt-4"
-            onClick={() => setCategoryForm({ mode: "create" })}
-          >
-            Add category
-          </Button>
-        </div>
+        <EmptyState
+          title="No categories yet"
+          description="Generate the standard catalog (Dairy, Bakery, Pantry and more, with subcategories) in one click, or add your own."
+          action={
+            <>
+              <Button
+                type="button"
+                loading={generate.isPending}
+                onClick={() => generate.mutate()}
+              >
+                Generate default catalog
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setCategoryForm({ mode: "create" })}
+              >
+                Add category
+              </Button>
+            </>
+          }
+        />
       )}
 
       <ul className="grid gap-4 lg:grid-cols-2">
@@ -151,20 +186,22 @@ export default function Categories() {
           <li key={category.id}>
             <article
               aria-labelledby={`cat-${category.id}`}
-              className="h-full rounded-lg border border-slate-800 bg-slate-900 p-4"
+              className="h-full rounded-lg border border-slate-200 bg-white p-4"
             >
               <header className="flex items-start gap-3">
                 {category.icon_url ? (
                   <img
                     src={category.icon_url}
                     alt=""
-                    className="h-10 w-10 shrink-0 rounded border border-slate-700 object-cover"
+                    className="h-10 w-10 shrink-0 rounded border border-slate-300 object-cover"
                   />
                 ) : (
                   <div
                     aria-hidden="true"
-                    className="h-10 w-10 shrink-0 rounded bg-slate-800"
-                  />
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-100 text-xl"
+                  >
+                    {categoryEmoji(category.name)}
+                  </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <h3
@@ -216,7 +253,7 @@ export default function Categories() {
                   No subcategories yet.
                 </p>
               ) : (
-                <ul className="mt-4 divide-y divide-slate-800 rounded border border-slate-800">
+                <ul className="mt-4 divide-y divide-slate-200 rounded border border-slate-200">
                   {category.subcategories.map((sub) => (
                     <li
                       key={sub.id}
@@ -261,26 +298,31 @@ export default function Categories() {
         ))}
       </ul>
 
-      <CategoryFormDialog
+      <NameFormDialog
         open={categoryForm !== null}
-        category={
-          categoryForm?.mode === "edit" ? categoryForm.category : undefined
+        title={categoryForm?.mode === "edit" ? "Edit category" : "Add category"}
+        description="Shoppers browse the catalog by category, then subcategory. The icon is chosen automatically."
+        initialName={
+          categoryForm?.mode === "edit" ? categoryForm.category.name : ""
+        }
+        submitLabel={
+          categoryForm?.mode === "edit" ? "Save changes" : "Add category"
         }
         onClose={() => setCategoryForm(null)}
-        onSubmit={async (values) => {
+        onSubmit={async (name) => {
           if (categoryForm?.mode === "edit") {
-            await updateCategory(categoryForm.category.id, values);
-            setNotice(`Saved "${values.name}".`);
+            await updateCategory(categoryForm.category.id, { name });
+            setNotice(`Saved "${name}".`);
           } else {
-            await createCategory(values);
-            setNotice(`Added "${values.name}".`);
+            await createCategory({ name });
+            setNotice(`Added "${name}".`);
           }
           setCategoryForm(null);
           await refresh();
         }}
       />
 
-      <SubcategoryFormDialog
+      <NameFormDialog
         open={subForm !== null}
         title={
           subForm?.mode === "edit"
@@ -306,17 +348,19 @@ export default function Categories() {
         }}
       />
 
-      <DeleteReasonDialog
+      <ReasonDialog
         open={deleting !== null}
         title={
           deleting?.kind === "sub"
             ? `Delete subcategory "${deleting.sub.name}"?`
             : `Delete category "${deleting?.category.name ?? ""}"?`
         }
-        consequences={deleting ? deleteConsequences(deleting) : ""}
+        description={deleting ? deleteConsequences(deleting) : ""}
         confirmLabel={
           deleting?.kind === "sub" ? "Delete subcategory" : "Delete category"
         }
+        busyLabel="Deleting…"
+        hint="Recorded in the audit ledger with a snapshot of what is removed."
         onClose={() => setDeleting(null)}
         onConfirm={async (reason) => {
           if (!deleting) return;

@@ -1,7 +1,9 @@
 import { getAccessToken, getUserRole, signOutEverywhere } from "@/session";
+import { BrandIcon, Button, cn, Drawer } from "@nearcommerce/ui";
+import { useState } from "react";
 import {
-  NavLink,
   Navigate,
+  NavLink,
   Outlet,
   useLocation,
   useNavigate,
@@ -18,10 +20,20 @@ export function ProtectedRoute() {
   return <Outlet />;
 }
 
-//  Persistent shell for all admin pages — dark sidebar-style header with nav links and a sign-out button.
+export const NAV_ITEMS = [
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/users", label: "Users" },
+  { to: "/stores", label: "Stores" },
+  { to: "/categories", label: "Categories" },
+  { to: "/reviews", label: "Reviews" },
+  { to: "/audit-logs", label: "Audit ledger" },
+] as const;
 
+// Persistent shell for all admin pages: header with nav links (a drawer on small screens)
+// and a sign-out button.
 export function AdminLayout() {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const signOut = () => {
     void signOutEverywhere();
@@ -29,44 +41,78 @@ export function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-900 px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400">
-              NearCommerce
-            </p>
-            <h1 className="text-lg font-semibold">System Admin Oversight</h1>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+              aria-label="Open menu"
+              onClick={() => setMenuOpen(true)}
+            >
+              <span aria-hidden="true">☰</span>
+            </Button>
+            <BrandIcon size={36} className="rounded-xl" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+                NearCommerce
+              </p>
+              <h1 className="text-lg font-semibold leading-tight">
+                System Admin Oversight
+              </h1>
+            </div>
           </div>
-          <nav className="hidden gap-4 text-sm md:flex">
-            {[
-              ["/dashboard", "Dashboard"],
-              ["/users", "Users"],
-              ["/stores", "Stores"],
-              ["/categories", "Categories"],
-              ["/reviews", "Reviews"],
-              ["/audit-logs", "Audit ledger"],
-            ].map(([to, label]) => (
+          <nav aria-label="Primary" className="hidden gap-4 text-sm md:flex">
+            {NAV_ITEMS.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  isActive ? "text-cyan-300" : "text-slate-400 hover:text-white"
+                  isActive
+                    ? "font-medium text-brand-700"
+                    : "text-slate-500 hover:text-slate-900"
                 }
               >
                 {label}
               </NavLink>
             ))}
           </nav>
-          <button
-            onClick={signOut}
-            className="rounded border border-slate-600 px-3 py-2 text-sm hover:bg-slate-800"
-          >
+          <Button variant="secondary" size="sm" onClick={signOut}>
             Sign out
-          </button>
+          </Button>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl p-6">
+
+      <Drawer
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        title="Menu"
+        side="left"
+      >
+        <nav aria-label="Mobile" className="flex flex-col gap-1">
+          {NAV_ITEMS.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                cn(
+                  "rounded-md px-3 py-2 text-sm font-medium",
+                  isActive
+                    ? "bg-brand-50 text-brand-700"
+                    : "text-slate-700 hover:bg-slate-100",
+                )
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+      </Drawer>
+
+      <main className="mx-auto max-w-7xl p-4 sm:p-6">
         <Outlet />
       </main>
     </div>

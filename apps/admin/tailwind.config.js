@@ -1,8 +1,10 @@
-// @type {import('tailwindcss').Config}
+import preset from "@nearcommerce/config/tailwind-preset";
+
 export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
+  presets: [preset],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "../../packages/ui/src/**/*.{ts,tsx}",
+  ],
 };

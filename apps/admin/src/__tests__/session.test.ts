@@ -4,16 +4,13 @@ import {
   persistSession,
   signOutEverywhere,
 } from "@/session";
-import { apiClient, configureTokenRefresh } from "@nearcommerce/api";
+import { apiClient } from "@nearcommerce/api";
+import * as tokenRefresh from "@nearcommerce/api/src/tokenRefresh";
 
-jest.mock("@nearcommerce/api", () => ({
-  apiClient: {
-    post: jest.fn(),
-    defaults: { headers: { common: {} as Record<string, string> } },
-  },
-  configureTokenRefresh: jest.fn(),
-}));
-const post = apiClient.post as jest.Mock;
+const post = jest.spyOn(apiClient, "post");
+const configureTokenRefresh = jest
+  .spyOn(tokenRefresh, "configureTokenRefresh")
+  .mockImplementation(() => undefined);
 
 const clearCookies = () =>
   document.cookie.split("; ").forEach((c) => {
@@ -22,6 +19,7 @@ const clearCookies = () =>
 
 beforeEach(() => {
   jest.clearAllMocks();
+  post.mockResolvedValue({} as never);
   clearCookies();
 });
 
@@ -51,7 +49,7 @@ it("sign out tolerates an unreachable server", async () => {
 it("stores rotated tokens and expires the session on failure", () => {
   const onExpired = jest.fn();
   installTokenRefresh(onExpired);
-  const handlers = (configureTokenRefresh as jest.Mock).mock.calls[0][0];
+  const handlers = configureTokenRefresh.mock.calls[0][0] as any;
 
   handlers.onTokens({ accessToken: "a2", refreshToken: "r2" });
   expect(getRefreshToken()).toBe("r2");

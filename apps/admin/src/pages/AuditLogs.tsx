@@ -1,4 +1,5 @@
 import { getAuditLogs } from "@/api/admin";
+import { CardListSkeleton } from "@/components/PageSkeletons";
 import { ADMIN_AUDIT_LOGS_KEY } from "@/constants";
 import { Button } from "@nearcommerce/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -18,29 +19,34 @@ export default function AuditLogs() {
     ),
   );
 
-  if (query.isLoading)
-    return <p className="text-slate-400">Loading audit ledger…</p>;
   if (query.isError)
-    return <p className="text-red-400">Unable to load audit logs.</p>;
+    return <p className="text-red-600">Unable to load audit logs.</p>;
 
   return (
     <section>
       <div className="mb-6">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-400">
+        <p className="text-sm font-medium uppercase tracking-[0.2em] text-brand-700">
           Immutable oversight
         </p>
         <h2 className="mt-1 text-3xl font-bold">System audit ledger</h2>
       </div>
+      {query.isLoading && (
+        <CardListSkeleton
+          label="Audit ledger"
+          count={5}
+          className="space-y-4"
+        />
+      )}
       <div className="space-y-4">
-        {query.data?.data.length ? (
+        {query.isLoading ? null : query.data?.data.length ? (
           query.data.data.map((log) => (
             <article
               key={log.id}
-              className="rounded-lg border border-slate-800 bg-slate-900 p-5"
+              className="rounded-lg border border-slate-200 bg-white p-5"
             >
-              <div className="flex flex-wrap justify-between gap-2 border-b border-slate-800 pb-3">
-                <strong className="text-cyan-300">{log.action}</strong>
-                <time className="text-sm text-slate-400">
+              <div className="flex flex-wrap justify-between gap-2 border-b border-slate-200 pb-3">
+                <strong className="text-brand-700">{log.action}</strong>
+                <time className="text-sm text-slate-500">
                   {new Date(log.created_at).toLocaleString()}
                 </time>
               </div>
@@ -62,10 +68,10 @@ export default function AuditLogs() {
               </dl>
               {log.snapshot && (
                 <div className="mt-4">
-                  <p className="mb-2 text-sm font-medium text-slate-300">
+                  <p className="mb-2 text-sm font-medium text-slate-700">
                     Pre-mutation snapshot
                   </p>
-                  <pre className="max-h-80 overflow-auto rounded bg-slate-950 p-3 text-xs text-slate-300">
+                  <pre className="max-h-80 overflow-auto rounded bg-slate-50 p-3 text-xs text-slate-700">
                     {JSON.stringify(log.snapshot, null, 2)}
                   </pre>
                 </div>
@@ -73,13 +79,13 @@ export default function AuditLogs() {
             </article>
           ))
         ) : (
-          <p className="rounded-lg border border-dashed border-slate-700 p-8 text-slate-400">
+          <p className="rounded-lg border border-dashed border-slate-300 p-8 text-slate-500">
             No audit events recorded.
           </p>
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
         <span>
           Page {page} of {totalPages}
           {query.data && ` · ${query.data.pagination.total} events`}
@@ -87,6 +93,7 @@ export default function AuditLogs() {
         <div className="flex gap-2">
           <Button
             type="button"
+            variant="secondary"
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
           >
@@ -94,6 +101,7 @@ export default function AuditLogs() {
           </Button>
           <Button
             type="button"
+            variant="secondary"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
           >

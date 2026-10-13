@@ -4,6 +4,7 @@ import type {
   AdminReview,
   AdminStore,
   AdminUser,
+  AdminUserDetails,
   CategoryDeleteResult,
   GlobalMetrics,
   PaginatedResponse,
@@ -34,6 +35,13 @@ export async function getUsers(
     },
   );
   return response.data;
+}
+
+export async function getUserDetails(id: string) {
+  const response = await apiClient.get<{ data: AdminUserDetails }>(
+    `/admin/users/${id}`,
+  );
+  return response.data.data;
 }
 
 export async function demoteAdmin(id: string, reason: string) {
@@ -118,10 +126,7 @@ export async function getCategories() {
   return response.data;
 }
 
-export async function createCategory(input: {
-  name: string;
-  iconUrl?: string | null;
-}) {
+export async function createCategory(input: { name: string }) {
   const response = await apiClient.post<{ data: AdminCategory }>(
     "/admin/categories",
     input,
@@ -129,10 +134,16 @@ export async function createCategory(input: {
   return response.data.data;
 }
 
-export async function updateCategory(
-  id: string,
-  input: { name?: string; iconUrl?: string | null },
-) {
+export async function generateDefaultCatalog() {
+  const response = await apiClient.post<{
+    message: string;
+    categories_created: number;
+    subcategories_created: number;
+  }>("/admin/categories/generate-defaults");
+  return response.data;
+}
+
+export async function updateCategory(id: string, input: { name: string }) {
   const response = await apiClient.patch(`/admin/categories/${id}`, input);
   return response.data.data;
 }

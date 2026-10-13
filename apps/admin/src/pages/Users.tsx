@@ -5,35 +5,36 @@ import {
   toggleUserSuspension,
 } from "@/api/admin";
 import { ReasonDialog } from "@/components/ReasonDialog";
-import { ADMIN_USERS_KEY } from "@/constants";
-import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { UserDetailsModal } from "@/components/UserDetailsModal";
+import { ADMIN_USER_KEY, ADMIN_USERS_KEY } from "@/constants";
+import {
+  actionDialogCopy,
+  ROLE_LABELS,
+  userActionRules,
+  type UserActionKind,
+} from "@/lib/userActions";
 import { getCurrentUserId } from "@/session";
 import type { AdminUser, UserFilters } from "@/types/admin";
 import {
+  Badge,
   Button,
+  SelectField,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
+  TextField,
+  useDebouncedValue,
 } from "@nearcommerce/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-type Action = {
-  kind: "suspend" | "demote" | "delete";
-  user: AdminUser;
-};
+type Action = { kind: UserActionKind; user: AdminUser };
 
-const ROLE_LABELS: Record<AdminUser["role"], string> = {
-  CUSTOMER: "Customer",
-  STORE_OWNER: "Store owner",
-  SYSTEM_ADMIN: "System admin",
-};
-
-const selectClass =
-  "rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400";
+const COLUMNS = 5;
 
 export default function Users() {
   const queryClient = useQueryClient();
@@ -42,6 +43,7 @@ export default function Users() {
   const [role, setRole] = useState<UserFilters["role"] | "">("");
   const [status, setStatus] = useState<UserFilters["status"] | "">("");
   const [action, setAction] = useState<Action | null>(null);
+  const [viewing, setViewing] = useState<AdminUser | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const q = useDebouncedValue(search.trim(), 300);
@@ -71,6 +73,7 @@ export default function Users() {
     },
     onSuccess: (_data, { act }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_USERS_KEY });
+      queryClient.invalidateQueries({ queryKey: ADMIN_USER_KEY });
       queryClient.invalidateQueries({ queryKey: ["admin-audit-logs"] });
       setNotice(
         {
@@ -93,34 +96,41 @@ export default function Users() {
     ),
   );
   const users = query.data?.data ?? [];
+  const dialog = action && actionDialogCopy(action.kind, action.user);
 
-  const dialog = action && dialogCopy(action);
+  // Starts a moderation action from the row or the details dialog.
+  const startAction = (kind: UserActionKind, user: AdminUser) => {
+    setNotice(null);
+    setViewing(null);
+    setAction({ kind, user });
+  };
 
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-400">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-brand-700">
             Moderation
           </p>
           <h2 className="mt-1 text-3xl font-bold">Users</h2>
         </div>
         <div className="flex flex-wrap gap-2">
-          <input
+          <TextField
             type="search"
-            aria-label="Search users"
+            label="Search users"
+            hideLabel
             value={search}
             onChange={(e) => changeFilter(() => setSearch(e.target.value))}
             placeholder="Search name or email"
-            className={`${selectClass} w-56`}
+            className="w-56"
           />
-          <select
-            aria-label="Filter by role"
+          <SelectField
+            label="Filter by role"
+            hideLabel
             value={role}
             onChange={(e) =>
               changeFilter(() => setRole(e.target.value as typeof role))
             }
-            className={selectClass}
           >
             <option value="">All roles</option>
             {Object.entries(ROLE_LABELS).map(([value, label]) => (
@@ -128,37 +138,37 @@ export default function Users() {
                 {label}
               </option>
             ))}
-          </select>
-          <select
-            aria-label="Filter by status"
+          </SelectField>
+          <SelectField
+            label="Filter by status"
+            hideLabel
             value={status}
             onChange={(e) =>
               changeFilter(() => setStatus(e.target.value as typeof status))
             }
-            className={selectClass}
           >
             <option value="">Any status</option>
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
-          </select>
+          </SelectField>
         </div>
       </div>
 
       {notice && (
         <p
           role="status"
-          className="mb-4 rounded border border-emerald-800 bg-emerald-950 px-4 py-2 text-sm text-emerald-300"
+          className="mb-4 rounded border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700"
         >
           {notice}
         </p>
       )}
 
       {query.isError ? (
-        <p role="alert" className="text-red-400">
+        <p role="alert" className="text-red-600">
           Unable to load users.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-900">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
           <Table>
             <TableHeader>
               <TableRow>
@@ -171,19 +181,20 @@ export default function Users() {
             </TableHeader>
             <TableBody>
               {query.isLoading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="py-8 text-center text-slate-400"
-                  >
-                    Loading users…
-                  </TableCell>
-                </TableRow>
+                Array.from({ length: 8 }, (_, r) => (
+                  <TableRow key={r} aria-hidden="true">
+                    {Array.from({ length: COLUMNS }, (_, c) => (
+                      <TableCell key={c}>
+                        <Skeleton className="h-5 w-full min-w-16" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
               ) : users.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
-                    className="py-8 text-center text-slate-400"
+                    colSpan={COLUMNS}
+                    className="py-8 text-center text-slate-500"
                   >
                     No users found.
                   </TableCell>
@@ -194,10 +205,8 @@ export default function Users() {
                     key={user.id}
                     user={user}
                     isSelf={user.id === currentUserId}
-                    onAction={(kind) => {
-                      setNotice(null);
-                      setAction({ kind, user });
-                    }}
+                    onOpen={() => setViewing(user)}
+                    onAction={(kind) => startAction(kind, user)}
                   />
                 ))
               )}
@@ -206,7 +215,7 @@ export default function Users() {
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
         <span>
           Page {page} of {totalPages}
           {query.data && ` · ${query.data.pagination.total} users`}
@@ -214,6 +223,7 @@ export default function Users() {
         <div className="flex gap-2">
           <Button
             type="button"
+            variant="secondary"
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
           >
@@ -221,6 +231,7 @@ export default function Users() {
           </Button>
           <Button
             type="button"
+            variant="secondary"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
           >
@@ -228,6 +239,13 @@ export default function Users() {
           </Button>
         </div>
       </div>
+
+      <UserDetailsModal
+        user={viewing}
+        currentUserId={currentUserId}
+        onClose={() => setViewing(null)}
+        onAction={startAction}
+      />
 
       {action && dialog && (
         <ReasonDialog
@@ -248,48 +266,60 @@ export default function Users() {
 function UserRow({
   user,
   isSelf,
+  onOpen,
   onAction,
 }: {
   user: AdminUser;
   isSelf: boolean;
-  onAction: (kind: Action["kind"]) => void;
+  onOpen: () => void;
+  onAction: (kind: UserActionKind) => void;
 }) {
-  const isAdmin = user.role === "SYSTEM_ADMIN";
+  const rules = userActionRules(user, isSelf);
   return (
-    <TableRow className="hover:bg-slate-800/60">
+    <TableRow
+      className="cursor-pointer hover:bg-slate-50"
+      onClick={(e) => {
+        // Row click opens the details, except for clicks on its own buttons.
+        if (!(e.target as HTMLElement).closest("button, a")) onOpen();
+      }}
+    >
       <TableCell>
-        {user.full_name}
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`View details: ${user.full_name}`}
+          className="rounded text-left font-medium hover:text-brand-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+        >
+          {user.full_name}
+        </button>
         {isSelf && <span className="ml-2 text-xs text-slate-500">(you)</span>}
       </TableCell>
       <TableCell>{user.email}</TableCell>
       <TableCell>{ROLE_LABELS[user.role] ?? user.role}</TableCell>
       <TableCell>
-        <span
-          className={user.is_suspended ? "text-red-400" : "text-emerald-400"}
-        >
+        <Badge tone={user.is_suspended ? "danger" : "success"}>
           {user.is_suspended ? "Suspended" : "Active"}
-        </span>
+        </Badge>
       </TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
-            disabled={isAdmin}
-            title={isAdmin ? "Demote an admin before suspending" : undefined}
-            className={
-              user.is_suspended
-                ? "border-emerald-700 text-emerald-300"
-                : "border-amber-700 text-amber-300"
-            }
+            size="sm"
+            variant="secondary"
+            disabled={!rules.canSuspend}
+            title={rules.suspendHint}
             onClick={() => onAction("suspend")}
           >
             {user.is_suspended ? "Unsuspend" : "Suspend"}
           </Button>
-          {isAdmin && (
+          {rules.showDemote && (
             <Button
               type="button"
-              disabled={isSelf}
-              title={isSelf ? "Another admin must demote you" : undefined}
+              size="sm"
+              variant="secondary"
+              disabled={!rules.canDemote}
+              title={rules.demoteHint}
               onClick={() => onAction("demote")}
             >
               Demote
@@ -297,13 +327,10 @@ function UserRow({
           )}
           <Button
             type="button"
+            size="sm"
             variant="danger"
-            disabled={isAdmin || isSelf}
-            title={
-              isAdmin
-                ? "Demote this admin before deleting the account"
-                : undefined
-            }
+            disabled={!rules.canDelete}
+            title={rules.deleteHint}
             onClick={() => onAction("delete")}
           >
             Delete
@@ -312,41 +339,4 @@ function UserRow({
       </TableCell>
     </TableRow>
   );
-}
-
-function dialogCopy({ kind, user }: Action) {
-  if (kind === "demote")
-    return {
-      title: `Demote ${user.email}?`,
-      description:
-        "They become a customer, lose access to the admin console immediately and are signed out everywhere.",
-      confirmLabel: "Demote to customer",
-      busyLabel: "Demoting…",
-      tone: "danger" as const,
-    };
-  if (kind === "delete")
-    return {
-      title: `Delete ${user.email}?`,
-      description:
-        "This permanently removes the account, their stores, products and reviews. Household lists they own pass to the next member. A snapshot is kept in the audit log.",
-      confirmLabel: "Delete account",
-      busyLabel: "Deleting…",
-      tone: "danger" as const,
-    };
-  return user.is_suspended
-    ? {
-        title: `Unsuspend ${user.email}?`,
-        description: "They can sign in again and their stores become visible.",
-        confirmLabel: "Unsuspend",
-        busyLabel: "Unsuspending…",
-        tone: "primary" as const,
-      }
-    : {
-        title: `Suspend ${user.email}?`,
-        description:
-          "They are blocked immediately and their stores and products are hidden from shoppers.",
-        confirmLabel: "Suspend",
-        busyLabel: "Suspending…",
-        tone: "danger" as const,
-      };
 }

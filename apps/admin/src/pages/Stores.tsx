@@ -1,8 +1,10 @@
 import { deleteStore, getStores, toggleStoreSuspension } from "@/api/admin";
+import { TableSkeleton } from "@/components/PageSkeletons";
 import { ReasonDialog } from "@/components/ReasonDialog";
 import { ADMIN_AUDIT_LOGS_KEY, ADMIN_STORES_KEY } from "@/constants";
 import type { AdminStore } from "@/types/admin";
 import {
+  Badge,
   Button,
   Table,
   TableBody,
@@ -91,7 +93,7 @@ export default function Stores() {
   return (
     <section>
       <div className="mb-6">
-        <p className="text-sm uppercase tracking-[0.2em] text-cyan-400">
+        <p className="text-sm uppercase tracking-[0.2em] text-brand-700">
           Moderation
         </p>
         <h2 className="mt-1 text-3xl font-bold">Stores</h2>
@@ -100,17 +102,17 @@ export default function Stores() {
       {notice && (
         <p
           role="status"
-          className="mb-4 rounded border border-emerald-800 bg-emerald-950 px-4 py-2 text-sm text-emerald-300"
+          className="mb-4 rounded border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700"
         >
           {notice}
         </p>
       )}
 
-      {query.isLoading && <p className="text-slate-400">Loading stores…</p>}
-      {query.isError && <p className="text-red-400">Unable to load stores.</p>}
+      {query.isLoading && <TableSkeleton columns={4} />}
+      {query.isError && <p className="text-red-600">Unable to load stores.</p>}
 
       {query.data && (
-        <div className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-900">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
           <Table>
             <TableHeader>
               <TableRow>
@@ -123,7 +125,7 @@ export default function Stores() {
             <TableBody>
               {stores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-slate-400">
+                  <TableCell colSpan={4} className="text-slate-500">
                     No stores yet.
                   </TableCell>
                 </TableRow>
@@ -132,17 +134,17 @@ export default function Stores() {
                   <TableRow key={store.id}>
                     <TableCell>{store.name}</TableCell>
                     <TableCell>{store.owner_email ?? store.owner_id}</TableCell>
-                    <TableCell
-                      className={
-                        store.is_suspended ? "text-red-400" : "text-emerald-400"
-                      }
-                    >
-                      {store.is_suspended ? "Suspended" : "Active"}
+                    <TableCell>
+                      <Badge tone={store.is_suspended ? "danger" : "success"}>
+                        {store.is_suspended ? "Suspended" : "Active"}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <Button
                           type="button"
+                          size="sm"
+                          variant="secondary"
                           onClick={() => {
                             setNotice(null);
                             setAction({ kind: "suspend", store });
@@ -152,6 +154,8 @@ export default function Stores() {
                         </Button>
                         <Button
                           type="button"
+                          size="sm"
+                          variant="danger"
                           onClick={() => {
                             setNotice(null);
                             setAction({ kind: "delete", store });
@@ -169,7 +173,7 @@ export default function Stores() {
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
+      <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
         <span>
           Page {page} of {totalPages}
           {query.data && ` · ${query.data.pagination.total} stores`}
@@ -177,6 +181,7 @@ export default function Stores() {
         <div className="flex gap-2">
           <Button
             type="button"
+            variant="secondary"
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
           >
@@ -184,6 +189,7 @@ export default function Stores() {
           </Button>
           <Button
             type="button"
+            variant="secondary"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
           >

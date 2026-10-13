@@ -67,10 +67,14 @@ describe("Admin Categories page", () => {
     get.mockResolvedValue({ data: { data: tree() } });
   });
 
-  it("shows a loading state, then the tree with counts", async () => {
+  it("shows a skeleton of the category cards (and no loading text) while loading", async () => {
     get.mockReturnValue(new Promise(() => {}));
     renderPage();
-    expect(screen.getByText(/loading categories/i)).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Categories" })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
   });
 
   it("lists categories with product and subcategory counts", async () => {
@@ -135,7 +139,6 @@ describe("Admin Categories page", () => {
       await waitFor(() =>
         expect(post).toHaveBeenCalledWith("/admin/categories", {
           name: "Pet care",
-          iconUrl: null,
         }),
       );
       expect(await screen.findByRole("status")).toHaveTextContent(
@@ -145,31 +148,19 @@ describe("Admin Categories page", () => {
       await waitFor(() => expect(listCalls()).toBe(2));
     });
 
-    it("sends the icon URL when given", async () => {
-      post.mockResolvedValue({ data: { data: {} } });
+    it("only asks for a name: the icon is generated automatically", async () => {
       const dialog = await open();
-      typeInto("Name", "Toys");
-      typeInto(/icon url/i, "https://cdn.test/toys.png");
-      fireEvent.click(
-        within(dialog).getByRole("button", { name: "Add category" }),
-      );
-      await waitFor(() =>
-        expect(post).toHaveBeenCalledWith("/admin/categories", {
-          name: "Toys",
-          iconUrl: "https://cdn.test/toys.png",
-        }),
-      );
+      expect(within(dialog).getByLabelText("Name")).toBeInTheDocument();
+      expect(within(dialog).queryByLabelText(/icon/i)).not.toBeInTheDocument();
     });
 
     it("validates before calling the API", async () => {
       const dialog = await open();
       typeInto("Name", "   ");
-      typeInto(/icon url/i, "ftp://nope");
       fireEvent.click(
         within(dialog).getByRole("button", { name: "Add category" }),
       );
       expect(await screen.findByText("Name is required")).toBeInTheDocument();
-      expect(screen.getByText("Icon URL must be http(s)")).toBeInTheDocument();
       expect(post).not.toHaveBeenCalled();
       expect(screen.getByLabelText("Name")).toHaveAttribute(
         "aria-invalid",
@@ -224,9 +215,6 @@ describe("Admin Categories page", () => {
         name: "Edit category",
       });
       expect(screen.getByLabelText("Name")).toHaveValue("Groceries");
-      expect(screen.getByLabelText(/icon url/i)).toHaveValue(
-        "https://cdn.test/g.png",
-      );
 
       typeInto("Name", "Food & Drink");
       fireEvent.click(
@@ -235,7 +223,6 @@ describe("Admin Categories page", () => {
       await waitFor(() =>
         expect(patch).toHaveBeenCalledWith("/admin/categories/c1", {
           name: "Food & Drink",
-          iconUrl: "https://cdn.test/g.png",
         }),
       );
       expect(await screen.findByRole("status")).toHaveTextContent(
@@ -243,23 +230,12 @@ describe("Admin Categories page", () => {
       );
     });
 
-    it("clears the icon by sending null", async () => {
-      patch.mockResolvedValue({ data: { data: {} } });
+    it("shows a generated icon for a category without an icon URL", async () => {
       renderPage();
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Edit Groceries" }),
-      );
-      const dialog = await screen.findByRole("dialog");
-      typeInto(/icon url/i, "");
-      fireEvent.click(
-        within(dialog).getByRole("button", { name: "Save changes" }),
-      );
-      await waitFor(() =>
-        expect(patch).toHaveBeenCalledWith("/admin/categories/c1", {
-          name: "Groceries",
-          iconUrl: null,
-        }),
-      );
+      const pharmacy = (await screen.findByText("Pharmacy")).closest(
+        "article",
+      )!;
+      expect(pharmacy).toHaveTextContent("💊");
     });
   });
 
@@ -451,5 +427,60 @@ describe("Admin Categories page", () => {
     await screen.findByRole("status");
     fireEvent.click(screen.getByRole("button", { name: "Dismiss message" }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  describe("generating the default catalog", () => {
+    it("is offered on an empty catalog and fills it in one click", async () => {
+      get.mockResolvedValueOnce({ data: { data: [] } });
+      post.mockResolvedValue({
+        data: {
+          message: "Default catalog generated.",
+          categories_created: 15,
+          subcategories_created: 52,
+        },
+      });
+      get.mockResolvedValue({ data: { data: tree() } });
+      renderPage();
+      await screen.findByText("No categories yet");
+      fireEvent.click(
+        screen.getAllByRole("button", { name: "Generate default catalog" })[0],
+      );
+      await waitFor(() =>
+        expect(post).toHaveBeenCalledWith(
+          "/admin/categories/generate-defaults",
+        ),
+      );
+      expect(await screen.findByRole("status")).toHaveTextContent(
+        "Added 15 categories and 52 subcategories.",
+      );
+    });
+
+    it("says so when nothing needed adding", async () => {
+      post.mockResolvedValue({
+        data: {
+          message: "The default catalog is already in place.",
+          categories_created: 0,
+          subcategories_created: 0,
+        },
+      });
+      renderPage();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Generate default catalog" }),
+      );
+      expect(await screen.findByText(/already in place/)).toBeInTheDocument();
+    });
+
+    it("shows the server's message if generating fails", async () => {
+      post.mockRejectedValue({
+        response: { status: 500, data: { error: "Internal Server Error" } },
+      });
+      renderPage();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Generate default catalog" }),
+      );
+      expect(
+        await screen.findByText(/internal server error/i),
+      ).toBeInTheDocument();
+    });
   });
 });

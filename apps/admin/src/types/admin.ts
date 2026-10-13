@@ -1,4 +1,5 @@
-export type UserRole = "CUSTOMER" | "STORE_OWNER" | "SYSTEM_ADMIN";
+import type { UserRole as ApiUserRole } from "@nearcommerce/api";
+export type UserRole = `${ApiUserRole}`;
 
 export interface AdminUser {
   id: string;
@@ -6,8 +7,15 @@ export interface AdminUser {
   full_name: string;
   role: UserRole;
   is_suspended: boolean;
+  email_verified_at?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AdminUserDetails extends AdminUser {
+  stores: { id: string; name: string; is_suspended: boolean }[];
+  review_count: number;
+  list_count: number;
 }
 
 export interface AdminAuditLog {
@@ -27,11 +35,28 @@ export interface PaginatedResponse<T> {
   pagination: { page: number; limit: number; total: number };
 }
 
+export interface ActivityDay {
+  date: string;
+  users: number;
+  stores: number;
+  reviews: number;
+}
+
 export interface GlobalMetrics {
   totalActiveStores: number;
   newRegistrations: number;
   flaggedItems: number;
   suspendedUsers: number;
+  totals: { users: number; stores: number; products: number; reviews: number };
+  usersByRole: Record<UserRole, number>;
+  catalog: {
+    published: number;
+    drafts: number;
+    outOfStock: number;
+    stale: number;
+  };
+  // The last 14 days, oldest first.
+  activity: ActivityDay[];
 }
 
 export interface AdminStore {
