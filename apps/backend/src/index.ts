@@ -2,6 +2,7 @@ import { app } from "@/app";
 import { connectRedis } from "@/config/redis";
 import { initSocketServer } from "@/config/socket";
 import { DEFAULT_PORT, ENV_PATH } from "@/constants";
+import { ensureDefaultCatalog } from "@/features/catalog/services/category.service";
 import dotenv from "dotenv";
 import http from "http";
 import path from "path";
@@ -18,6 +19,16 @@ const httpServer = http.createServer(app);
 (async () => {
   await connectRedis();
   await initSocketServer(httpServer);
+
+  try {
+    const seeded = await ensureDefaultCatalog();
+    if (seeded)
+      console.log(
+        `📚 Default catalog created: ${seeded.categoriesCreated} categories, ${seeded.subcategoriesCreated} subcategories`,
+      );
+  } catch (err) {
+    console.error("Could not create the default catalog:", err);
+  }
 
   httpServer.listen(PORT, () => {
     console.log(`🚀 NearCommerce Backend running on http://localhost:${PORT}`);

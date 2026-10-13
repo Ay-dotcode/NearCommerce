@@ -3,7 +3,7 @@ import request from "supertest";
 
 describe("Support Integration Tests", () => {
   describe("GET /support", () => {
-    it("should return 200 with the correct support channels and operating hours", async () => {
+    it("should return 200 with the correct support channels (and no operating hours)", async () => {
       const response = await request(app).get("/support");
 
       expect(response.status).toBe(200);
@@ -12,7 +12,6 @@ describe("Support Integration Tests", () => {
           email: "joseyowolabi@gmail.com",
           phone: "+905338856528",
         },
-        operating_hours: "24/7",
       });
     });
   });

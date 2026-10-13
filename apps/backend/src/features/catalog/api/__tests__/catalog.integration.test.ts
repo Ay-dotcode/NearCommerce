@@ -9,6 +9,8 @@ import {
 } from "@/__tests__/helpers/fixtures";
 import { app } from "@/app";
 import { db } from "@/config/database";
+import { DEFAULT_CATALOG } from "@/features/catalog/defaultCatalog";
+import { ensureDefaultCatalog } from "@/features/catalog/services/category.service";
 import request from "supertest";
 
 const auth = (u: TestUser) => ({ Authorization: `Bearer ${u.token}` });
@@ -470,6 +472,77 @@ describe("Categories", () => {
           subcategoryId: UNKNOWN,
         });
       expect(res.status).toBe(422);
+    });
+  });
+
+  describe("default catalog generation", () => {
+    const defaultNames = DEFAULT_CATALOG.map((c) => c.name);
+    const cleanDefaults = () =>
+      db.query("DELETE FROM categories WHERE name = ANY($1::text[])", [
+        defaultNames,
+      ]);
+    beforeAll(cleanDefaults);
+    afterAll(cleanDefaults);
+
+    it("is admin only", async () => {
+      expect(
+        (await request(app).post("/admin/categories/generate-defaults")).status,
+      ).toBe(401);
+      expect(
+        (
+          await request(app)
+            .post("/admin/categories/generate-defaults")
+            .set(auth(owner))
+        ).status,
+      ).toBe(403);
+    });
+
+    it("creates the standard categories and subcategories without typing anything", async () => {
+      const res = await request(app)
+        .post("/admin/categories/generate-defaults")
+        .set(auth(admin));
+      expect(res.status).toBe(200);
+      expect(res.body.categories_created).toBe(DEFAULT_CATALOG.length);
+      expect(res.body.subcategories_created).toBe(
+        DEFAULT_CATALOG.reduce((n, c) => n + c.subcategories.length, 0),
+      );
+
+      const tree = await request(app).get("/admin/categories").set(auth(admin));
+      const bakery = tree.body.data.find((c: any) => c.name === "Bakery");
+      expect(bakery.subcategories.map((s: any) => s.name)).toEqual(
+        expect.arrayContaining(["Bread", "Pastries"]),
+      );
+    });
+
+    it("can be run again safely: nothing is duplicated or changed", async () => {
+      const again = await request(app)
+        .post("/admin/categories/generate-defaults")
+        .set(auth(admin));
+      expect(again.status).toBe(200);
+      expect(again.body).toMatchObject({
+        categories_created: 0,
+        subcategories_created: 0,
+      });
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS n FROM categories WHERE name = ANY($1::text[])",
+        [defaultNames],
+      );
+      expect(rows[0].n).toBe(DEFAULT_CATALOG.length);
+    });
+
+    it("re-adds only what an admin deleted", async () => {
+      await db.query("DELETE FROM subcategories WHERE name = 'Bread'");
+      const res = await request(app)
+        .post("/admin/categories/generate-defaults")
+        .set(auth(admin));
+      expect(res.body).toMatchObject({
+        categories_created: 0,
+        subcategories_created: 1,
+      });
+    });
+
+    it("the first-boot seed does nothing when categories already exist", async () => {
+      await expect(ensureDefaultCatalog()).resolves.toBeNull();
     });
   });
 });

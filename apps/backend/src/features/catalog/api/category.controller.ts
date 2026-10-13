@@ -4,6 +4,7 @@ import {
   deleteCategory,
   deleteSubcategory,
   listCategoryTree,
+  seedDefaultCatalog,
   updateCategory,
   updateSubcategory,
 } from "@/features/catalog/services/category.service";
@@ -40,6 +41,25 @@ export async function adminCreateCategory(req: Request, res: Response) {
     return res.status(201).json({ data: await createCategory(parsed.data) });
   } catch (error) {
     return fail(res, "adminCreateCategory", error);
+  }
+}
+
+export async function adminGenerateDefaultCatalog(
+  _req: Request,
+  res: Response,
+) {
+  try {
+    const result = await seedDefaultCatalog();
+    return res.status(200).json({
+      message:
+        result.categoriesCreated + result.subcategoriesCreated === 0
+          ? "The default catalog is already in place."
+          : "Default catalog generated.",
+      categories_created: result.categoriesCreated,
+      subcategories_created: result.subcategoriesCreated,
+    });
+  } catch (error) {
+    return fail(res, "adminGenerateDefaultCatalog", error);
   }
 }
 

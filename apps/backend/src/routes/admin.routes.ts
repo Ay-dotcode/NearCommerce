@@ -7,6 +7,7 @@ import {
   listAuditLogs,
   listReviews,
   listStores,
+  getUserDetails,
   listUsers,
   toggleStoreSuspension,
   toggleUserSuspension,
@@ -14,6 +15,7 @@ import {
 import {
   adminCreateCategory,
   adminCreateSubcategory,
+  adminGenerateDefaultCatalog,
   adminDeleteCategory,
   adminDeleteSubcategory,
   adminListCategories,
@@ -35,6 +37,7 @@ router.use(
 );
 router.get("/metrics", getGlobalMetrics);
 router.get("/users", listUsers);
+router.get("/users/:userId", getUserDetails);
 router.get("/audit-logs", listAuditLogs);
 router.get("/reviews", listReviews);
 router.delete("/reviews/:reviewId", deleteReview);
@@ -49,6 +52,7 @@ router.delete("/stores/:storeId", deleteStore);
 // Category & subcategory administration (SRS 4.3 / Implementation 4.3).
 router.get("/categories", adminListCategories);
 router.post("/categories", adminCreateCategory);
+router.post("/categories/generate-defaults", adminGenerateDefaultCatalog);
 router.patch("/categories/:categoryId", adminUpdateCategory);
 router.delete("/categories/:categoryId", adminDeleteCategory);
 router.post("/categories/:categoryId/subcategories", adminCreateSubcategory);

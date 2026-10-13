@@ -2,6 +2,7 @@ import { db } from "@/config/database";
 import { PRODUCT_FRESHNESS_THRESHOLD_DAYS } from "@/constants";
 import { isProductStale } from "@/utils/freshness";
 import { HttpError } from "@/utils/http";
+import { escapeLike } from "@/utils/like";
 import type {
   CreateProductInput,
   ImportProductRow,
@@ -48,8 +49,6 @@ export function shouldRefreshFreshness(
     patch.quantity !== undefined && current.quantity !== patch.quantity;
   return priceChanged || quantityChanged;
 }
-
-const escapeLike = (term: string) => term.replace(/[\\%_]/g, "\\$&");
 
 const STATUS_CLAUSES: Record<string, string> = {
   all: "TRUE",

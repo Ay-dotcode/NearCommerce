@@ -1,8 +1,4 @@
-import {
-  SUPPORT_EMAIL,
-  SUPPORT_OPERATING_HOURS,
-  SUPPORT_PHONE,
-} from "@/constants";
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from "@/constants";
 import { Request, Response } from "express";
 
 export const getSupportChannels = (_req: Request, res: Response) => {
@@ -11,6 +7,5 @@ export const getSupportChannels = (_req: Request, res: Response) => {
       email: SUPPORT_EMAIL,
       phone: SUPPORT_PHONE,
     },
-    operating_hours: SUPPORT_OPERATING_HOURS,
   });
 };

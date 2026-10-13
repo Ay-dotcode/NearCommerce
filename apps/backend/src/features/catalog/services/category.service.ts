@@ -1,4 +1,5 @@
 import { db } from "@/config/database";
+import { DEFAULT_CATALOG } from "@/features/catalog/defaultCatalog";
 import { HttpError } from "@/utils/http";
 import type {
   CreateCategoryInput,
@@ -274,4 +275,61 @@ export async function deleteSubcategory(
   } finally {
     client.release();
   }
+}
+
+export interface SeedResult {
+  categoriesCreated: number;
+  subcategoriesCreated: number;
+}
+
+// Creates any default category or subcategory that does not exist yet (matched by name,
+// case-insensitive). Safe to run repeatedly; it never edits or removes anything.
+export async function seedDefaultCatalog(): Promise<SeedResult> {
+  const client = await db.connect();
+  const result: SeedResult = { categoriesCreated: 0, subcategoriesCreated: 0 };
+  try {
+    await client.query("BEGIN");
+    for (const entry of DEFAULT_CATALOG) {
+      const existing = await client.query(
+        "SELECT id FROM categories WHERE LOWER(name) = LOWER($1)",
+        [entry.name],
+      );
+      let categoryId: string;
+      if (existing.rows.length > 0) categoryId = existing.rows[0].id;
+      else {
+        const created = await client.query(
+          "INSERT INTO categories (name) VALUES ($1) RETURNING id",
+          [entry.name],
+        );
+        categoryId = created.rows[0].id;
+        result.categoriesCreated += 1;
+      }
+      for (const sub of entry.subcategories) {
+        const inserted = await client.query(
+          `INSERT INTO subcategories (parent_category_id, name)
+           SELECT $1::uuid, $2::varchar
+            WHERE NOT EXISTS (
+              SELECT 1 FROM subcategories
+               WHERE parent_category_id = $1::uuid AND LOWER(name) = LOWER($2::varchar))
+           RETURNING id`,
+          [categoryId, sub],
+        );
+        result.subcategoriesCreated += inserted.rows.length;
+      }
+    }
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// First-boot convenience: fills an empty catalog so shoppers and store owners never face a
+// blank category list. Does nothing once any category exists.
+export async function ensureDefaultCatalog(): Promise<SeedResult | null> {
+  const { rows } = await db.query("SELECT 1 FROM categories LIMIT 1");
+  return rows.length === 0 ? seedDefaultCatalog() : null;
 }

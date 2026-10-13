@@ -2,7 +2,7 @@ import { db } from "@/config/database";
 import redisClient from "@/config/redis";
 import { releaseHouseholdLists } from "@/services/account.service";
 import { auditSnapshot } from "@/utils/audit";
-import { isUuid } from "@/utils/http";
+import { isUuid, sendValidationError } from "@/utils/http";
 import { escapeLike } from "@/utils/like";
 import {
   AdminDeleteSchema,
@@ -11,9 +11,12 @@ import {
   ToggleSuspensionSchema,
 } from "@nearcommerce/api";
 import { Request, Response } from "express";
-import { ZodError, ZodType } from "zod";
+import { ZodError, ZodIssue, ZodType } from "zod";
 
-const parseBody = <T>(schema: ZodType<T>, body: unknown) => {
+const parseBody = <T>(
+  schema: ZodType<T>,
+  body: unknown,
+): { data: T } | { error: ZodIssue[] } => {
   try {
     return { data: schema.parse(body) };
   } catch (error) {
@@ -21,9 +24,6 @@ const parseBody = <T>(schema: ZodType<T>, body: unknown) => {
     throw error;
   }
 };
-
-const sendValidationError = (res: Response, issues: unknown) =>
-  res.status(400).json({ error: "Validation failed", details: issues });
 
 const invalidateSuspensionCache = async (
   userId: string,
@@ -38,7 +38,11 @@ const invalidateSuspensionCache = async (
   }
 };
 
-const parsePagination = (query: Request["query"]) => {
+type PaginationResult =
+  | { page: number; limit: number }
+  | { error: { path: (string | number)[]; message: string }[] };
+
+const parsePagination = (query: Request["query"]): PaginationResult => {
   const parsed = PaginationQuerySchema.safeParse(query);
   if (!parsed.success) return { error: parsed.error.issues };
 
@@ -46,7 +50,13 @@ const parsePagination = (query: Request["query"]) => {
   const limit = Number(parsed.data.limit);
   if (page < 1 || limit < 1 || limit > 100)
     return {
-      error: "page must be at least 1 and limit must be between 1 and 100",
+      error: [
+        {
+          path: ["limit"],
+          message:
+            "page must be at least 1 and limit must be between 1 and 100",
+        },
+      ],
     };
 
   return { page, limit };
@@ -97,6 +107,45 @@ export async function listUsers(req: Request, res: Response) {
   });
 }
 
+// Everything an admin needs to review one account: profile, stores owned, review and
+// shared-list activity.
+export async function getUserDetails(req: Request, res: Response) {
+  const { userId } = req.params;
+  if (!isUuid(userId)) return res.status(404).json({ error: "User not found" });
+
+  const user = await db.query(
+    `SELECT id, email, full_name, role, is_suspended, email_verified_at, created_at, updated_at
+       FROM users WHERE id = $1`,
+    [userId],
+  );
+  if (user.rows.length === 0)
+    return res.status(404).json({ error: "User not found" });
+
+  const [stores, reviews, lists] = await Promise.all([
+    db.query(
+      `SELECT id, name, is_suspended FROM stores
+        WHERE owner_id = $1 ORDER BY created_at, id`,
+      [userId],
+    ),
+    db.query("SELECT COUNT(*)::int AS count FROM reviews WHERE user_id = $1", [
+      userId,
+    ]),
+    db.query(
+      "SELECT COUNT(*)::int AS count FROM household_list_members WHERE user_id = $1",
+      [userId],
+    ),
+  ]);
+
+  return res.json({
+    data: {
+      ...user.rows[0],
+      stores: stores.rows,
+      review_count: reviews.rows[0].count,
+      list_count: lists.rows[0].count,
+    },
+  });
+}
+
 export async function listStores(req: Request, res: Response) {
   const pagination = parsePagination(req.query);
   if ("error" in pagination) return sendValidationError(res, pagination.error);
@@ -120,30 +169,78 @@ export async function listStores(req: Request, res: Response) {
   });
 }
 
+const ACTIVITY_DAYS = 14;
+
 export async function getGlobalMetrics(_req: Request, res: Response) {
-  const [stores, registrations, flaggedItems, suspendedUsers] =
-    await Promise.all([
-      db.query(
-        `SELECT COUNT(*)::int AS count FROM stores s
+  const [
+    stores,
+    registrations,
+    flaggedItems,
+    suspendedUsers,
+    totals,
+    roles,
+    catalog,
+    activity,
+  ] = await Promise.all([
+    db.query(
+      `SELECT COUNT(*)::int AS count FROM stores s
            JOIN users u ON u.id = s.owner_id
           WHERE s.is_suspended = false AND u.is_suspended = false`,
-      ),
-      db.query(
-        "SELECT COUNT(*)::int AS count FROM users WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'",
-      ),
-      db.query(
-        "SELECT COUNT(*)::int AS count FROM products WHERE last_verified_at < CURRENT_TIMESTAMP - INTERVAL '30 days'",
-      ),
-      db.query(
-        "SELECT COUNT(*)::int AS count FROM users WHERE is_suspended = true",
-      ),
-    ]);
+    ),
+    db.query(
+      "SELECT COUNT(*)::int AS count FROM users WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'",
+    ),
+    db.query(
+      "SELECT COUNT(*)::int AS count FROM products WHERE last_verified_at < CURRENT_TIMESTAMP - INTERVAL '30 days'",
+    ),
+    db.query(
+      "SELECT COUNT(*)::int AS count FROM users WHERE is_suspended = true",
+    ),
+    db.query(
+      `SELECT (SELECT COUNT(*)::int FROM users) AS users,
+              (SELECT COUNT(*)::int FROM stores) AS stores,
+              (SELECT COUNT(*)::int FROM products) AS products,
+              (SELECT COUNT(*)::int FROM reviews) AS reviews`,
+    ),
+    db.query("SELECT role, COUNT(*)::int AS count FROM users GROUP BY role"),
+    db.query(
+      `SELECT COUNT(*) FILTER (WHERE is_published)::int AS published,
+              COUNT(*) FILTER (WHERE NOT is_published)::int AS drafts,
+              COUNT(*) FILTER (WHERE quantity = 0)::int AS out_of_stock
+         FROM products`,
+    ),
+    db.query(
+      `WITH days AS (
+         SELECT generate_series(
+                  (CURRENT_DATE - ($1::int - 1) * INTERVAL '1 day')::date,
+                  CURRENT_DATE, INTERVAL '1 day')::date AS day)
+       SELECT d.day::text AS date,
+              (SELECT COUNT(*)::int FROM users    x WHERE x.created_at::date = d.day) AS users,
+              (SELECT COUNT(*)::int FROM stores   x WHERE x.created_at::date = d.day) AS stores,
+              (SELECT COUNT(*)::int FROM reviews  x WHERE x.created_at::date = d.day) AS reviews
+         FROM days d ORDER BY d.day`,
+      [ACTIVITY_DAYS],
+    ),
+  ]);
+
+  const usersByRole = { CUSTOMER: 0, STORE_OWNER: 0, SYSTEM_ADMIN: 0 };
+  for (const row of roles.rows)
+    usersByRole[row.role as keyof typeof usersByRole] = row.count;
 
   return res.json({
     totalActiveStores: stores.rows[0].count,
     newRegistrations: registrations.rows[0].count,
     flaggedItems: flaggedItems.rows[0].count,
     suspendedUsers: suspendedUsers.rows[0].count,
+    totals: totals.rows[0],
+    usersByRole,
+    catalog: {
+      published: catalog.rows[0].published,
+      drafts: catalog.rows[0].drafts,
+      outOfStock: catalog.rows[0].out_of_stock,
+      stale: flaggedItems.rows[0].count,
+    },
+    activity: activity.rows,
   });
 }
 

@@ -24,6 +24,7 @@ import {
   LIST_MAX_ITEM_QUANTITY,
   type UpdateListItemInput,
 } from "@nearcommerce/api";
+import { isUuid } from "@/utils/http";
 import type { PoolClient } from "pg";
 import { z } from "zod";
 
@@ -42,9 +43,6 @@ export class ListError extends Error {
 }
 
 const notFound = () => new ListError(404, "List not found", "LIST_NOT_FOUND");
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // ---------------------------------------------------------------------------
 // Membership
@@ -539,7 +537,7 @@ export async function setItemChecked(
 ) {
   await requireMember(listId, userId);
   const key = ref.itemId ?? ref.productId;
-  if (!key || !UUID_RE.test(key))
+  if (!isUuid(key))
     throw new ListError(404, "Item not found", "ITEM_NOT_FOUND");
 
   const { rows } = await db.query(

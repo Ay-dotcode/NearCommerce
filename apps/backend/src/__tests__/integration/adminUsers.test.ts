@@ -329,6 +329,108 @@ describe("Admin user moderation: search, demote and force delete", () => {
     });
   });
 
+  describe("GET /admin/users/:userId", () => {
+    it("returns the profile with stores, review and list activity", async () => {
+      const owner = await createTestUser("STORE_OWNER");
+      const storeId = await createTestStore(owner.id, "Details Store");
+      await db.query(
+        `INSERT INTO reviews (user_id, store_id, rating, comment)
+         VALUES ($1, $2, 5, 'Great')`,
+        [owner.id, storeId],
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/users/${owner.id}`)
+        .set("Authorization", auth(admin));
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({
+        id: owner.id,
+        role: "STORE_OWNER",
+        is_suspended: false,
+        review_count: 1,
+        list_count: 0,
+        stores: [{ id: storeId, name: "Details Store", is_suspended: false }],
+      });
+      expect(res.body.data).not.toHaveProperty("password_hash");
+    });
+
+    it("404s for an unknown or malformed id", async () => {
+      const unknown = await request(app)
+        .get("/api/admin/users/00000000-0000-4000-8000-000000000000")
+        .set("Authorization", auth(admin));
+      expect(unknown.status).toBe(404);
+      const malformed = await request(app)
+        .get("/api/admin/users/not-a-uuid")
+        .set("Authorization", auth(admin));
+      expect(malformed.status).toBe(404);
+    });
+
+    it("is admin only", async () => {
+      const res = await request(app)
+        .get(`/api/admin/users/${customer.id}`)
+        .set("Authorization", auth(customer));
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe("GET /admin/metrics (dashboard data)", () => {
+    it("returns totals, a role breakdown, catalog health and 14 days of activity", async () => {
+      const res = await request(app)
+        .get("/api/admin/metrics")
+        .set("Authorization", auth(admin));
+      expect(res.status).toBe(200);
+
+      expect(res.body.totals).toEqual(
+        expect.objectContaining({
+          users: expect.any(Number),
+          stores: expect.any(Number),
+          products: expect.any(Number),
+          reviews: expect.any(Number),
+        }),
+      );
+      const roles = res.body.usersByRole;
+      expect(Object.keys(roles).sort()).toEqual([
+        "CUSTOMER",
+        "STORE_OWNER",
+        "SYSTEM_ADMIN",
+      ]);
+      expect(roles.CUSTOMER + roles.STORE_OWNER + roles.SYSTEM_ADMIN).toBe(
+        res.body.totals.users,
+      );
+      expect(res.body.catalog).toEqual(
+        expect.objectContaining({
+          published: expect.any(Number),
+          drafts: expect.any(Number),
+          outOfStock: expect.any(Number),
+          stale: res.body.flaggedItems,
+        }),
+      );
+
+      expect(res.body.activity).toHaveLength(14);
+      const dates = res.body.activity.map((d: { date: string }) => d.date);
+      expect([...dates].sort()).toEqual(dates);
+      expect(res.body.activity[13]).toEqual({
+        date: new Date().toISOString().slice(0, 10),
+        users: expect.any(Number),
+        stores: expect.any(Number),
+        reviews: expect.any(Number),
+      });
+    });
+
+    it("counts a registration made today in the latest activity day", async () => {
+      const read = async () =>
+        (
+          await request(app)
+            .get("/api/admin/metrics")
+            .set("Authorization", auth(admin))
+        ).body.activity[13].users as number;
+      const before = await read();
+      await createTestUser("CUSTOMER");
+      expect(await read()).toBe(before + 1);
+    });
+  });
+
   describe("admin routes use the live role", () => {
     it("locks out a suspended admin even with a valid token", async () => {
       const suspended = await createTestUser("SYSTEM_ADMIN", {

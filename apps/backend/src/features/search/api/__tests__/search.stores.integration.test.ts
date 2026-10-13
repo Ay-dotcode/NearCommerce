@@ -155,6 +155,16 @@ describe("GET /search/stores", () => {
     expect((await search({ radius_meters: 1_000 })).body.data).toHaveLength(0);
   });
 
+  it("accepts the largest radius (50 km) and rejects anything bigger or non-positive", async () => {
+    expect((await search({ radius_meters: 50_000 })).status).toBe(200);
+    const tooBig = await search({ radius_meters: 50_001 });
+    expect(tooBig.status).toBe(400);
+    expect(JSON.stringify(tooBig.body)).toMatch(
+      /radius_meters must be at most 50000/,
+    );
+    expect((await search({ radius_meters: 0 })).status).toBe(400);
+  });
+
   it("narrows by name, treating wildcard characters literally", async () => {
     await createTestStore(owner.id, "Green Market", at(10));
     await createTestStore(owner.id, "50% Off Shop", at(20));
