@@ -13,7 +13,7 @@ NearCommerce is a modular, AI-assisted local commerce platform that helps people
 | System admin portal | `apps/admin`   | Admins moderate users, stores, reviews | 3000            |
 | Shopper app         | `apps/mobile`  | Customers (React Native / Expo)        | Expo dev server |
 
-Shared code lives in `packages/` (`@nearcommerce/api` for the HTTP client, schemas and token refresh; `@nearcommerce/ui` for shared components; `@nearcommerce/config` for shared TypeScript config).
+Shared code lives in `packages/`: `@nearcommerce/api` (HTTP client, schemas, shared session manager, validation rules), `@nearcommerce/ui` (the React components used by both portals, plus the single brand icon in `packages/ui/public/icon.svg`) and `@nearcommerce/config` (the colour palette, the Tailwind preset and the shared TypeScript config).
 
 ### Features
 
@@ -29,6 +29,9 @@ Shared code lives in `packages/` (`@nearcommerce/api` for the HTTP client, schem
 - **User Authentication, RBAC & Security:** Role-based access control (`CUSTOMER`, `STORE_OWNER`, `SYSTEM_ADMIN`). Secure password hashing (`bcrypt`), JWT access tokens (15-min expiry) paired with SHA-256 hashed refresh tokens in PostgreSQL, progressive IP and account login lockout (exponential delay after failed attempts), rate limiting on sensitive routes, email verification via Nodemailer, password reset tokens (1h expiry), and customer account deletion (`DELETE /api/users/me`).
 - **Turn-by-Turn Directions & Native Maps Handoff:** One-tap navigation launching device-native maps (Apple Maps on iOS, Google Maps on Android) with address/coordinate geocoding and "avoid tolls" preference support.
 - **Official Support Channel:** Standardized `/support` endpoint providing dedicated support channels for shoppers and store owners.
+- **Light & Dark Mode:** All three apps follow the device or browser appearance automatically (no toggle). Colours come from one shared palette (`packages/config/palette.cjs`) used by the Tailwind preset (web, admin) and the mobile theme.
+- **Skeleton Loading & Blurred Pop-ups:** Pages show skeleton placeholders sized like the real content instead of loading text, and every modal, drawer and bottom sheet blurs the page behind it, built from one shared component per platform.
+- **Search Distance:** Shoppers choose how far shops may be (1 to 25 miles) in the mobile settings drawer; it is saved on the device and sent as `radius_meters` with every search.
 
 ### Good to know
 
@@ -36,6 +39,8 @@ Shared code lives in `packages/` (`@nearcommerce/api` for the HTTP client, schem
 - Uploaded product images are stored directly in PostgreSQL (up to 2 MB each). For large-scale production deployments, the storage layer can be pointed to S3/Cloud Storage while retaining the same `/api/images/:id` URLs.
 - The bundled cropper model (`apps/web/public/models/yolo.onnx`) is an Ultralytics YOLOv8n export. Note that Ultralytics models are licensed under AGPL-3.0; verify licensing requirements before commercial distribution.
 - In development mode, email verification and password reset tokens are logged to the backend console if SMTP credentials are not configured, enabling full local testing without an external mail provider.
+- Categories are created automatically: an empty catalog is filled with the standard categories on first start, and admins can add anything missing with **Generate default catalog** (or `pnpm --filter @nearcommerce/backend seed:catalog`). Category icons are derived from the name, so admins only type a name.
+- `samples/nearcommerce-sample-products.csv` is a ready-to-import product list for the store owner CSV importer.
 
 ## Repository structure
 
@@ -49,12 +54,12 @@ This monorepo is managed with `pnpm` workspaces and Turborepo:
 │   ├── mobile/      # React Native, Expo Router, TanStack Query, Expo Image Picker mobile app
 │   └── web/         # React 18, Vite, Tailwind CSS, ONNX Runtime Web store owner dashboard
 ├── packages/
-│   ├── api/         # Shared Axios HTTP client, Zod schemas, JWT refresh logic & TypeScript types
-│   ├── config/      # Shared TypeScript configuration (tsconfig.base.json)
-│   └── ui/          # Shared design system components (Button, Card, Table)
+│   ├── api/         # Shared Axios client, Zod schemas, session manager, JWT refresh & types
+│   ├── config/      # Shared colour palette, Tailwind preset & TypeScript configuration
+│   └── ui/          # Shared web components (Modal, Drawer, Skeleton, fields...) & the brand icon
+├── samples/         # Sample CSV for the product importer
 ├── .env.example     # Root environment configuration template
-├── Implementation.md# Implementation blueprint, task breakdowns & testing specs
-├── NearCommerce_SRS.md # Software Requirements Specification (data model, system design)
+├── Documents/       # Implementation blueprint and Software Requirements Specification
 ├── package.json     # Root monorepo scripts & package manager configuration
 ├── pnpm-workspace.yaml
 └── turbo.json       # Turborepo pipeline configuration
@@ -281,6 +286,8 @@ pnpm --filter @nearcommerce/admin test
 # Shopper Mobile App
 pnpm --filter @nearcommerce/mobile start
 pnpm --filter @nearcommerce/mobile test
+pnpm --filter @nearcommerce/ui test         # shared components
+pnpm --filter @nearcommerce/ui generate:app-icons   # re-render the mobile icons from packages/ui/public/icon.svg
 ```
 
 ## Testing
@@ -294,8 +301,11 @@ pnpm --filter @nearcommerce/mobile test
 ## Conventions
 
 - **Module Aliases:** Application imports utilize the `@/` alias (e.g., `@/features/auth/...`) rather than deep relative `../../` paths.
-- **Shared Packages:** Shared packages in `packages/*` use relative imports internally and export typed APIs consumed directly by the applications.
+- **Shared Packages:** Shared packages in `packages/*` import their own files through `@nearcommerce/<package>/...` aliases (configured in each package and app) and export typed APIs consumed directly by the applications.
 - **Comments:** Clean inline comments use `//` for concise explanations of non-obvious business rules and safeguards.
+- **Forms:** Every form uses Formik. Shared Formik-bound inputs live in `@nearcommerce/ui` (web, admin) and `apps/mobile/components/ui` (mobile); the mobile forms show errors inline instead of in pop-ups.
+- **Colours:** Never hard-code colours. Tailwind classes such as `bg-white` and `text-slate-900` switch with the theme; mobile screens read `useColors()`.
+- **Reuse:** Define a component once. Shared UI belongs in `packages/ui` (web, admin) or `apps/mobile/components/ui` (mobile).
 
 ## Documentation
 
