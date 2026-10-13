@@ -82,76 +82,76 @@ This monorepo is managed with `pnpm` workspaces and Turborepo:
 
 All backend endpoints support optional `/api` prefixes for reverse-proxy compatibility.
 
-| Domain | Method & Path | Auth / Role | Description |
-| --- | --- | --- | --- |
-| **Auth** | `POST /auth/register` | Public | Create Customer or Store Owner account |
-| | `POST /auth/login` | Public | Authenticate user, return access token & set refresh session |
-| | `POST /auth/refresh` | Public | Exchange refresh token for new access token |
-| | `POST /auth/logout` | Public | Invalidate refresh token session |
-| | `POST /auth/verify-email` | Public | Validate email verification token |
-| | `POST /auth/resend-verification` | Public | Resend verification link with rate limiting |
-| | `POST /auth/forgot-password` | Public | Send password reset token to email |
-| | `POST /auth/reset-password` | Public | Set new password with valid token |
-| **Users** | `GET /api/users/me` | Authenticated | Retrieve current authenticated user profile & verification status |
-| | `DELETE /api/users/me` | Authenticated | Permanently delete authenticated user account |
-| **Discovery** | `GET /search` | Public | Geospatial product search with filters (lat, lng, radius, category, query) |
-| | `GET /search/stores` | Public | Proximity store search (lat, lng, query, radius) |
-| | `POST /search/image` | Public | Multimodal Gemini Vision photo search |
-| | `GET /categories` | Public | Browse full category and subcategory taxonomy tree |
-| **Stores** | `GET /api/stores/:storeId` | Public | Public store profile, distance, operating hours, and rating |
-| | `GET /api/stores/mine` | `STORE_OWNER` | List stores belonging to the authenticated owner |
-| | `POST /api/stores` | `STORE_OWNER` | Create a new store profile |
-| | `GET /api/stores/:storeId/manage` | `STORE_OWNER` | Store management details (requires store ownership) |
-| | `PATCH /api/stores/:storeId` | `STORE_OWNER` | Update store metadata, coordinates, timezone, and hours |
-| | `DELETE /api/stores/:storeId` | `STORE_OWNER` | Delete store and cascade associated products |
-| **Products** | `GET /api/products/:productId` | Public | Public product details, stock, store info, and rating |
-| | `GET /api/products` | `STORE_OWNER` | List store inventory (via `X-Store-ID` header) |
-| | `POST /api/products` | `STORE_OWNER` | Create new product listing |
-| | `POST /api/products/import` | `STORE_OWNER` | Bulk CSV import (image URL = published, no image = draft) |
-| | `PATCH /api/products/:productId` | `STORE_OWNER` | Update product details (auto-refreshes `last_verified_at`) |
-| | `DELETE /api/products/:productId` | `STORE_OWNER` | Remove product listing |
-| | `PATCH /api/products/:productId/confirm-stock` | `STORE_OWNER` / `ADMIN` | One-click stock freshness confirmation |
-| **Uploads** | `POST /api/uploads/images` | `STORE_OWNER` | Upload binary image (`raw` body <= 2MB, JPEG/PNG/WebP) |
-| | `GET /api/images/:id` | Public | Serve stored image binary with appropriate cache headers |
-| **Lists** | `GET /lists` | Authenticated | List all household lists the user belongs to |
-| | `POST /lists` | Authenticated | Create a new household list (assigns `OWNER` role) |
-| | `POST /lists/join` | Authenticated | Join list using 6-character alphanumeric invite code |
-| | `GET /lists/:list_id` | Authenticated | Retrieve list items, members, and details |
-| | `PATCH /lists/:list_id` | `OWNER` | Rename household list |
-| | `DELETE /lists/:list_id` | `OWNER` | Delete household list |
-| | `POST /lists/:list_id/leave` | Authenticated | Leave shared household list |
-| | `POST /lists/:list_id/regenerate-invite-code` | `OWNER` | Invalidate and generate a new invite code |
-| | `DELETE /lists/:list_id/members/:user_id` | `OWNER` | Remove member from list |
-| | `POST /lists/:list_id/items` | Authenticated | Add catalog product or custom item to list |
-| | `PATCH /lists/:list_id/items/:item_id` | Authenticated | Toggle `is_checked` or update quantity |
-| | `DELETE /lists/:list_id/items/:item_id` | Authenticated | Remove item from list |
-| **Favorites** | `GET /api/favorites` | Authenticated | List user's saved stores and products (newest first) |
-| | `POST /api/favorites` | Authenticated | Save store or product to favorites |
-| | `DELETE /api/favorites/:favoriteId` | Authenticated | Remove store or product from favorites |
-| **Reviews** | `GET /api/reviews` | Public / Optional Auth | List reviews for target store or product |
-| | `GET /api/reviews/mine` | Authenticated | List reviews written by authenticated user |
-| | `POST /api/reviews` | Verified Email | Submit 1-5 star review (owner self-review prohibited) |
-| | `PATCH /api/reviews/:reviewId` | Author | Update review rating or comment |
-| | `DELETE /api/reviews/:reviewId` | Author | Delete review |
-| **Admin** | `GET /api/admin/metrics` | `SYSTEM_ADMIN` | Platform aggregate counts (users, stores, products, reviews) |
-| | `GET /api/admin/users` | `SYSTEM_ADMIN` | List and search users with role and suspension filters |
-| | `PATCH /api/admin/users/:userId/suspend` | `SYSTEM_ADMIN` | Toggle user suspension status (syncs to Redis) |
-| | `PATCH /api/admin/users/:userId/demote` | `SYSTEM_ADMIN` | Demote admin user to `CUSTOMER` |
-| | `DELETE /api/admin/users/:userId` | `SYSTEM_ADMIN` | Hard delete user with audit snapshot |
-| | `GET /api/admin/stores` | `SYSTEM_ADMIN` | List stores with suspension status |
-| | `PATCH /api/admin/stores/:storeId/suspend` | `SYSTEM_ADMIN` | Toggle store suspension status |
-| | `DELETE /api/admin/stores/:storeId` | `SYSTEM_ADMIN` | Hard delete store with audit snapshot |
-| | `GET /api/admin/categories` | `SYSTEM_ADMIN` | List category taxonomy for management |
-| | `POST /api/admin/categories` | `SYSTEM_ADMIN` | Create root category |
-| | `PATCH /api/admin/categories/:id` | `SYSTEM_ADMIN` | Rename root category or update icon URL |
-| | `DELETE /api/admin/categories/:id` | `SYSTEM_ADMIN` | Delete category and cascade subcategories |
-| | `POST /api/admin/categories/:id/subcategories`| `SYSTEM_ADMIN` | Add subcategory to category |
-| | `PATCH /api/admin/subcategories/:id` | `SYSTEM_ADMIN` | Update subcategory name |
-| | `DELETE /api/admin/subcategories/:id` | `SYSTEM_ADMIN` | Delete subcategory |
-| | `GET /api/admin/reviews` | `SYSTEM_ADMIN` | List reviews with target filters |
-| | `DELETE /api/admin/reviews/:reviewId` | `SYSTEM_ADMIN` | Remove review with audit trail snapshot |
-| | `GET /api/admin/audit-logs` | `SYSTEM_ADMIN` | Paginated audit log ledger with pre-change JSON snapshots |
-| **Support** | `GET /support` | Public | Retrieve support contact email and official channels |
+| Domain        | Method & Path                                  | Auth / Role             | Description                                                                |
+| ------------- | ---------------------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| **Auth**      | `POST /auth/register`                          | Public                  | Create Customer or Store Owner account                                     |
+|               | `POST /auth/login`                             | Public                  | Authenticate user, return access token & set refresh session               |
+|               | `POST /auth/refresh`                           | Public                  | Exchange refresh token for new access token                                |
+|               | `POST /auth/logout`                            | Public                  | Invalidate refresh token session                                           |
+|               | `POST /auth/verify-email`                      | Public                  | Validate email verification token                                          |
+|               | `POST /auth/resend-verification`               | Public                  | Resend verification link with rate limiting                                |
+|               | `POST /auth/forgot-password`                   | Public                  | Send password reset token to email                                         |
+|               | `POST /auth/reset-password`                    | Public                  | Set new password with valid token                                          |
+| **Users**     | `GET /api/users/me`                            | Authenticated           | Retrieve current authenticated user profile & verification status          |
+|               | `DELETE /api/users/me`                         | Authenticated           | Permanently delete authenticated user account                              |
+| **Discovery** | `GET /search`                                  | Public                  | Geospatial product search with filters (lat, lng, radius, category, query) |
+|               | `GET /search/stores`                           | Public                  | Proximity store search (lat, lng, query, radius)                           |
+|               | `POST /search/image`                           | Public                  | Multimodal Gemini Vision photo search                                      |
+|               | `GET /categories`                              | Public                  | Browse full category and subcategory taxonomy tree                         |
+| **Stores**    | `GET /api/stores/:storeId`                     | Public                  | Public store profile, distance, operating hours, and rating                |
+|               | `GET /api/stores/mine`                         | `STORE_OWNER`           | List stores belonging to the authenticated owner                           |
+|               | `POST /api/stores`                             | `STORE_OWNER`           | Create a new store profile                                                 |
+|               | `GET /api/stores/:storeId/manage`              | `STORE_OWNER`           | Store management details (requires store ownership)                        |
+|               | `PATCH /api/stores/:storeId`                   | `STORE_OWNER`           | Update store metadata, coordinates, timezone, and hours                    |
+|               | `DELETE /api/stores/:storeId`                  | `STORE_OWNER`           | Delete store and cascade associated products                               |
+| **Products**  | `GET /api/products/:productId`                 | Public                  | Public product details, stock, store info, and rating                      |
+|               | `GET /api/products`                            | `STORE_OWNER`           | List store inventory (via `X-Store-ID` header)                             |
+|               | `POST /api/products`                           | `STORE_OWNER`           | Create new product listing                                                 |
+|               | `POST /api/products/import`                    | `STORE_OWNER`           | Bulk CSV import (image URL = published, no image = draft)                  |
+|               | `PATCH /api/products/:productId`               | `STORE_OWNER`           | Update product details (auto-refreshes `last_verified_at`)                 |
+|               | `DELETE /api/products/:productId`              | `STORE_OWNER`           | Remove product listing                                                     |
+|               | `PATCH /api/products/:productId/confirm-stock` | `STORE_OWNER` / `ADMIN` | One-click stock freshness confirmation                                     |
+| **Uploads**   | `POST /api/uploads/images`                     | `STORE_OWNER`           | Upload binary image (`raw` body <= 2MB, JPEG/PNG/WebP)                     |
+|               | `GET /api/images/:id`                          | Public                  | Serve stored image binary with appropriate cache headers                   |
+| **Lists**     | `GET /lists`                                   | Authenticated           | List all household lists the user belongs to                               |
+|               | `POST /lists`                                  | Authenticated           | Create a new household list (assigns `OWNER` role)                         |
+|               | `POST /lists/join`                             | Authenticated           | Join list using 6-character alphanumeric invite code                       |
+|               | `GET /lists/:list_id`                          | Authenticated           | Retrieve list items, members, and details                                  |
+|               | `PATCH /lists/:list_id`                        | `OWNER`                 | Rename household list                                                      |
+|               | `DELETE /lists/:list_id`                       | `OWNER`                 | Delete household list                                                      |
+|               | `POST /lists/:list_id/leave`                   | Authenticated           | Leave shared household list                                                |
+|               | `POST /lists/:list_id/regenerate-invite-code`  | `OWNER`                 | Invalidate and generate a new invite code                                  |
+|               | `DELETE /lists/:list_id/members/:user_id`      | `OWNER`                 | Remove member from list                                                    |
+|               | `POST /lists/:list_id/items`                   | Authenticated           | Add catalog product or custom item to list                                 |
+|               | `PATCH /lists/:list_id/items/:item_id`         | Authenticated           | Toggle `is_checked` or update quantity                                     |
+|               | `DELETE /lists/:list_id/items/:item_id`        | Authenticated           | Remove item from list                                                      |
+| **Favorites** | `GET /api/favorites`                           | Authenticated           | List user's saved stores and products (newest first)                       |
+|               | `POST /api/favorites`                          | Authenticated           | Save store or product to favorites                                         |
+|               | `DELETE /api/favorites/:favoriteId`            | Authenticated           | Remove store or product from favorites                                     |
+| **Reviews**   | `GET /api/reviews`                             | Public / Optional Auth  | List reviews for target store or product                                   |
+|               | `GET /api/reviews/mine`                        | Authenticated           | List reviews written by authenticated user                                 |
+|               | `POST /api/reviews`                            | Verified Email          | Submit 1-5 star review (owner self-review prohibited)                      |
+|               | `PATCH /api/reviews/:reviewId`                 | Author                  | Update review rating or comment                                            |
+|               | `DELETE /api/reviews/:reviewId`                | Author                  | Delete review                                                              |
+| **Admin**     | `GET /api/admin/metrics`                       | `SYSTEM_ADMIN`          | Platform aggregate counts (users, stores, products, reviews)               |
+|               | `GET /api/admin/users`                         | `SYSTEM_ADMIN`          | List and search users with role and suspension filters                     |
+|               | `PATCH /api/admin/users/:userId/suspend`       | `SYSTEM_ADMIN`          | Toggle user suspension status (syncs to Redis)                             |
+|               | `PATCH /api/admin/users/:userId/demote`        | `SYSTEM_ADMIN`          | Demote admin user to `CUSTOMER`                                            |
+|               | `DELETE /api/admin/users/:userId`              | `SYSTEM_ADMIN`          | Hard delete user with audit snapshot                                       |
+|               | `GET /api/admin/stores`                        | `SYSTEM_ADMIN`          | List stores with suspension status                                         |
+|               | `PATCH /api/admin/stores/:storeId/suspend`     | `SYSTEM_ADMIN`          | Toggle store suspension status                                             |
+|               | `DELETE /api/admin/stores/:storeId`            | `SYSTEM_ADMIN`          | Hard delete store with audit snapshot                                      |
+|               | `GET /api/admin/categories`                    | `SYSTEM_ADMIN`          | List category taxonomy for management                                      |
+|               | `POST /api/admin/categories`                   | `SYSTEM_ADMIN`          | Create root category                                                       |
+|               | `PATCH /api/admin/categories/:id`              | `SYSTEM_ADMIN`          | Rename root category or update icon URL                                    |
+|               | `DELETE /api/admin/categories/:id`             | `SYSTEM_ADMIN`          | Delete category and cascade subcategories                                  |
+|               | `POST /api/admin/categories/:id/subcategories` | `SYSTEM_ADMIN`          | Add subcategory to category                                                |
+|               | `PATCH /api/admin/subcategories/:id`           | `SYSTEM_ADMIN`          | Update subcategory name                                                    |
+|               | `DELETE /api/admin/subcategories/:id`          | `SYSTEM_ADMIN`          | Delete subcategory                                                         |
+|               | `GET /api/admin/reviews`                       | `SYSTEM_ADMIN`          | List reviews with target filters                                           |
+|               | `DELETE /api/admin/reviews/:reviewId`          | `SYSTEM_ADMIN`          | Remove review with audit trail snapshot                                    |
+|               | `GET /api/admin/audit-logs`                    | `SYSTEM_ADMIN`          | Paginated audit log ledger with pre-change JSON snapshots                  |
+| **Support**   | `GET /support`                                 | Public                  | Retrieve support contact email and official channels                       |
 
 ## Prerequisites
 
@@ -205,6 +205,7 @@ All backend endpoints support optional `/api` prefixes for reverse-proxy compati
    In production (`NODE_ENV=production`), seeds require explicit `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_OWNER_EMAIL`, and `SEED_OWNER_PASSWORD` environment variables.
 
    If products are created prior to configuring `GEMINI_API_KEY`, backfill vector embeddings at any time:
+
    ```bash
    pnpm --filter @nearcommerce/backend embeddings:backfill
    ```
@@ -217,11 +218,11 @@ All backend endpoints support optional `/api` prefixes for reverse-proxy compati
    pnpm dev
    ```
 
-   | App | URL | Description |
-   | --- | --- | --- |
-   | **Backend API** | `http://localhost:4000` | Express REST & Socket.IO server |
-   | **Store Owner Portal** | `http://localhost:3001` | Dashboard, product management, CSV import, YOLO cropping |
-   | **Admin Portal** | `http://localhost:3000` | System metrics, user/store moderation, categories, audit logs |
+   | App                    | URL                     | Description                                                   |
+   | ---------------------- | ----------------------- | ------------------------------------------------------------- |
+   | **Backend API**        | `http://localhost:4000` | Express REST & Socket.IO server                               |
+   | **Store Owner Portal** | `http://localhost:3001` | Dashboard, product management, CSV import, YOLO cropping      |
+   | **Admin Portal**       | `http://localhost:3000` | System metrics, user/store moderation, categories, audit logs |
 
 6. Launch the mobile app. Expo uses its own environment configuration, so create `apps/mobile/.env`:
 
@@ -242,6 +243,7 @@ pnpm clear-db
 ```
 
 This runs `apps/backend/src/db/clearDb.ts`, which:
+
 1. Flushes all keys from Redis
 2. Drops and recreates the PostgreSQL `public` schema and ENUM types
 3. Re-applies all migration files in `apps/backend/src/db/migrations/` in order
@@ -303,4 +305,3 @@ pnpm --filter @nearcommerce/mobile test
 ## License
 
 This project is intended to be released under the MIT License. See the repository license file for authoritative terms.
-
