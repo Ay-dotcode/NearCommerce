@@ -1,3 +1,4 @@
+import { DialogProvider } from "@/components/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react-native";
 import { createElement, type ReactElement } from "react";
@@ -10,7 +11,13 @@ export function renderWithClient(ui: ReactElement) {
     },
   });
   // Cast: the workspace has two @types/react copies, which makes JSX element types incompatible.
-  return render(createElement(QueryClientProvider, { client }, ui) as never);
+  return render(
+    createElement(
+      QueryClientProvider,
+      { client },
+      createElement(DialogProvider, null, ui),
+    ) as never,
+  );
 }
 
 // Route a mocked apiClient.get by URL so tests don't depend on call order.

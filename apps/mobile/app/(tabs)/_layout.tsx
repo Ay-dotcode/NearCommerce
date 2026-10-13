@@ -1,54 +1,51 @@
+import { SettingsHeaderButton } from "@/components/settings/HeaderButtons";
+import { useColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
+import type { IconName } from "@/utils/categoryIcon";
 import { Tabs } from "expo-router";
 
+const TABS: { name: string; title: string; icon: IconName }[] = [
+  { name: "index", title: "Home", icon: "home" },
+  { name: "search", title: "Search", icon: "search" },
+  { name: "lists", title: "Lists", icon: "list" },
+  { name: "favorites", title: "Favorites", icon: "heart" },
+];
+
+// Four tabs. Settings is not a tab: the gear button in the app bar opens it as a drawer.
 export default function TabLayout() {
+  const c = useColors();
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: "#2563eb" }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: "Search",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="lists"
-        options={{
-          title: "Lists",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          title: "Favorites",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
-          ),
-        }}
-      />
+    <Tabs
+      screenOptions={{
+        // Content slides sideways when switching tabs.
+        animation: "shift",
+        headerLeft: () => <SettingsHeaderButton />,
+        headerStyle: { backgroundColor: c.surface },
+        headerTitleStyle: { color: c.text, fontWeight: "700" },
+        headerShadowVisible: false,
+        sceneStyle: { backgroundColor: c.background },
+        tabBarActiveTintColor: c.primary,
+        tabBarInactiveTintColor: c.textMuted,
+        tabBarStyle: {
+          backgroundColor: c.surface,
+          borderTopColor: c.border,
+        },
+      }}
+    >
+      {TABS.map(({ name, title, icon }) => (
+        <Tabs.Screen
+          key={name}
+          name={name}
+          options={{
+            title,
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name={icon} size={size} color={color} />
+            ),
+          }}
+        />
+      ))}
+      {/* Reached from the Lists tab; not a tab of its own. */}
+      <Tabs.Screen name="lists/join" options={{ href: null }} />
     </Tabs>
   );
 }

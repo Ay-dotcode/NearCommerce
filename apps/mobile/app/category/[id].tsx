@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   ScrollView,
@@ -16,11 +15,18 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ProductListSkeleton } from "@/components/skeletons";
+import { useSearchRadius } from "@/src/hooks/useSearchRadius";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 export default function CategoryScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const [subcategoryId, setSubcategoryId] = useState<string | undefined>();
   const coords = useSessionCoords();
+  const radius = useSearchRadius();
 
   const categories = useQuery({
     queryKey: CATEGORIES_KEY,
@@ -30,12 +36,18 @@ export default function CategoryScreen() {
   const category = categories.data?.find((c) => c.id === id);
 
   const products = useQuery({
-    queryKey: ["category-products", id, subcategoryId, coords],
+    queryKey: ["category-products", id, subcategoryId, coords, radius.meters],
     queryFn: () =>
-      searchProducts("", coords!.latitude, coords!.longitude, {
-        categoryId: subcategoryId ? undefined : id,
-        subcategoryId,
-      }),
+      searchProducts(
+        "",
+        coords!.latitude,
+        coords!.longitude,
+        {
+          categoryId: subcategoryId ? undefined : id,
+          subcategoryId,
+        },
+        radius.meters,
+      ),
     enabled: Boolean(id) && coords !== null,
   });
   const results = products.data?.data ?? [];
@@ -49,7 +61,7 @@ export default function CategoryScreen() {
           accessibilityLabel="Go back"
           hitSlop={8}
         >
-          <Ionicons name="chevron-back" size={26} color="#123047" />
+          <Ionicons name="chevron-back" size={26} color={c.text} />
         </Pressable>
         <Text style={styles.title}>{category?.name ?? "Category"}</Text>
       </View>
@@ -77,9 +89,7 @@ export default function CategoryScreen() {
         </ScrollView>
       )}
 
-      {(products.isLoading || coords === null) && (
-        <ActivityIndicator color="#2563eb" style={styles.loader} />
-      )}
+      {(products.isLoading || coords === null) && <ProductListSkeleton />}
       {products.isError && (
         <Text style={styles.message}>
           Couldn't load products. Please try again.
@@ -120,6 +130,8 @@ function Chip({
   selected: boolean;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <Pressable
       onPress={onPress}
@@ -134,37 +146,38 @@ function Chip({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f8fb" },
-  header: { flexDirection: "row", alignItems: "center", gap: 8, padding: 16 },
-  title: { color: "#123047", fontSize: 24, fontWeight: "800", flex: 1 },
-  chipScroll: { flexGrow: 0 },
-  chips: { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#d9e2ec",
-  },
-  chipSelected: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
-  chipText: { color: "#123047", fontWeight: "600" },
-  chipTextSelected: { color: "#fff" },
-  loader: { marginTop: 24 },
-  message: { color: "#718096", textAlign: "center", margin: 24 },
-  results: { padding: 16 },
-  result: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-  },
-  resultCopy: { flex: 1 },
-  resultName: { color: "#123047", fontSize: 15, fontWeight: "800" },
-  storeName: { color: "#718096", fontSize: 12, marginTop: 4 },
-  price: { color: "#123047", fontWeight: "800" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    header: { flexDirection: "row", alignItems: "center", gap: 8, padding: 16 },
+    title: { color: c.text, fontSize: 24, fontWeight: "800", flex: 1 },
+    chipScroll: { flexGrow: 0 },
+    chips: { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
+    chip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    chipSelected: { backgroundColor: c.primary, borderColor: c.primary },
+    chipText: { color: c.text, fontWeight: "600" },
+    chipTextSelected: { color: c.onPrimary },
+    loader: { marginTop: 24 },
+    message: { color: c.textMuted, textAlign: "center", margin: 24 },
+    results: { padding: 16 },
+    result: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 10,
+    },
+    resultCopy: { flex: 1 },
+    resultName: { color: c.text, fontSize: 15, fontWeight: "800" },
+    storeName: { color: c.textMuted, fontSize: 12, marginTop: 4 },
+    price: { color: c.text, fontWeight: "800" },
+  });

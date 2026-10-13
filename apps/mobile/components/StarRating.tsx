@@ -1,10 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 type DisplayProps = { rating: number; size?: number };
 
 // Read-only stars. Half values round to the nearest whole star.
 export function Stars({ rating, size = 16 }: DisplayProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
+
   const filled = Math.round(rating);
   return (
     <View
@@ -16,7 +20,7 @@ export function Stars({ rating, size = 16 }: DisplayProps) {
           key={n}
           name={n <= filled ? "star" : "star-outline"}
           size={size}
-          color="#eab308"
+          color={c.star}
         />
       ))}
     </View>
@@ -26,6 +30,9 @@ export function Stars({ rating, size = 16 }: DisplayProps) {
 type PickerProps = { value: number; onChange: (value: number) => void };
 
 export function StarPicker({ value, onChange }: PickerProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
+
   return (
     <View style={styles.row}>
       {[1, 2, 3, 4, 5].map((n) => (
@@ -40,7 +47,7 @@ export function StarPicker({ value, onChange }: PickerProps) {
           <Ionicons
             name={n <= value ? "star" : "star-outline"}
             size={34}
-            color="#eab308"
+            color={c.star}
           />
         </Pressable>
       ))}
@@ -48,6 +55,7 @@ export function StarPicker({ value, onChange }: PickerProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 4 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    row: { flexDirection: "row", gap: 4 },
+  });

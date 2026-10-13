@@ -47,7 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearLocal = async () => {
-    await AsyncStorage.removeMany([TOKEN_KEY, REFRESH_TOKEN_KEY]);
+    await Promise.all([
+      AsyncStorage.removeItem(TOKEN_KEY),
+      AsyncStorage.removeItem(REFRESH_TOKEN_KEY),
+    ]);
     delete apiClient.defaults.headers.common["Authorization"];
     setToken(null);
   };
@@ -58,10 +61,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     configureTokenRefresh({
       getRefreshToken: () => AsyncStorage.getItem(REFRESH_TOKEN_KEY),
       onTokens: async ({ accessToken, refreshToken }) => {
-        await AsyncStorage.setMany({
-          [TOKEN_KEY]: accessToken,
-          [REFRESH_TOKEN_KEY]: refreshToken,
-        });
+        await Promise.all([
+          AsyncStorage.setItem(TOKEN_KEY, accessToken),
+          AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken),
+        ]);
         applyAccessToken(accessToken);
       },
       onAuthFailure: clearLocal,

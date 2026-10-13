@@ -15,6 +15,13 @@ export const AVOID_TOLLS_KEY = "@routing_avoid_tolls";
 // Metres in a mile, for showing distances.
 export const METERS_PER_MILE = 1609.34;
 
+// AsyncStorage key and limits for "how far shops can be from me" (Settings). The default is
+// about the server's own 5 km default; the maximum stays under the server's 50 km cap.
+export const SEARCH_RADIUS_KEY = "@search_radius_miles";
+export const SEARCH_RADIUS_MIN_MILES = 1;
+export const SEARCH_RADIUS_MAX_MILES = 25;
+export const SEARCH_RADIUS_DEFAULT_MILES = 3;
+
 // Backend base URL. Expo only inlines a direct `process.env.EXPO_PUBLIC_*` read, so keep it
 // exactly in this form.
 const defaultApiUrl =

@@ -11,9 +11,10 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function fetchNearbyStores(
   lat: number,
   lng: number,
+  radiusMeters?: number,
 ): Promise<NearbyStore[]> {
   const res = await apiClient.get<{ data: NearbyStore[] }>("/search/stores", {
-    params: { lat, lng },
+    params: { lat, lng, radius_meters: radiusMeters },
   });
   return res.data.data ?? [];
 }

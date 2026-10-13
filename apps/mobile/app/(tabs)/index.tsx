@@ -4,14 +4,7 @@ import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
@@ -21,10 +14,21 @@ import {
 } from "@/api/catalog";
 import type { Category } from "@/types/catalog";
 import { iconForCategory } from "@/utils/categoryIcon";
+import {
+  CategoryGridSkeleton,
+  StoreListSkeleton,
+} from "@/components/skeletons";
+import { SCREEN_EDGES } from "@/theme/layout";
+import { useSearchRadius } from "@/src/hooks/useSearchRadius";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 export default function HomeScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
+
   const { location, isFetching: isFetchingLocation } = useLocationFetcher();
 
+  const radius = useSearchRadius();
   const lat = location?.coords.latitude;
   const lng = location?.coords.longitude;
 
@@ -33,8 +37,8 @@ export default function HomeScreen() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["nearby-stores", lat, lng],
-    queryFn: () => fetchNearbyStores(lat!, lng!),
+    queryKey: ["nearby-stores", lat, lng, radius.meters],
+    queryFn: () => fetchNearbyStores(lat!, lng!, radius.meters),
     enabled: lat !== undefined && lng !== undefined,
   });
 
@@ -55,7 +59,7 @@ export default function HomeScreen() {
   }));
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={SCREEN_EDGES}>
       <FlatList
         contentContainerStyle={styles.content}
         data={storeCards}
@@ -73,16 +77,14 @@ export default function HomeScreen() {
                   accessibilityLabel="Search"
                   style={styles.searchButton}
                 >
-                  <Ionicons name="search" size={22} color="#123047" />
+                  <Ionicons name="search" size={22} color={c.text} />
                 </Pressable>
               </Link>
             </View>
 
             {/* Category grid */}
             <Text style={styles.sectionTitle}>Browse categories</Text>
-            {categoriesQuery.isLoading && (
-              <ActivityIndicator color="#2563eb" style={styles.loader} />
-            )}
+            {categoriesQuery.isLoading && <CategoryGridSkeleton />}
             {categoriesQuery.isError && (
               <Text style={styles.emptyText}>
                 Couldn't load categories. Pull to retry later.
@@ -109,7 +111,7 @@ export default function HomeScreen() {
                     <Ionicons
                       name={iconForCategory(category.name)}
                       size={24}
-                      color="#2563eb"
+                      color={c.primary}
                     />
                     <Text style={styles.categoryLabel}>{category.name}</Text>
                   </Pressable>
@@ -128,7 +130,7 @@ export default function HomeScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           isFetchingLocation || isLoading ? (
-            <ActivityIndicator color="#2563eb" style={styles.loader} />
+            <StoreListSkeleton />
           ) : isError ? (
             <Text style={styles.emptyText}>
               Couldn't load nearby stores. Check your connection.
@@ -142,68 +144,69 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f8fb" },
-  content: { padding: 20, paddingBottom: 32 },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 28,
-  },
-  eyebrow: {
-    color: "#2563eb",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1.4,
-  },
-  heading: {
-    color: "#123047",
-    fontSize: 28,
-    fontWeight: "800",
-    marginTop: 6,
-    maxWidth: 280,
-  },
-  searchButton: {
-    backgroundColor: "#dbeafe",
-    borderRadius: 14,
-    padding: 12,
-  },
-  sectionTitle: {
-    color: "#123047",
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 14,
-  },
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 28,
-  },
-  category: {
-    width: "48%",
-    minHeight: 82,
-    justifyContent: "center",
-    gap: 8,
-    padding: 14,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-  },
-  categoryLabel: { color: "#123047", fontSize: 14, fontWeight: "700" },
-  sectionHeading: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    marginBottom: 4,
-  },
-  caption: { color: "#718096", fontSize: 12 },
-  separator: { height: 10 },
-  loader: { marginTop: 24 },
-  emptyText: {
-    color: "#718096",
-    textAlign: "center",
-    marginTop: 24,
-    fontSize: 14,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    content: { padding: 20, paddingBottom: 32 },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 28,
+    },
+    eyebrow: {
+      color: c.primary,
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 1.4,
+    },
+    heading: {
+      color: c.text,
+      fontSize: 28,
+      fontWeight: "800",
+      marginTop: 6,
+      maxWidth: 280,
+    },
+    searchButton: {
+      backgroundColor: c.primarySoft,
+      borderRadius: 14,
+      padding: 12,
+    },
+    sectionTitle: {
+      color: c.text,
+      fontSize: 18,
+      fontWeight: "800",
+      marginBottom: 14,
+    },
+    categoryGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+      marginBottom: 28,
+    },
+    category: {
+      width: "48%",
+      minHeight: 82,
+      justifyContent: "center",
+      gap: 8,
+      padding: 14,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+    },
+    categoryLabel: { color: c.text, fontSize: 14, fontWeight: "700" },
+    sectionHeading: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      marginBottom: 4,
+    },
+    caption: { color: c.textMuted, fontSize: 12 },
+    separator: { height: 10 },
+    loader: { marginTop: 24 },
+    emptyText: {
+      color: c.textMuted,
+      textAlign: "center",
+      marginTop: 24,
+      fontSize: 14,
+    },
+  });

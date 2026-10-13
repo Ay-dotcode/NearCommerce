@@ -13,15 +13,11 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { router } from "expo-router";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
+import { ReviewsSkeleton } from "@/components/skeletons";
+import { Skeleton, useDialogs } from "@/components/ui";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 type Props = { target: ReviewTarget };
 
@@ -33,6 +29,10 @@ const formatDate = (iso: string) =>
   });
 
 export default function ReviewsSection({ target }: Props) {
+  const styles = useThemedStyles(makeStyles);
+  const { confirm } = useDialogs();
+  const c = useColors();
+
   const queryClient = useQueryClient();
   const key = reviewsKey(target);
 
@@ -77,18 +77,17 @@ export default function ReviewsSection({ target }: Props) {
       },
     });
 
-  const confirmDelete = (review: Review) =>
-    Alert.alert("Delete your review?", "This can't be undone.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => remove.mutate(review.id),
-      },
-    ]);
+  const confirmDelete = async (review: Review) => {
+    const ok = await confirm({
+      title: "Delete your review?",
+      message: "This can't be undone.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (ok) remove.mutate(review.id);
+  };
 
-  if (query.isLoading)
-    return <ActivityIndicator color="#2563eb" style={styles.loader} />;
+  if (query.isLoading) return <ReviewsSkeleton />;
 
   if (query.isError)
     return (
@@ -193,53 +192,56 @@ export default function ReviewsSection({ target }: Props) {
           disabled={query.isFetchingNextPage}
           accessibilityRole="button"
         >
-          <Text style={styles.link}>
-            {query.isFetchingNextPage
-              ? "Loading…"
-              : `Show more (${total - reviews.length} more)`}
-          </Text>
+          {query.isFetchingNextPage ? (
+            <Skeleton width={140} height={18} style={{ alignSelf: "center" }} />
+          ) : (
+            <Text style={styles.link}>
+              {`Show more (${total - reviews.length} more)`}
+            </Text>
+          )}
         </Pressable>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  section: { marginTop: 24, gap: 12 },
-  loader: { marginTop: 24 },
-  heading: { fontSize: 18, fontWeight: "600", color: "#123047" },
-  muted: { color: "#718096", fontSize: 13 },
-  summary: { flexDirection: "row", gap: 20, alignItems: "center" },
-  summaryScore: { alignItems: "center", gap: 4 },
-  score: { fontSize: 32, fontWeight: "800", color: "#123047" },
-  bars: { flex: 1, gap: 4 },
-  barRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  barLabel: { width: 12, color: "#718096", fontSize: 12 },
-  barTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#e5e7eb",
-    overflow: "hidden",
-  },
-  barFill: { height: 6, backgroundColor: "#eab308" },
-  writeButton: {
-    borderWidth: 1,
-    borderColor: "#2563eb",
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  writeText: { color: "#2563eb", fontWeight: "700" },
-  review: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
-    gap: 6,
-  },
-  reviewHeader: { gap: 4 },
-  comment: { color: "#374151", fontSize: 14, lineHeight: 20 },
-  actions: { flexDirection: "row", gap: 16, marginTop: 4 },
-  link: { color: "#2563eb", fontWeight: "700" },
-  danger: { color: "#b91c1c", fontWeight: "700" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    section: { marginTop: 24, gap: 12 },
+    loader: { marginTop: 24 },
+    heading: { fontSize: 18, fontWeight: "600", color: c.text },
+    muted: { color: c.textMuted, fontSize: 13 },
+    summary: { flexDirection: "row", gap: 20, alignItems: "center" },
+    summaryScore: { alignItems: "center", gap: 4 },
+    score: { fontSize: 32, fontWeight: "800", color: c.text },
+    bars: { flex: 1, gap: 4 },
+    barRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    barLabel: { width: 12, color: c.textMuted, fontSize: 12 },
+    barTrack: {
+      flex: 1,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: c.border,
+      overflow: "hidden",
+    },
+    barFill: { height: 6, backgroundColor: c.star },
+    writeButton: {
+      borderWidth: 1,
+      borderColor: c.primary,
+      borderRadius: 8,
+      paddingVertical: 10,
+      alignItems: "center",
+    },
+    writeText: { color: c.primary, fontWeight: "700" },
+    review: {
+      backgroundColor: c.surface,
+      borderRadius: 8,
+      padding: 12,
+      gap: 6,
+    },
+    reviewHeader: { gap: 4 },
+    comment: { color: c.textSecondary, fontSize: 14, lineHeight: 20 },
+    actions: { flexDirection: "row", gap: 16, marginTop: 4 },
+    link: { color: c.primary, fontWeight: "700" },
+    danger: { color: c.danger, fontWeight: "700" },
+  });

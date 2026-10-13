@@ -1,5 +1,6 @@
 import { METERS_PER_MILE } from "@/constants";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 
 type Props = {
   name: string;
@@ -22,6 +23,8 @@ export default function ProductCard({
   quantity,
   onPress,
 }: Props) {
+  const styles = useThemedStyles(makeStyles);
+
   const where = [
     storeName,
     distanceMeters !== undefined
@@ -54,23 +57,24 @@ export default function ProductCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-  },
-  copy: { flex: 1 },
-  name: { color: "#123047", fontSize: 15, fontWeight: "800" },
-  where: { color: "#718096", fontSize: 12, marginTop: 4 },
-  badges: { flexDirection: "row", gap: 10, marginTop: 6 },
-  inStock: { color: "#10b981", fontSize: 12, fontWeight: "bold" },
-  outOfStock: { color: "#ef4444", fontSize: 12, fontWeight: "bold" },
-  fresh: { color: "#166534", fontSize: 12 },
-  stale: { color: "#b45309", fontSize: 12 },
-  price: { color: "#123047", fontWeight: "800" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 10,
+    },
+    copy: { flex: 1 },
+    name: { color: c.text, fontSize: 15, fontWeight: "800" },
+    where: { color: c.textMuted, fontSize: 12, marginTop: 4 },
+    badges: { flexDirection: "row", gap: 10, marginTop: 6 },
+    inStock: { color: c.success, fontSize: 12, fontWeight: "bold" },
+    outOfStock: { color: c.heart, fontSize: 12, fontWeight: "bold" },
+    fresh: { color: c.successText, fontSize: 12 },
+    stale: { color: c.warning, fontSize: 12 },
+    price: { color: c.text, fontWeight: "800" },
+  });

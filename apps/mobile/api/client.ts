@@ -10,6 +10,7 @@ export async function searchProducts(
   latitude: number,
   longitude: number,
   filters: SearchFilters = {},
+  radiusMeters?: number,
 ): Promise<SearchResponse> {
   const response = await apiClient.get<SearchResponse>("/search", {
     params: {
@@ -18,6 +19,7 @@ export async function searchProducts(
       lng: longitude,
       category_id: filters.categoryId,
       subcategory_id: filters.subcategoryId,
+      radius_meters: radiusMeters,
     },
   });
 
@@ -30,12 +32,14 @@ export async function searchByImage(
   image: { base64: string; mimeType: string },
   latitude: number,
   longitude: number,
+  radiusMeters?: number,
 ): Promise<ImageSearchResponse> {
   const response = await apiClient.post<ImageSearchResponse>("/search/image", {
     image: image.base64,
     mime_type: image.mimeType,
     lat: latitude,
     lng: longitude,
+    radius_meters: radiusMeters,
   });
   return response.data;
 }

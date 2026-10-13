@@ -27,8 +27,6 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(() => Promise.resolve(null)),
   removeItem: jest.fn(() => Promise.resolve()),
-  removeMany: jest.fn(() => Promise.resolve()),
-  setMany: jest.fn(() => Promise.resolve()),
 }));
 
 // Lazy-require so mocks are applied first
@@ -138,31 +136,41 @@ describe("LoginScreen", () => {
       new Error("Network Error"),
       "Can't reach the server. Check your connection and try again.",
     ],
-  ])("shows an Alert explaining %s", async (_name, rejection, message) => {
+  ])(
+    "shows an inline error, not a pop-up, explaining %s",
+    async (_name, rejection, message) => {
+      const { apiClient } = require("@nearcommerce/api");
+      (apiClient.post as jest.Mock).mockRejectedValueOnce(rejection);
+      const alert = jest.spyOn(require("react-native").Alert, "alert");
+
+      const { getByTestId, findByTestId } = render(
+        <AuthProvider>
+          <LoginScreen />
+        </AuthProvider>,
+      );
+
+      fireEvent.changeText(getByTestId("email-input"), "bad@email.com");
+      fireEvent.changeText(getByTestId("password-input"), "wrongpass");
+      fireEvent.press(getByTestId("login-button"));
+
+      expect(await findByTestId("form-error")).toHaveTextContent(message);
+      expect(alert).not.toHaveBeenCalled();
+      expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+      alert.mockRestore();
+    },
+  );
+
+  it("shows empty fields in error mode with a message under each, and calls nothing", async () => {
     const { apiClient } = require("@nearcommerce/api");
-    (apiClient.post as jest.Mock).mockRejectedValueOnce(rejection);
-
-    const alert = jest.fn();
-    const AlertMock = jest
-      .spyOn(require("react-native"), "Alert", "get")
-      .mockReturnValue({ alert });
-
-    const { getByTestId } = render(
+    const { getByTestId, findByText } = render(
       <AuthProvider>
         <LoginScreen />
       </AuthProvider>,
     );
-
-    fireEvent.changeText(getByTestId("email-input"), "bad@email.com");
-    fireEvent.changeText(getByTestId("password-input"), "wrongpass");
     fireEvent.press(getByTestId("login-button"));
-
-    await waitFor(() => {
-      expect(alert).toHaveBeenCalledWith("Login Failed", message);
-    });
-    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
-
-    AlertMock.mockRestore();
+    expect(await findByText("Enter your email.")).toBeTruthy();
+    expect(await findByText("Enter your password.")).toBeTruthy();
+    expect(apiClient.post).not.toHaveBeenCalled();
   });
 
   it("stores the refresh token alongside the access token", async () => {

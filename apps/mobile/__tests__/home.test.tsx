@@ -7,6 +7,7 @@ import { fireEvent, waitFor } from "@testing-library/react-native";
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
 jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 jest.mock("expo-router", () => ({
@@ -67,7 +68,7 @@ describe("HomeScreen", () => {
     expect(await findByText("Corner Shop")).toBeTruthy();
     expect(getByText("1.0 miles away")).toBeTruthy();
     expect(get).toHaveBeenCalledWith("/search/stores", {
-      params: { lat: 1, lng: 2 },
+      params: { lat: 1, lng: 2, radius_meters: 4828 },
     });
   });
 

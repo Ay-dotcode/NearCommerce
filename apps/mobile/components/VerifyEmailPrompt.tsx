@@ -1,11 +1,15 @@
 import { fetchMe, resendVerification, type Me } from "@/api/account";
 import { apiErrorMessage } from "@/api/errors";
 import { useEffect, useState } from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Button } from "@/components/ui";
+import { StyleSheet, Text, View } from "react-native";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 
 // Shown only to signed-in users whose email is still unverified. Reviews require a
 // verified address, so this is where they can ask for a fresh link.
 export default function VerifyEmailPrompt() {
+  const styles = useThemedStyles(makeStyles);
+
   const [me, setMe] = useState<Me | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -42,24 +46,26 @@ export default function VerifyEmailPrompt() {
       </Text>
       {status && <Text style={styles.status}>{status}</Text>}
       <Button
+        variant="secondary"
         title="Resend verification email"
         onPress={resend}
-        disabled={busy}
+        loading={busy}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  box: {
-    backgroundColor: "#fffbeb",
-    borderColor: "#fcd34d",
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 20,
-  },
-  title: { fontWeight: "700", color: "#78350f", marginBottom: 4 },
-  body: { color: "#78350f", marginBottom: 8 },
-  status: { color: "#166534", marginBottom: 8 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    box: {
+      backgroundColor: c.warningSoft,
+      borderColor: c.warningBorder,
+      borderWidth: 1,
+      borderRadius: 10,
+      padding: 14,
+      marginBottom: 20,
+    },
+    title: { fontWeight: "700", color: c.warningText, marginBottom: 4 },
+    body: { color: c.warningText, marginBottom: 8 },
+    status: { color: c.successText, marginBottom: 8 },
+  });

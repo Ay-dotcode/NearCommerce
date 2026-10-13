@@ -7,7 +7,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -16,6 +15,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ProductListSkeleton } from "@/components/skeletons";
+import { SCREEN_EDGES } from "@/theme/layout";
+import { useSearchRadius } from "@/src/hooks/useSearchRadius";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 const VISION_UNAVAILABLE_NOTICE =
   "Image search is unavailable right now. Text search is still working.";
@@ -30,21 +33,27 @@ function photoErrorMessage(error: unknown): string {
 }
 
 export default function SearchScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
+
   const params = useLocalSearchParams<{ q?: string }>();
   const [searchQuery, setSearchQuery] = useState(params.q ?? "");
   const location = useSessionCoords();
+  const radius = useSearchRadius();
   // Set once the server reports the vision model is down; photo search is then hidden
   // and text search carries on (SRS 3.2.1).
   const [visionUnavailable, setVisionUnavailable] = useState(false);
   const [photoNotice, setPhotoNotice] = useState<string | null>(null);
 
   const query = useQuery({
-    queryKey: ["search", searchQuery, location],
+    queryKey: ["search", searchQuery, location, radius.meters],
     queryFn: () =>
       searchProducts(
         searchQuery.trim(),
         location!.latitude,
         location!.longitude,
+        {},
+        radius.meters,
       ),
     enabled: searchQuery.trim().length > 2 && location !== null,
   });
@@ -55,7 +64,12 @@ export default function SearchScreen() {
       if (photo === "denied")
         throw Object.assign(new Error("denied"), { denied: true });
       if (photo === null) return null; // backed out of the picker
-      return searchByImage(photo, location!.latitude, location!.longitude);
+      return searchByImage(
+        photo,
+        location!.latitude,
+        location!.longitude,
+        radius.meters,
+      );
     },
     onMutate: () => setPhotoNotice(null),
     onError: (error) => {
@@ -86,19 +100,19 @@ export default function SearchScreen() {
   const busy = query.isLoading || photoSearch.isPending;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={SCREEN_EDGES}>
       <View style={styles.content}>
         <Text style={styles.heading}>Find nearby products</Text>
         <Text style={styles.subtitle}>
           Search across local stores in one place.
         </Text>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#718096" />
+          <Ionicons name="search" size={20} color={c.textMuted} />
           <TextInput
             autoFocus
             style={styles.input}
             placeholder="Search nearby products"
-            placeholderTextColor="#9aa7b5"
+            placeholderTextColor={c.placeholder}
             value={searchQuery}
             onChangeText={(text) => {
               setSearchQuery(text);
@@ -114,7 +128,7 @@ export default function SearchScreen() {
                 disabled={photoSearch.isPending}
                 onPress={() => startPhotoSearch("camera")}
               >
-                <Ionicons name="camera-outline" size={24} color="#2563eb" />
+                <Ionicons name="camera-outline" size={24} color={c.primary} />
               </Pressable>
               <Pressable
                 accessibilityLabel="Choose a photo from your library"
@@ -122,7 +136,7 @@ export default function SearchScreen() {
                 disabled={photoSearch.isPending}
                 onPress={() => startPhotoSearch("library")}
               >
-                <Ionicons name="image-outline" size={22} color="#2563eb" />
+                <Ionicons name="image-outline" size={22} color={c.primary} />
               </Pressable>
             </>
           )}
@@ -142,7 +156,7 @@ export default function SearchScreen() {
         )}
       </View>
 
-      {busy && <ActivityIndicator color="#2563eb" style={styles.loader} />}
+      {busy && <ProductListSkeleton />}
       {!busy && !showingPhoto && query.isError && (
         <Text style={styles.message}>
           Search is unavailable. Please try again.
@@ -182,31 +196,32 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f8fb" },
-  content: { padding: 20, paddingBottom: 8 },
-  heading: { color: "#123047", fontSize: 26, fontWeight: "800" },
-  subtitle: { color: "#718096", marginTop: 6, marginBottom: 18 },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: "#d9e2ec",
-  },
-  input: { flex: 1, color: "#123047", fontSize: 16 },
-  notice: { color: "#718096", fontSize: 12, marginTop: 10 },
-  detected: {
-    color: "#123047",
-    fontSize: 14,
-    fontWeight: "700",
-    marginTop: 12,
-  },
-  loader: { marginTop: 24 },
-  message: { color: "#718096", textAlign: "center", margin: 24 },
-  results: { padding: 20, paddingTop: 8 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    content: { padding: 20, paddingBottom: 8 },
+    heading: { color: c.text, fontSize: 26, fontWeight: "800" },
+    subtitle: { color: c.textMuted, marginTop: 6, marginBottom: 18 },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    input: { flex: 1, color: c.text, fontSize: 16 },
+    notice: { color: c.textMuted, fontSize: 12, marginTop: 10 },
+    detected: {
+      color: c.text,
+      fontSize: 14,
+      fontWeight: "700",
+      marginTop: 12,
+    },
+    loader: { marginTop: 24 },
+    message: { color: c.textMuted, textAlign: "center", margin: 24 },
+    results: { padding: 20, paddingTop: 8 },
+  });

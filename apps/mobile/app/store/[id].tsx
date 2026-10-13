@@ -5,14 +5,11 @@ import ReviewsSection from "@/components/ReviewsSection";
 import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StoreDetailSkeleton } from "@/components/skeletons";
+import { STACK_SCREEN_EDGES } from "@/theme/layout";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 interface Product {
   id: string;
@@ -36,6 +33,9 @@ interface Store {
 }
 
 export default function StoreDetailScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
+
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: store, isLoading } = useQuery({
@@ -49,24 +49,20 @@ export default function StoreDetailScreen() {
 
   if (isLoading)
     return (
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <ActivityIndicator
-          size="large"
-          color="#2563eb"
-          style={{ marginTop: 50 }}
-        />
+      <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
+        <StoreDetailSkeleton />
       </SafeAreaView>
     );
 
   if (!store)
     return (
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
         <Text style={styles.error}>Store not found or suspended.</Text>
       </SafeAreaView>
     );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
       <View style={styles.header}>
         <Text style={styles.title}>{store.name}</Text>
         <FavoriteButton storeId={store.id} />
@@ -116,32 +112,38 @@ export default function StoreDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: "#f9fafb" },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: { fontSize: 24, fontWeight: "bold", color: "#123047" },
-  address: { fontSize: 14, color: "#6b7280", marginBottom: 8 },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 20,
-  },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  open: { backgroundColor: "#dcfce7" },
-  closed: { backgroundColor: "#fee2e2" },
-  badgeText: { fontSize: 12, fontWeight: "800", color: "#123047" },
-  rating: { color: "#4b5563", fontSize: 14 },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#123047",
-    marginBottom: 10,
-  },
-  error: { textAlign: "center", marginTop: 50, fontSize: 16, color: "#6b7280" },
-  emptyText: { color: "#718096", textAlign: "center", marginTop: 20 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, padding: 15, backgroundColor: c.surfaceAlt },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    title: { fontSize: 24, fontWeight: "bold", color: c.text },
+    address: { fontSize: 14, color: c.textMuted, marginBottom: 8 },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 20,
+    },
+    badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+    open: { backgroundColor: c.successSoft },
+    closed: { backgroundColor: c.dangerSoft },
+    badgeText: { fontSize: 12, fontWeight: "800", color: c.text },
+    rating: { color: c.textSecondary, fontSize: 14 },
+    subtitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: c.text,
+      marginBottom: 10,
+    },
+    error: {
+      textAlign: "center",
+      marginTop: 50,
+      fontSize: 16,
+      color: c.textMuted,
+    },
+    emptyText: { color: c.textMuted, textAlign: "center", marginTop: 20 },
+  });

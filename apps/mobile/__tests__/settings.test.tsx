@@ -1,12 +1,28 @@
-import SettingsScreen from "@/app/(tabs)/settings";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiClient } from "@nearcommerce/api";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
+import SettingsContent from "@/components/settings/SettingsContent";
+import { DialogProvider } from "@/components/ui";
+const SettingsScreen = ({
+  onOpenZip = () => {},
+}: {
+  onOpenZip?: () => void;
+}) => (
+  <DialogProvider>
+    <SettingsContent onOpenZip={onOpenZip} onOpenSupport={() => {}} />
+  </DialogProvider>
+);
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(),
   getItem: jest.fn(() => Promise.resolve("false")),
+}));
+
+jest.mock("react-native-toast-message", () => ({
+  __esModule: true,
+  default: { show: jest.fn() },
 }));
 
 const mockLogout = jest.fn();
@@ -49,36 +65,37 @@ describe("SettingsScreen", () => {
   });
 
   describe("delete account", () => {
-    const pressConfirm = () => {
-      const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as {
-        text: string;
-        onPress?: () => void;
-      }[];
-      buttons.find((b) => b.text === "Delete account")!.onPress!();
-    };
+    const pressConfirm = async (utils: ReturnType<typeof render>) =>
+      fireEvent.press(await utils.findByTestId("dialog-confirm"));
 
     beforeEach(() => {
-      jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+      jest.spyOn(Alert, "alert");
     });
 
-    it("asks for confirmation before calling the API", () => {
+    it("asks for confirmation on a blurred sheet before calling the API", async () => {
       const del = jest.spyOn(apiClient, "delete");
-      const { getByText } = render(<SettingsScreen />);
-      fireEvent.press(getByText("Delete account"));
+      const utils = render(<SettingsScreen />);
+      fireEvent.press(utils.getByText("Delete account"));
 
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Delete your account?",
-        expect.any(String),
-        expect.any(Array),
-      );
+      expect(await utils.findByText("Delete your account?")).toBeTruthy();
+      expect(Alert.alert).not.toHaveBeenCalled();
       expect(del).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when the shopper cancels", async () => {
+      const del = jest.spyOn(apiClient, "delete");
+      const utils = render(<SettingsScreen />);
+      fireEvent.press(utils.getByText("Delete account"));
+      fireEvent.press(await utils.findByTestId("dialog-cancel"));
+      expect(del).not.toHaveBeenCalled();
+      expect(mockLogout).not.toHaveBeenCalled();
     });
 
     it("deletes via /users/me and then signs out", async () => {
       const del = jest.spyOn(apiClient, "delete").mockResolvedValue({});
-      const { getByText } = render(<SettingsScreen />);
-      fireEvent.press(getByText("Delete account"));
-      pressConfirm();
+      const utils = render(<SettingsScreen />);
+      fireEvent.press(utils.getByText("Delete account"));
+      await pressConfirm(utils);
 
       await waitFor(() => expect(mockLogout).toHaveBeenCalledTimes(1));
       expect(del).toHaveBeenCalledWith("/users/me");
@@ -88,14 +105,16 @@ describe("SettingsScreen", () => {
       jest.spyOn(apiClient, "delete").mockRejectedValue({
         response: { data: { error: "Server said no" } },
       });
-      const { getByText } = render(<SettingsScreen />);
-      fireEvent.press(getByText("Delete account"));
-      pressConfirm();
+      const utils = render(<SettingsScreen />);
+      fireEvent.press(utils.getByText("Delete account"));
+      await pressConfirm(utils);
 
       await waitFor(() =>
-        expect(Alert.alert).toHaveBeenLastCalledWith(
-          "Couldn't delete account",
-          "Server said no",
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({
+            text1: "Couldn't delete account",
+            text2: "Server said no",
+          }),
         ),
       );
       expect(mockLogout).not.toHaveBeenCalled();

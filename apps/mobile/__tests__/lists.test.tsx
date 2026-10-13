@@ -9,6 +9,7 @@ import Toast from "react-native-toast-message";
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
 jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 jest.mock("expo-router", () => ({
@@ -189,17 +190,20 @@ describe("ListDetailScreen rename and members", () => {
 
   it("doesn't call the API when the name is unchanged or blank", async () => {
     serveGet(api.get, { "/lists/list-1": detail() });
-    const { findByLabelText, getByLabelText, getByText } = renderWithClient(
+    const { findByLabelText, findByText, getByLabelText } = renderWithClient(
       <ListDetailScreen />,
     );
     fireEvent.press(await findByLabelText("Rename list"));
     fireEvent.press(getByLabelText("Save name"));
+    expect(await findByText("Home")).toBeTruthy();
     expect(api.patch).not.toHaveBeenCalled();
-    expect(getByText("Home")).toBeTruthy();
 
     fireEvent.press(getByLabelText("Rename list"));
     fireEvent.changeText(getByLabelText("List name"), "   ");
-    fireEvent.press(getByLabelText("Save name"));
+    // A blank name cannot even be submitted: the button is disabled.
+    expect(getByLabelText("Save name").props.accessibilityState.disabled).toBe(
+      true,
+    );
     expect(api.patch).not.toHaveBeenCalled();
   });
 
@@ -220,19 +224,15 @@ describe("ListDetailScreen rename and members", () => {
     api.patch.mockRejectedValue({
       response: { data: { error: "Only the list owner can rename it." } },
     });
-    const { findByLabelText, getByLabelText } = renderWithClient(
+    const { findByLabelText, findByText, getByLabelText } = renderWithClient(
       <ListDetailScreen />,
     );
     fireEvent.press(await findByLabelText("Rename list"));
     fireEvent.changeText(getByLabelText("List name"), "New");
     fireEvent.press(getByLabelText("Save name"));
-    await waitFor(() =>
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({
-          text2: "Only the list owner can rename it.",
-        }),
-      ),
-    );
+    // Shown inline under the field (no toast).
+    expect(await findByText("Only the list owner can rename it.")).toBeTruthy();
+    expect(Toast.show).not.toHaveBeenCalled();
   });
 
   it("hides rename from members", async () => {
@@ -257,16 +257,18 @@ describe("ListDetailScreen rename and members", () => {
 
   it("lets the owner remove a member after confirming", async () => {
     serveGet(api.get, { "/lists/list-1": detail() });
-    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
-    const { findByText, getByLabelText, queryByLabelText } = renderWithClient(
-      <ListDetailScreen />,
-    );
+    const alert = jest.spyOn(Alert, "alert");
+    const { findByText, getByLabelText, queryByLabelText, findByTestId } =
+      renderWithClient(<ListDetailScreen />);
     fireEvent.press(await findByText("Members (2)"));
     expect(queryByLabelText("Remove Ada")).toBeNull();
     fireEvent.press(getByLabelText("Remove Ben"));
     expect(api.delete).not.toHaveBeenCalled();
 
-    alert.mock.calls[0][2]!.find((b) => b.text === "Remove")!.onPress!();
+    // A blurred bottom sheet, not the phone's native alert box.
+    expect(await findByText("Remove Ben?")).toBeTruthy();
+    expect(alert).not.toHaveBeenCalled();
+    fireEvent.press(await findByTestId("dialog-confirm"));
     await waitFor(() =>
       expect(api.delete).toHaveBeenCalledWith("/lists/list-1/members/u2"),
     );
@@ -332,12 +334,8 @@ describe("ListsScreen", () => {
     await findByText(/No lists yet/);
     fireEvent.changeText(getByLabelText("New list name"), "Another");
     fireEvent.press(getByLabelText("Create list"));
-    await waitFor(() =>
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({
-          text2: "You can be in at most 10 lists. Leave one first.",
-        }),
-      ),
-    );
+    expect(
+      await findByText("You can be in at most 10 lists. Leave one first."),
+    ).toBeTruthy();
   });
 });

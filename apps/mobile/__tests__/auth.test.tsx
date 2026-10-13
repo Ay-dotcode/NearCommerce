@@ -6,6 +6,7 @@ import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Text } from "react-native";
 
 jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 jest.mock("expo-router", () => ({
@@ -13,6 +14,7 @@ jest.mock("expo-router", () => ({
   useLocalSearchParams: jest.fn(() => ({})),
 }));
 jest.mock("@nearcommerce/api", () => ({
+  ...jest.requireActual("@nearcommerce/api"),
   apiClient: {
     post: jest.fn(),
     defaults: { headers: { common: {} as Record<string, string> } },
@@ -23,8 +25,6 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(() => Promise.resolve(null)),
   removeItem: jest.fn(() => Promise.resolve()),
-  removeMany: jest.fn(() => Promise.resolve()),
-  setMany: jest.fn(() => Promise.resolve()),
 }));
 
 const api = require("@nearcommerce/api");
@@ -79,10 +79,11 @@ describe("AuthProvider token refresh", () => {
     await act(async () => {
       await handlers().onTokens({ accessToken: "a2", refreshToken: "r2" });
     });
-    expect(storage.setMany).toHaveBeenCalledWith({
-      "@nearcommerce_token": "a2",
-      "@nearcommerce_refresh_token": "r2",
-    });
+    expect(storage.setItem).toHaveBeenCalledWith("@nearcommerce_token", "a2");
+    expect(storage.setItem).toHaveBeenCalledWith(
+      "@nearcommerce_refresh_token",
+      "r2",
+    );
     expect(api.apiClient.defaults.headers.common.Authorization).toBe(
       "Bearer a2",
     );
@@ -97,7 +98,10 @@ describe("AuthProvider token refresh", () => {
     await act(async () => {
       await handlers().onAuthFailure();
     });
-    expect(storage.removeMany).toHaveBeenCalled();
+    expect(storage.removeItem).toHaveBeenCalledWith("@nearcommerce_token");
+    expect(storage.removeItem).toHaveBeenCalledWith(
+      "@nearcommerce_refresh_token",
+    );
     expect(getByTestId("token").props.children).toBe("none");
     expect(post).not.toHaveBeenCalled();
   });
@@ -125,11 +129,11 @@ describe("AuthProvider token refresh", () => {
 });
 
 describe("ForgotPasswordScreen", () => {
-  it("rejects an invalid email without calling the API", () => {
-    const { getByTestId, getByText } = render(<ForgotPasswordScreen />);
+  it("rejects an invalid email without calling the API", async () => {
+    const { getByTestId, findByText } = render(<ForgotPasswordScreen />);
     fireEvent.changeText(getByTestId("email-input"), "nope");
     fireEvent.press(getByTestId("send-reset-button"));
-    expect(getByText("Enter a valid email address.")).toBeTruthy();
+    expect(await findByText("Enter a valid email address.")).toBeTruthy();
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -172,18 +176,18 @@ describe("ResetPasswordScreen", () => {
     fireEvent.press(utils.getByTestId("reset-button"));
   };
 
-  it("validates code, length and matching passwords", () => {
+  it("validates code, length and matching passwords", async () => {
     const utils = render(<ResetPasswordScreen />);
     fill(utils, "longenough1", "longenough1");
     expect(
-      utils.getByText("Paste the reset code from your email."),
+      await utils.findByText("Paste the reset code from your email."),
     ).toBeTruthy();
     fill(utils, "short", "short", "tok");
     expect(
-      utils.getByText("Password must be at least 8 characters."),
+      await utils.findByText("Password must be at least 8 characters."),
     ).toBeTruthy();
     fill(utils, "longenough1", "different11");
-    expect(utils.getByText("Passwords do not match.")).toBeTruthy();
+    expect(await utils.findByText("Passwords do not match.")).toBeTruthy();
     expect(post).not.toHaveBeenCalled();
   });
 

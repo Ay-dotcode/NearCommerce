@@ -1,6 +1,7 @@
 import { openNativeMaps } from "@/utils/maps";
 import { Pressable, StyleSheet, Text } from "react-native";
 import Toast from "react-native-toast-message";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 
 type Props = { latitude: number; longitude: number; label: string };
 
@@ -9,6 +10,8 @@ export default function DirectionsButton({
   longitude,
   label,
 }: Props) {
+  const styles = useThemedStyles(makeStyles);
+
   const onPress = async () => {
     const opened = await openNativeMaps(latitude, longitude, label).catch(
       () => false,
@@ -33,14 +36,15 @@ export default function DirectionsButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    borderColor: "#2563eb",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  text: { color: "#2563eb", fontWeight: "700", fontSize: 15 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    button: {
+      borderColor: c.primary,
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingVertical: 10,
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    text: { color: c.primary, fontWeight: "700", fontSize: 15 },
+  });

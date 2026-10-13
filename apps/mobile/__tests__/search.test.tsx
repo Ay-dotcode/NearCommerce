@@ -6,6 +6,7 @@ import { fireEvent, waitFor } from "@testing-library/react-native";
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
 jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 jest.mock("expo-router", () => ({
@@ -95,6 +96,7 @@ describe("SearchScreen photo search", () => {
       mime_type: "image/jpeg",
       lat: 35.1,
       lng: 32.8,
+      radius_meters: 4828,
     });
   });
 

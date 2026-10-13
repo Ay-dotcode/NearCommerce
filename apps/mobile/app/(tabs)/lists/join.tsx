@@ -1,83 +1,83 @@
+import { apiErrorMessage } from "@/api/errors";
+import { Button, FormError, FormTextField } from "@/components/ui";
+import { useThemedStyles, type ThemeColors } from "@/theme";
+import { SCREEN_EDGES } from "@/theme/layout";
 import { apiClient } from "@nearcommerce/api";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput } from "react-native";
+import { FormikProvider, useFormik } from "formik";
+import { StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Yup from "yup";
+
+const schema = Yup.object({
+  code: Yup.string()
+    .trim()
+    .min(4, "Enter the full invite code.")
+    .required("Enter the invite code."),
+});
 
 export default function JoinListScreen() {
-  const [inviteCode, setInviteCode] = useState("");
+  const styles = useThemedStyles(makeStyles);
   const queryClient = useQueryClient();
 
-  const joinList = useMutation({
-    mutationFn: async (code: string) =>
-      apiClient.post("/lists/join", { invite_code: code }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
-      router.back();
+  const formik = useFormik({
+    initialValues: { code: "" },
+    validationSchema: schema,
+    validateOnChange: false,
+    onSubmit: async ({ code }, helpers) => {
+      helpers.setStatus(undefined);
+      try {
+        await apiClient.post("/lists/join", { invite_code: code.trim() });
+        queryClient.invalidateQueries({ queryKey: ["lists"] });
+        router.back();
+      } catch (err) {
+        // Shown in the form (not a pop-up): the code field turns red with the reason.
+        helpers.setStatus({
+          form: apiErrorMessage(err, "Invalid or expired invite code."),
+        });
+      }
     },
-    onError: () => Alert.alert("Error", "Invalid or expired invite code."),
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.container} edges={SCREEN_EDGES}>
       <Text style={styles.title}>Join a Household List</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Invite Code"
-        placeholderTextColor="#9ca3af"
-        value={inviteCode}
-        onChangeText={setInviteCode}
-        autoCapitalize="characters"
-      />
-      <Pressable
-        style={[
-          styles.button,
-          (joinList.isPending || inviteCode.trim().length < 4) &&
-            styles.buttonDisabled,
-        ]}
-        onPress={() => joinList.mutate(inviteCode.trim())}
-        disabled={joinList.isPending || inviteCode.trim().length < 4}
-      >
-        <Text style={styles.buttonText}>
-          {joinList.isPending ? "Joining..." : "Join List"}
-        </Text>
-      </Pressable>
+      <FormikProvider value={formik}>
+        <FormTextField
+          name="code"
+          testID="invite-code-input"
+          placeholder="Enter Invite Code"
+          accessibilityLabel="Invite code"
+          autoCapitalize="characters"
+          returnKeyType="done"
+          onSubmitEditing={() => formik.handleSubmit()}
+          invalid={Boolean(formik.status?.form)}
+        />
+        <FormError message={formik.status?.form} />
+        <Button
+          title="Join List"
+          loading={formik.isSubmitting}
+          onPress={() => formik.handleSubmit()}
+        />
+      </FormikProvider>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-    color: "#123047",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 15,
-    marginBottom: 20,
-    borderRadius: 8,
-    fontSize: 18,
-    textAlign: "center",
-    letterSpacing: 2,
-    color: "#123047",
-  },
-  button: {
-    backgroundColor: "#2563eb",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 20,
+      justifyContent: "center",
+      backgroundColor: c.background,
+    },
+    title: {
+      color: c.text,
+      fontSize: 24,
+      fontWeight: "bold",
+      marginBottom: 20,
+      textAlign: "center",
+    },
+  });

@@ -20,24 +20,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { ListDetailSkeleton } from "@/components/skeletons";
+import { InlineForm, useDialogs } from "@/components/ui";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 export default function ListDetailScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { confirm } = useDialogs();
+  const c = useColors();
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token } = useAuth();
   const queryClient = useQueryClient();
-  const [newItem, setNewItem] = useState("");
   const [renaming, setRenaming] = useState(false);
 
   const onGone = useCallback((reason: "deleted" | "revoked") => {
@@ -73,7 +70,6 @@ export default function ListDetailScreen() {
   const add = useMutation({
     mutationFn: (name: string) => addListItem(id!, { custom_item_name: name }),
     onSuccess: (item) => {
-      setNewItem("");
       if (item.already_on_list) {
         Toast.show({
           type: "info",
@@ -83,7 +79,6 @@ export default function ListDetailScreen() {
       }
       refresh();
     },
-    onError: onError("Couldn't add item"),
   });
 
   const toggle = useMutation({
@@ -127,7 +122,7 @@ export default function ListDetailScreen() {
   if (list.isLoading)
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#2563eb" style={styles.loader} />
+        <ListDetailSkeleton />
       </SafeAreaView>
     );
 
@@ -143,23 +138,18 @@ export default function ListDetailScreen() {
 
   const data = list.data;
   const isOwner = data.role === "OWNER";
-  const trimmed = newItem.trim();
 
-  const confirmLeave = () =>
-    Alert.alert(
-      isOwner ? "Delete this list?" : "Leave this list?",
-      isOwner
+  const confirmLeave = async () => {
+    const ok = await confirm({
+      title: isOwner ? "Delete this list?" : "Leave this list?",
+      message: isOwner
         ? "This removes the list for every member."
         : "You can rejoin later with an invite code.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: isOwner ? "Delete" : "Leave",
-          style: "destructive",
-          onPress: () => leaveOrDelete.mutate(isOwner),
-        },
-      ],
-    );
+      confirmLabel: isOwner ? "Delete" : "Leave",
+      destructive: true,
+    });
+    if (ok) leaveOrDelete.mutate(isOwner);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -170,7 +160,7 @@ export default function ListDetailScreen() {
           accessibilityLabel="Go back"
           hitSlop={8}
         >
-          <Ionicons name="chevron-back" size={26} color="#123047" />
+          <Ionicons name="chevron-back" size={26} color={c.text} />
         </Pressable>
         {renaming ? (
           <RenameListForm
@@ -193,7 +183,7 @@ export default function ListDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Rename list"
               >
-                <Ionicons name="pencil" size={18} color="#2563eb" />
+                <Ionicons name="pencil" size={18} color={c.primary} />
               </Pressable>
             )}
           </>
@@ -221,7 +211,7 @@ export default function ListDetailScreen() {
               disabled={regenerate.isPending}
               accessibilityRole="button"
             >
-              <Ionicons name="refresh-outline" size={16} color="#991b1b" />
+              <Ionicons name="refresh-outline" size={16} color={c.dangerText} />
               <Text style={styles.actionText}>Regenerate invite code</Text>
             </Pressable>
           )}
@@ -231,7 +221,7 @@ export default function ListDetailScreen() {
             disabled={leaveOrDelete.isPending}
             accessibilityRole="button"
           >
-            <Ionicons name="exit-outline" size={16} color="#991b1b" />
+            <Ionicons name="exit-outline" size={16} color={c.dangerText} />
             <Text style={styles.actionText}>
               {isOwner ? "Delete list" : "Leave list"}
             </Text>
@@ -239,31 +229,15 @@ export default function ListDetailScreen() {
         </View>
       </View>
 
-      <View style={styles.addRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Add an item"
-          placeholderTextColor="#9ca3af"
-          value={newItem}
-          onChangeText={setNewItem}
-          maxLength={255}
-          accessibilityLabel="Add an item"
-          returnKeyType="done"
-          onSubmitEditing={() => trimmed && add.mutate(trimmed)}
-        />
-        <Pressable
-          style={[
-            styles.addButton,
-            (!trimmed || add.isPending) && styles.disabled,
-          ]}
-          disabled={!trimmed || add.isPending}
-          onPress={() => add.mutate(trimmed)}
-          accessibilityRole="button"
-          accessibilityLabel="Add item"
-        >
-          <Ionicons name="add" size={22} color="#fff" />
-        </Pressable>
-      </View>
+      <InlineForm
+        accessibilityLabel="Add an item"
+        placeholder="Add an item"
+        maxLength={255}
+        submitIcon="add"
+        submitAccessibilityLabel="Add item"
+        errorFallback="Couldn't add the item. Please try again."
+        onSubmit={(item) => add.mutateAsync(item)}
+      />
 
       <FlatList
         data={data.items}
@@ -285,7 +259,7 @@ export default function ListDetailScreen() {
                 <Ionicons
                   name={item.is_checked ? "checkbox" : "square-outline"}
                   size={24}
-                  color={item.is_checked ? "#10b981" : "#6b7280"}
+                  color={item.is_checked ? c.success : c.textMuted}
                 />
                 <Text
                   style={[
@@ -302,7 +276,11 @@ export default function ListDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${label}`}
               >
-                <Ionicons name="trash-outline" size={20} color="#9ca3af" />
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color={c.placeholder}
+                />
               </Pressable>
             </View>
           );
@@ -312,71 +290,72 @@ export default function ListDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f8fb", padding: 20 },
-  loader: { marginTop: 32 },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  title: { color: "#123047", fontSize: 24, fontWeight: "800", flex: 1 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  online: { backgroundColor: "#10b981" },
-  offline: { backgroundColor: "#f59e0b" },
-  header: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  inviteCode: { color: "#123047", fontWeight: "700" },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    padding: 10,
-    backgroundColor: "#fee2e2",
-    borderRadius: 8,
-  },
-  actionText: { color: "#991b1b", fontWeight: "800" },
-  addRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  input: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#d9e2ec",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    color: "#123047",
-    fontSize: 16,
-  },
-  addButton: {
-    backgroundColor: "#2563eb",
-    borderRadius: 10,
-    width: 46,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  disabled: { opacity: 0.5 },
-  message: { color: "#718096", textAlign: "center", marginTop: 24 },
-  link: {
-    color: "#2563eb",
-    fontWeight: "700",
-    textAlign: "center",
-    marginTop: 12,
-  },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  itemMain: { flex: 1, flexDirection: "row", alignItems: "center" },
-  itemName: { color: "#123047", fontSize: 16, marginLeft: 12, flex: 1 },
-  itemChecked: { textDecorationLine: "line-through", color: "#9ca3af" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background, padding: 20 },
+    loader: { marginTop: 32 },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 12,
+    },
+    title: { color: c.text, fontSize: 24, fontWeight: "800", flex: 1 },
+    dot: { width: 8, height: 8, borderRadius: 4 },
+    online: { backgroundColor: c.success },
+    offline: { backgroundColor: c.warningStrong },
+    header: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+    },
+    inviteCode: { color: c.text, fontWeight: "700" },
+    actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
+    actionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      padding: 10,
+      backgroundColor: c.dangerSoft,
+      borderRadius: 8,
+    },
+    actionText: { color: c.dangerText, fontWeight: "800" },
+    addRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+    input: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      color: c.text,
+      fontSize: 16,
+    },
+    addButton: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      width: 46,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    disabled: { opacity: 0.5 },
+    message: { color: c.textMuted, textAlign: "center", marginTop: 24 },
+    link: {
+      color: c.primary,
+      fontWeight: "700",
+      textAlign: "center",
+      marginTop: 12,
+    },
+    itemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderColor: c.border,
+    },
+    itemMain: { flex: 1, flexDirection: "row", alignItems: "center" },
+    itemName: { color: c.text, fontSize: 16, marginLeft: 12, flex: 1 },
+    itemChecked: { textDecorationLine: "line-through", color: c.placeholder },
+  });

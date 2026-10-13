@@ -7,17 +7,13 @@ import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { ProductDetailSkeleton } from "@/components/skeletons";
+import { useDialogs } from "@/components/ui";
+import { STACK_SCREEN_EDGES } from "@/theme/layout";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 interface ProductDetail {
   id: string;
@@ -37,6 +33,10 @@ interface ProductDetail {
 }
 
 export default function ProductDetailScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { choose } = useDialogs();
+  const c = useColors();
+
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: product, isLoading } = useQuery({
@@ -74,13 +74,12 @@ export default function ProductDetailScreen() {
       const lists = await fetchLists();
       if (lists.length === 0) return router.push("/(tabs)/lists");
       if (lists.length === 1) return addToList(lists[0].id, lists[0].name);
-      Alert.alert("Add to which list?", undefined, [
-        ...lists.slice(0, 5).map((l) => ({
-          text: l.name,
-          onPress: () => addToList(l.id, l.name),
-        })),
-        { text: "Cancel", style: "cancel" as const },
-      ]);
+      const chosen = await choose({
+        title: "Add to which list?",
+        options: lists.slice(0, 5).map((l) => ({ label: l.name, value: l.id })),
+      });
+      const list = lists.find((l) => l.id === chosen);
+      if (list) await addToList(list.id, list.name);
     } catch (error) {
       Toast.show({
         type: "error",
@@ -92,18 +91,14 @@ export default function ProductDetailScreen() {
 
   if (isLoading)
     return (
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <ActivityIndicator
-          size="large"
-          color="#2563eb"
-          style={{ marginTop: 50 }}
-        />
+      <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
+        <ProductDetailSkeleton />
       </SafeAreaView>
     );
 
   if (!product)
     return (
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
         <Text style={styles.error}>Product not found.</Text>
       </SafeAreaView>
     );
@@ -111,7 +106,7 @@ export default function ProductDetailScreen() {
   const isFresh = !product.isStale;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <Text style={styles.title}>{product.name}</Text>
@@ -167,47 +162,53 @@ export default function ProductDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  scroll: { flexGrow: 1, paddingBottom: 24 },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: { fontSize: 26, fontWeight: "bold", flex: 1, color: "#123047" },
-  storeLink: {
-    fontSize: 16,
-    color: "#2563eb",
-    marginVertical: 10,
-    textDecorationLine: "underline",
-  },
-  metaContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginVertical: 20,
-  },
-  price: { fontSize: 22, fontWeight: "bold", color: "#111827" },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  badgeFresh: { backgroundColor: "#d1fae5" },
-  badgeStale: { backgroundColor: "#fee2e2" },
-  badgeText: { fontSize: 12, fontWeight: "600", color: "#374151" },
-  inStock: { color: "#10b981", fontSize: 14, fontWeight: "bold" },
-  outOfStock: { color: "#ef4444", fontSize: 14, fontWeight: "bold" },
-  description: {
-    fontSize: 16,
-    color: "#4b5563",
-    lineHeight: 24,
-    marginBottom: 30,
-  },
-  actions: { marginTop: 8, marginBottom: 8 },
-  actionButton: {
-    backgroundColor: "#2563eb",
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  actionButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  error: { textAlign: "center", marginTop: 50, fontSize: 16, color: "#6b7280" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, padding: 20, backgroundColor: c.surface },
+    scroll: { flexGrow: 1, paddingBottom: 24 },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    title: { fontSize: 26, fontWeight: "bold", flex: 1, color: c.text },
+    storeLink: {
+      fontSize: 16,
+      color: c.primary,
+      marginVertical: 10,
+      textDecorationLine: "underline",
+    },
+    metaContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginVertical: 20,
+    },
+    price: { fontSize: 22, fontWeight: "bold", color: c.text },
+    badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+    badgeFresh: { backgroundColor: c.successSoft },
+    badgeStale: { backgroundColor: c.dangerSoft },
+    badgeText: { fontSize: 12, fontWeight: "600", color: c.textSecondary },
+    inStock: { color: c.success, fontSize: 14, fontWeight: "bold" },
+    outOfStock: { color: c.heart, fontSize: 14, fontWeight: "bold" },
+    description: {
+      fontSize: 16,
+      color: c.textSecondary,
+      lineHeight: 24,
+      marginBottom: 30,
+    },
+    actions: { marginTop: 8, marginBottom: 8 },
+    actionButton: {
+      backgroundColor: c.primary,
+      borderRadius: 8,
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+    actionButtonText: { color: c.onPrimary, fontWeight: "bold", fontSize: 16 },
+    error: {
+      textAlign: "center",
+      marginTop: 50,
+      fontSize: 16,
+      color: c.textMuted,
+    },
+  });

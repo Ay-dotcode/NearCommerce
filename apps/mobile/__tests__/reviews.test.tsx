@@ -8,6 +8,7 @@ import Toast from "react-native-toast-message";
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
 jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 jest.mock("expo-router", () => ({
@@ -139,15 +140,16 @@ describe("ReviewsSection", () => {
       data: page([review({ is_mine: true })], 1),
     });
     api.delete.mockResolvedValue({});
-    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
-    const { findByLabelText } = renderWithClient(
+    const alert = jest.spyOn(Alert, "alert");
+    const { findByLabelText, findByTestId, findByText } = renderWithClient(
       <ReviewsSection target={target} />,
     );
     fireEvent.press(await findByLabelText("Delete your review"));
     expect(api.delete).not.toHaveBeenCalled();
 
-    const buttons = alert.mock.calls[0][2]!;
-    buttons.find((b) => b.text === "Delete")!.onPress!();
+    expect(await findByText("Delete your review?")).toBeTruthy();
+    expect(alert).not.toHaveBeenCalled();
+    fireEvent.press(await findByTestId("dialog-confirm"));
     await waitFor(() => expect(api.delete).toHaveBeenCalledWith("/reviews/r1"));
     await waitFor(() =>
       expect(Toast.show).toHaveBeenCalledWith(

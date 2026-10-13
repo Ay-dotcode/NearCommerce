@@ -1,5 +1,6 @@
-import SettingsScreen from "@/app/(tabs)/settings";
 import LocationFallbackModal from "@/components/LocationFallbackModal";
+import SettingsContent from "@/components/settings/SettingsContent";
+import { DialogProvider } from "@/components/ui";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import {
   PostalCodeError,
@@ -19,6 +20,15 @@ import {
   waitFor,
 } from "@testing-library/react-native";
 import * as Location from "expo-location";
+const SettingsScreen = ({
+  onOpenZip = () => {},
+}: {
+  onOpenZip?: () => void;
+}) => (
+  <DialogProvider>
+    <SettingsContent onOpenZip={onOpenZip} onOpenSupport={() => {}} />
+  </DialogProvider>
+);
 
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(),
@@ -227,10 +237,11 @@ describe("LocationFallbackModal", () => {
 
 describe("Settings location", () => {
   it("shows the device location by default and opens the ZIP dialog", async () => {
-    const { getByText, findByText } = render(<SettingsScreen />);
+    const onOpenZip = jest.fn();
+    const { getByText } = render(<SettingsScreen onOpenZip={onOpenZip} />);
     expect(getByText("Using your device location")).toBeTruthy();
     fireEvent.press(getByText("Set location by ZIP code"));
-    expect(await findByText("Set your location")).toBeTruthy();
+    expect(onOpenZip).toHaveBeenCalled();
   });
 
   it("shows the saved ZIP code and can switch back to the device", async () => {

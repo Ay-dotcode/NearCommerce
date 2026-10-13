@@ -1,11 +1,13 @@
+import { useDialogs } from "@/components/ui";
 import { apiErrorMessage } from "@/api/errors";
 import { removeMember } from "@/api/lists";
 import type { ListMember } from "@/types/lists";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 type Props = {
   listId: string;
@@ -23,6 +25,10 @@ export default function ListMembers({
   isOwner,
   onChanged,
 }: Props) {
+  const styles = useThemedStyles(makeStyles);
+  const { confirm } = useDialogs();
+  const c = useColors();
+
   const [open, setOpen] = useState(false);
 
   const remove = useMutation({
@@ -36,19 +42,16 @@ export default function ListMembers({
       }),
   });
 
-  const confirmRemove = (member: ListMember) =>
-    Alert.alert(
-      `Remove ${member.full_name}?`,
-      "They lose access to this list. They can rejoin with the invite code, so regenerate it if you want to keep them out.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: () => remove.mutate(member.user_id),
-        },
-      ],
-    );
+  const confirmRemove = async (member: ListMember) => {
+    const ok = await confirm({
+      title: `Remove ${member.full_name}?`,
+      message:
+        "They lose access to this list. They can rejoin with the invite code, so regenerate it if you want to keep them out.",
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (ok) remove.mutate(member.user_id);
+  };
 
   return (
     <View style={styles.wrap}>
@@ -62,7 +65,7 @@ export default function ListMembers({
         <Ionicons
           name={open ? "chevron-up" : "chevron-down"}
           size={18}
-          color="#123047"
+          color={c.text}
         />
       </Pressable>
 
@@ -89,7 +92,7 @@ export default function ListMembers({
                   <Ionicons
                     name="person-remove-outline"
                     size={20}
-                    color="#b91c1c"
+                    color={c.danger}
                   />
                 </Pressable>
               )}
@@ -100,23 +103,24 @@ export default function ListMembers({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginTop: 12 },
-  toggle: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  toggleText: { color: "#123047", fontWeight: "700" },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderColor: "#eef2f6",
-    marginTop: 8,
-  },
-  name: { flex: 1, color: "#123047" },
-  role: { color: "#718096", fontSize: 12 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    wrap: { marginTop: 12 },
+    toggle: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    toggleText: { color: c.text, fontWeight: "700" },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 8,
+      borderTopWidth: 1,
+      borderColor: c.border,
+      marginTop: 8,
+    },
+    name: { flex: 1, color: c.text },
+    role: { color: c.textMuted, fontSize: 12 },
+  });
