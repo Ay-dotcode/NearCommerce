@@ -21,7 +21,6 @@ export function BlurBackdrop({
       <BlurView
         intensity={40}
         tint={isDark ? "dark" : "light"}
-        blurMethod="dimezisBlurView"
         style={StyleSheet.absoluteFill}
         testID={`${testID}-blur`}
       />
