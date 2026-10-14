@@ -32,13 +32,6 @@ const httpServer = http.createServer(app);
 
   httpServer.listen(PORT, () => {
     console.log(`🚀 NearCommerce Backend running on http://localhost:${PORT}`);
-    console.log(`➡️Register: POST http://localhost:${PORT}/auth/register`);
-    console.log(
-      `➡️Add List Item:POST http://localhost:${PORT}/lists/:list_id/items`,
-    );
-    console.log(
-      `➡️Regenerate Invite: POST http://localhost:${PORT}/lists/:list_id/regenerate-invite`,
-    );
     console.log(`🔌 Socket.io listening on ws://localhost:${PORT}`);
   });
 })();
