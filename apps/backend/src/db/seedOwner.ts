@@ -53,7 +53,7 @@ export async function seedOwner(poolInstance?: Pool) {
   if (storeResult.rows.length === 0) {
     const newStore = await activePool.query(
       `INSERT INTO stores (owner_id, name, description, address, latitude, longitude, timezone, opening_hours, is_suspended)
-       VALUES ($1, 'Downtown Fresh Market', 'Local organic groceries & pantry essentials', '123 Market St, San Francisco, CA', 37.7749, -122.4194, 'America/Los_Angeles', '{"monday": {"open": "08:00", "close": "20:00"}}'::jsonb, false)
+       VALUES ($1, 'Lefke Fresh Market', 'Local groceries & pantry essentials in Lefke', 'Ecevit Cad., Lefke, Cyprus', 35.1167, 32.8500, 'Asia/Nicosia', '{"monday": {"open": "08:00", "close": "20:00"}, "tuesday": {"open": "08:00", "close": "20:00"}, "wednesday": {"open": "08:00", "close": "20:00"}, "thursday": {"open": "08:00", "close": "20:00"}, "friday": {"open": "08:00", "close": "20:00"}, "saturday": {"open": "09:00", "close": "18:00"}}'::jsonb, false)
        RETURNING id, name`,
       [user.id],
     );

@@ -2,6 +2,7 @@ import { db } from "@/config/database";
 import redisClient, { connectRedis } from "@/config/redis";
 import { seedAdmin } from "@/db/seedAdmin";
 import { seedOwner } from "@/db/seedOwner";
+import { seedDefaultCatalog } from "@/features/catalog/services/category.service";
 import fs from "fs";
 import path from "path";
 
@@ -40,6 +41,10 @@ async function clearDbAndCache() {
     console.log("🌱 Seeding default database records...");
     await seedAdmin(db);
     await seedOwner(db);
+    const catalogResult = await seedDefaultCatalog();
+    console.log(
+      `✅ Catalog seeded: ${catalogResult.categoriesCreated} categories, ${catalogResult.subcategoriesCreated} subcategories.`,
+    );
     console.log("✅ Database seeded successfully.");
 
     console.log("🎉 Database and cache cleared & seeded completely!");
