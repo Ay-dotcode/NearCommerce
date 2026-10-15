@@ -4,15 +4,15 @@ import {
   ROLE_LABELS,
   userActionRules,
   type UserActionKind,
-} from "@/lib/userActions";
+} from "@/helpers/userActions";
 import type { AdminUser } from "@/types/admin";
+import { formatDate, initialOf, timeAgo } from "@nearcommerce/helpers";
 import {
   Badge,
   Button,
   Modal,
   Skeleton,
   SkeletonGroup,
-  timeAgo,
 } from "@nearcommerce/ui";
 import { useQuery } from "@tanstack/react-query";
 
@@ -22,13 +22,6 @@ interface Props {
   onClose: () => void;
   onAction: (kind: UserActionKind, user: AdminUser) => void;
 }
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 
 function Detail({
   label,
@@ -137,7 +130,7 @@ export function UserDetailsModal({
               aria-hidden="true"
               className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-100 text-lg font-semibold text-brand-800"
             >
-              {shown.full_name.trim().charAt(0).toUpperCase() || "?"}
+              {initialOf(shown.full_name)}
             </div>
             <div className="min-w-0">
               <h3 className="truncate text-lg font-semibold">

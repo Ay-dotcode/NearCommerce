@@ -11,9 +11,11 @@ import {
 import { CategoriesSkeleton } from "@/components/PageSkeletons";
 import { ReasonDialog } from "@/components/ReasonDialog";
 import { ADMIN_CATEGORIES_KEY } from "@/constants";
+import { deleteConsequences, type Deleting } from "@/helpers/catalog";
 import { NameFormDialog } from "@/pages/categories/NameFormDialog";
 import type { AdminCategory, AdminSubcategory } from "@/types/admin";
-import { categoryEmoji, parseApiError } from "@nearcommerce/api";
+import { parseApiError } from "@nearcommerce/api";
+import { categoryEmoji, pluralize } from "@nearcommerce/helpers";
 import { Button, EmptyState } from "@nearcommerce/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -24,13 +26,6 @@ type CategoryForm =
 type SubForm =
   | { mode: "create"; category: AdminCategory }
   | { mode: "edit"; category: AdminCategory; sub: AdminSubcategory };
-type Deleting =
-  | { kind: "category"; category: AdminCategory }
-  | { kind: "sub"; category: AdminCategory; sub: AdminSubcategory };
-
-const plural = (n: number, one: string, many = `${one}s`) =>
-  `${n} ${n === 1 ? one : many}`;
-
 export default function Categories() {
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -50,7 +45,7 @@ export default function Categories() {
       setNotice(
         c + s === 0
           ? result.message
-          : `Added ${plural(c, "category", "categories")} and ${plural(s, "subcategory", "subcategories")}.`,
+          : `Added ${pluralize(c, "category", "categories")} and ${pluralize(s, "subcategory", "subcategories")}.`,
       );
       await refresh();
     },
@@ -70,24 +65,6 @@ export default function Categories() {
     : Array.isArray((query.data as any)?.data)
       ? (query.data as any).data
       : [];
-
-  const deleteConsequences = (d: Deleting) => {
-    if (d.kind === "sub") {
-      const n = d.sub.product_count;
-      return n === 0
-        ? `"${d.sub.name}" has no products. This can't be undone.`
-        : `${plural(n, "product")} in "${d.sub.name}" will become uncategorised and stay on sale. This can't be undone.`;
-    }
-    const subs = d.category.subcategories.length;
-    const n = d.category.product_count;
-    const parts = [
-      subs > 0 ? `its ${plural(subs, "subcategory", "subcategories")}` : null,
-      n > 0 ? `${plural(n, "product")} will become uncategorised` : null,
-    ].filter(Boolean);
-    return parts.length === 0
-      ? `"${d.category.name}" is empty. This can't be undone.`
-      : `Deleting "${d.category.name}" also deletes ${parts.join("; ")}. This can't be undone.`;
-  };
 
   return (
     <section>
@@ -211,8 +188,8 @@ export default function Categories() {
                     {category.name}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {plural(category.product_count, "product")} ·{" "}
-                    {plural(
+                    {pluralize(category.product_count, "product")} ·{" "}
+                    {pluralize(
                       category.subcategories.length,
                       "subcategory",
                       "subcategories",
@@ -262,7 +239,7 @@ export default function Categories() {
                       <div className="min-w-0">
                         <span className="font-medium">{sub.name}</span>
                         <span className="ml-2 text-xs text-slate-500">
-                          {plural(sub.product_count, "product")}
+                          {pluralize(sub.product_count, "product")}
                         </span>
                       </div>
                       <div className="flex gap-1">

@@ -3,6 +3,8 @@ import { ActivityChart } from "@/components/ActivityChart";
 import { BreakdownBars } from "@/components/BreakdownBars";
 import { DashboardSkeleton } from "@/components/PageSkeletons";
 import { ADMIN_AUDIT_LOGS_KEY } from "@/constants";
+import { actionLabel } from "@/helpers/audit";
+import { timeAgo } from "@nearcommerce/helpers";
 import {
   Badge,
   Card,
@@ -11,7 +13,6 @@ import {
   CardTitle,
   Skeleton,
   SkeletonGroup,
-  timeAgo,
 } from "@nearcommerce/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -28,23 +29,6 @@ const metricCards = [
 ] as const;
 
 type Metrics = NonNullable<Awaited<ReturnType<typeof getGlobalMetrics>>>;
-
-const ACTION_LABELS: Record<string, string> = {
-  SUSPEND_USER: "Suspended a user",
-  UNSUSPEND_USER: "Unsuspended a user",
-  DEMOTE_ADMIN: "Demoted an admin",
-  DELETE_USER: "Deleted a user",
-  SUSPEND_STORE: "Suspended a store",
-  UNSUSPEND_STORE: "Unsuspended a store",
-  DELETE_STORE: "Deleted a store",
-  DELETE_REVIEW: "Deleted a review",
-  DELETE_CATEGORY: "Deleted a category",
-  DELETE_SUBCATEGORY: "Deleted a subcategory",
-};
-
-const actionLabel = (action: string) =>
-  ACTION_LABELS[action] ??
-  action.charAt(0) + action.slice(1).toLowerCase().replace(/_/g, " ");
 
 export default function Dashboard() {
   const query = useQuery({

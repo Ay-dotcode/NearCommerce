@@ -1,5 +1,6 @@
+import { niceMax } from "@/helpers/chart";
 import type { ActivityDay } from "@/types/admin";
-import { cn } from "@nearcommerce/ui";
+import { cn, formatShortDate } from "@nearcommerce/helpers";
 
 type SeriesKey = "users" | "stores" | "reviews";
 
@@ -28,19 +29,6 @@ const SERIES: { key: SeriesKey; label: string; stroke: string; dot: string }[] =
 const W = 640;
 const H = 240;
 const PAD = { top: 12, right: 12, bottom: 28, left: 32 };
-
-// Rounds the top of the axis up to a tidy number so gridlines land on whole counts.
-const niceMax = (max: number) => {
-  if (max <= 4) return 4;
-  const step = 10 ** Math.floor(Math.log10(max));
-  return Math.ceil(max / step) * step;
-};
-
-const shortDate = (iso: string) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
 
 // Line chart of daily signups, new stores and new reviews. Drawn as plain SVG so it follows the
 // light/dark theme through the shared colour tokens; each point carries a native tooltip and
@@ -105,7 +93,7 @@ export function ActivityChart({ data }: { data: ActivityDay[] }) {
               textAnchor="middle"
               className="fill-slate-500 text-[10px]"
             >
-              {shortDate(d.date)}
+              {formatShortDate(d.date)}
             </text>
           ) : null,
         )}
@@ -129,7 +117,7 @@ export function ActivityChart({ data }: { data: ActivityDay[] }) {
                 className={cn(s.stroke, "fill-white")}
                 strokeWidth={2}
               >
-                <title>{`${shortDate(d.date)}: ${d[s.key]} ${s.label.toLowerCase()}`}</title>
+                <title>{`${formatShortDate(d.date)}: ${d[s.key]} ${s.label.toLowerCase()}`}</title>
               </circle>
             ))}
           </g>
@@ -149,7 +137,7 @@ export function ActivityChart({ data }: { data: ActivityDay[] }) {
         <tbody>
           {data.map((d) => (
             <tr key={d.date}>
-              <td>{shortDate(d.date)}</td>
+              <td>{formatShortDate(d.date)}</td>
               {SERIES.map((s) => (
                 <td key={s.key}>{d[s.key]}</td>
               ))}

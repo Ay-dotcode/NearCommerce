@@ -1,7 +1,7 @@
-import { CreateSubcategorySchema, parseApiError } from "@nearcommerce/api";
-import { Button, FormTextField, Modal } from "@nearcommerce/ui";
-import { FormikProvider, useFormik } from "formik";
-import { useEffect, useId } from "react";
+import { NameForm } from "@/forms/NameForm";
+import { useNameForm } from "@/forms/useNameForm";
+import { Button, Modal } from "@nearcommerce/ui";
+import { useId } from "react";
 
 interface Props {
   open: boolean;
@@ -13,6 +13,7 @@ interface Props {
   onSubmit: (name: string) => Promise<void>;
 }
 
+// Dialog to add or rename a category or subcategory. The form itself lives in forms/.
 export function NameFormDialog({
   open,
   title,
@@ -23,37 +24,7 @@ export function NameFormDialog({
   onSubmit,
 }: Props) {
   const formId = useId();
-  const formik = useFormik({
-    initialValues: { name: initialName },
-    validate: (values) => {
-      const parsed = CreateSubcategorySchema.safeParse(values);
-      return parsed.success ? {} : { name: parsed.error.issues[0].message };
-    },
-    validateOnChange: false,
-    onSubmit: async (values, helpers) => {
-      const name = CreateSubcategorySchema.parse(values).name;
-      try {
-        await onSubmit(name);
-      } catch (err) {
-        const parsed = parseApiError(
-          err,
-          "We couldn't save that. Please try again.",
-        );
-        helpers.setFieldError(
-          "name",
-          parsed.details.find((d) => d.path === "name")?.message ??
-            parsed.message,
-        );
-      }
-    },
-  });
-
-  const { resetForm } = formik;
-  useEffect(() => {
-    if (open) resetForm({ values: { name: initialName } });
-  }, [open, initialName, resetForm]);
-
-  const busy = formik.isSubmitting;
+  const { formik, busy } = useNameForm(open, initialName, onSubmit);
 
   return (
     <Modal
@@ -79,22 +50,7 @@ export function NameFormDialog({
         </>
       }
     >
-      <FormikProvider value={formik}>
-        <form
-          id={formId}
-          onSubmit={formik.handleSubmit}
-          noValidate
-          className="space-y-4"
-        >
-          <FormTextField
-            name="name"
-            label="Name"
-            data-autofocus
-            autoComplete="off"
-            error={formik.errors.name}
-          />
-        </form>
-      </FormikProvider>
+      <NameForm formik={formik} formId={formId} />
     </Modal>
   );
 }

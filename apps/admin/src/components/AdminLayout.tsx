@@ -1,5 +1,6 @@
 import { getAccessToken, getUserRole, signOutEverywhere } from "@/session";
-import { BrandIcon, Button, cn, Drawer } from "@nearcommerce/ui";
+import { cn } from "@nearcommerce/helpers";
+import { BrandIcon, Button, Drawer } from "@nearcommerce/ui";
 import { useState } from "react";
 import {
   Navigate,

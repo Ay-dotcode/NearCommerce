@@ -2,7 +2,7 @@ import { deleteStore, getStores, toggleStoreSuspension } from "@/api/admin";
 import { TableSkeleton } from "@/components/PageSkeletons";
 import { ReasonDialog } from "@/components/ReasonDialog";
 import { ADMIN_AUDIT_LOGS_KEY, ADMIN_STORES_KEY } from "@/constants";
-import type { AdminStore } from "@/types/admin";
+import { storeActionCopy, type StoreAction } from "@/helpers/storeActions";
 import {
   Badge,
   Button,
@@ -16,41 +16,10 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-type Action = { kind: "suspend" | "delete"; store: AdminStore };
-
-function dialogCopy({ kind, store }: Action) {
-  if (kind === "delete")
-    return {
-      title: `Delete ${store.name}?`,
-      description:
-        "This permanently removes the store and all of its inventory. A snapshot is kept in the audit log.",
-      confirmLabel: "Delete store",
-      busyLabel: "Deleting…",
-      tone: "danger" as const,
-    };
-  return store.is_suspended
-    ? {
-        title: `Unsuspend ${store.name}?`,
-        description:
-          "The store and its published products become visible again.",
-        confirmLabel: "Unsuspend",
-        busyLabel: "Unsuspending…",
-        tone: "primary" as const,
-      }
-    : {
-        title: `Suspend ${store.name}?`,
-        description:
-          "The store is hidden from search and direct links right away.",
-        confirmLabel: "Suspend",
-        busyLabel: "Suspending…",
-        tone: "danger" as const,
-      };
-}
-
 export default function Stores() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [action, setAction] = useState<Action | null>(null);
+  const [action, setAction] = useState<StoreAction | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const query = useQuery({
@@ -59,7 +28,7 @@ export default function Stores() {
   });
 
   const run = useMutation({
-    mutationFn: ({ act, reason }: { act: Action; reason: string }) =>
+    mutationFn: ({ act, reason }: { act: StoreAction; reason: string }) =>
       act.kind === "delete"
         ? deleteStore(act.store.id, reason)
         : toggleStoreSuspension(act.store.id, !act.store.is_suspended, reason),
@@ -88,7 +57,7 @@ export default function Stores() {
         (query.data?.pagination.limit ?? 20),
     ),
   );
-  const dialog = action && dialogCopy(action);
+  const dialog = action && storeActionCopy(action);
 
   return (
     <section>

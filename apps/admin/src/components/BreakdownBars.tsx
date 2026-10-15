@@ -1,4 +1,4 @@
-import { cn } from "@nearcommerce/ui";
+import { cn } from "@nearcommerce/helpers";
 
 export interface BreakdownItem {
   label: string;

@@ -1,8 +1,7 @@
-import { MIN_REASON_LENGTH } from "@/constants";
-import { parseApiError } from "@nearcommerce/api";
-import { Button, FormTextAreaField, Modal } from "@nearcommerce/ui";
-import { FormikProvider, useFormik } from "formik";
-import { useEffect, useId } from "react";
+import { ReasonForm } from "@/forms/ReasonForm";
+import { useReasonForm } from "@/forms/useReasonForm";
+import { Button, Modal } from "@nearcommerce/ui";
+import { useId } from "react";
 
 interface ReasonDialogProps {
   open: boolean;
@@ -18,8 +17,8 @@ interface ReasonDialogProps {
   onConfirm: (reason: string) => Promise<unknown>;
 }
 
-// Asks for the written reason every moderation action needs (the API rejects anything under
-// 5 characters) and runs the action once it is given. Used for suspend, demote and every delete.
+// Asks for the written reason every moderation action needs and runs the action once it is
+// given. Used for suspend, demote and every delete. The form itself lives in forms/.
 export function ReasonDialog({
   open,
   title,
@@ -32,34 +31,7 @@ export function ReasonDialog({
   onConfirm,
 }: ReasonDialogProps) {
   const formId = useId();
-  const formik = useFormik({
-    initialValues: { reason: "" },
-    validate: ({ reason }) =>
-      reason.trim().length >= MIN_REASON_LENGTH
-        ? {}
-        : {
-            reason: `Give a reason of at least ${MIN_REASON_LENGTH} characters.`,
-          },
-    validateOnChange: false,
-    onSubmit: async ({ reason }, helpers) => {
-      try {
-        await onConfirm(reason.trim());
-      } catch (err) {
-        helpers.setFieldError(
-          "reason",
-          parseApiError(err, "That didn't work. Please try again.").message,
-        );
-      }
-    },
-  });
-
-  const { resetForm } = formik;
-  useEffect(() => {
-    if (open) resetForm();
-  }, [open, resetForm]);
-
-  const busy = formik.isSubmitting;
-  const valid = formik.values.reason.trim().length >= MIN_REASON_LENGTH;
+  const { formik, busy, valid } = useReasonForm(open, onConfirm);
 
   return (
     <Modal
@@ -91,23 +63,7 @@ export function ReasonDialog({
         </>
       }
     >
-      <FormikProvider value={formik}>
-        <form
-          id={formId}
-          onSubmit={formik.handleSubmit}
-          noValidate
-          className="space-y-4"
-        >
-          <FormTextAreaField
-            name="reason"
-            label="Reason"
-            rows={3}
-            data-autofocus
-            hint={hint}
-            error={formik.errors.reason}
-          />
-        </form>
-      </FormikProvider>
+      <ReasonForm formik={formik} formId={formId} hint={hint} />
     </Modal>
   );
 }

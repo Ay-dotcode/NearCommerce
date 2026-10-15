@@ -12,7 +12,7 @@ import {
   ROLE_LABELS,
   userActionRules,
   type UserActionKind,
-} from "@/lib/userActions";
+} from "@/helpers/userActions";
 import { getCurrentUserId } from "@/session";
 import type { AdminUser, UserFilters } from "@/types/admin";
 import {
