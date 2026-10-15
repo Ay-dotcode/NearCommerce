@@ -6,25 +6,23 @@ import {
   SEARCH_RADIUS_MAX_MILES,
   SEARCH_RADIUS_MIN_MILES,
 } from "@/constants";
+import { clearManualLocation } from "@/helpers/location";
 import { useAuth } from "@/src/context/AuthContext";
 import { useManualLocation } from "@/src/hooks/useManualLocation";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
-import { clearManualLocation } from "@/utils/location";
-import { apiClient } from "@nearcommerce/api";
 import { Ionicons } from "@expo/vector-icons";
+import { apiClient } from "@nearcommerce/api";
+import { formatMiles } from "@nearcommerce/helpers";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import Toast from "react-native-toast-message";
 import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 interface Props {
   onOpenZip: () => void;
   onOpenSupport: () => void;
 }
-
-const milesLabel = (miles: number) =>
-  `${miles} ${miles === 1 ? "mile" : "miles"}`;
 
 // Everything a shopper can configure, shown inside the left-hand settings drawer.
 export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
@@ -86,7 +84,7 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
         <View style={styles.rowBetween}>
           <Text style={styles.label}>Show shops within</Text>
           <Text testID="radius-value" style={styles.value}>
-            {milesLabel(shownMiles)}
+            {formatMiles(shownMiles)}
           </Text>
         </View>
         <Slider
@@ -96,7 +94,7 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
           min={SEARCH_RADIUS_MIN_MILES}
           max={SEARCH_RADIUS_MAX_MILES}
           step={1}
-          valueText={milesLabel}
+          valueText={formatMiles}
           onChange={setDraftMiles}
           onChangeComplete={(miles) => {
             setDraftMiles(null);
@@ -104,8 +102,12 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
           }}
         />
         <View style={styles.rowBetween}>
-          <Text style={styles.hint}>{milesLabel(SEARCH_RADIUS_MIN_MILES)}</Text>
-          <Text style={styles.hint}>{milesLabel(SEARCH_RADIUS_MAX_MILES)}</Text>
+          <Text style={styles.hint}>
+            {formatMiles(SEARCH_RADIUS_MIN_MILES)}
+          </Text>
+          <Text style={styles.hint}>
+            {formatMiles(SEARCH_RADIUS_MAX_MILES)}
+          </Text>
         </View>
         <Text style={styles.hint}>
           Home, search and categories only show stores this close to you.

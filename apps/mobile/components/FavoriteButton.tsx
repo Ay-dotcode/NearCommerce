@@ -1,7 +1,7 @@
-import { useFavorite } from "@/hooks/useFavorites";
+import { useFavorite } from "@/src/hooks/useFavorites";
+import { useColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
-import { useColors } from "@/theme";
 
 type Props = { storeId?: string; productId?: string };
 

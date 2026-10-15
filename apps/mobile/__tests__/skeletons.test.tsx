@@ -1,5 +1,5 @@
-import HomeScreen from "@/app/(tabs)/index";
 import FavoritesScreen from "@/app/(tabs)/favorites";
+import HomeScreen from "@/app/(tabs)/index";
 import ListsScreen from "@/app/(tabs)/lists";
 import CategoryScreen from "@/app/category/[id]";
 import ListDetailScreen from "@/app/list/[id]";
@@ -22,7 +22,7 @@ jest.mock("react-native-toast-message", () => ({
 jest.mock("@/src/context/AuthContext", () => ({
   useAuth: () => ({ token: "jwt" }),
 }));
-jest.mock("@/hooks/useHouseholdList", () => ({
+jest.mock("@/src/hooks/useHouseholdList", () => ({
   useListLiveUpdates: jest.fn(() => ({ isConnected: true })),
 }));
 jest.mock("@/src/hooks/useLocationFetcher", () => ({
@@ -31,7 +31,7 @@ jest.mock("@/src/hooks/useLocationFetcher", () => ({
     isFetching: false,
   }),
 }));
-jest.mock("@/utils/location", () => ({
+jest.mock("@/helpers/location", () => ({
   getSessionLocation: jest.fn(async () => ({ latitude: 1, longitude: 2 })),
   subscribeManualLocation: jest.fn(() => () => undefined),
 }));

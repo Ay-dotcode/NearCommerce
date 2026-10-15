@@ -1,7 +1,15 @@
 import { searchByImage, searchProducts } from "@/api/client";
 import ProductCard from "@/components/ProductCard";
+import { ProductListSkeleton } from "@/components/skeletons";
+import {
+  photoErrorMessage,
+  pickPhoto,
+  type PhotoSource,
+} from "@/helpers/photo";
+import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useSessionCoords } from "@/src/hooks/useSessionCoords";
-import { pickPhoto, type PhotoSource } from "@/utils/photo";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { SCREEN_EDGES } from "@/theme/layout";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
@@ -15,22 +23,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ProductListSkeleton } from "@/components/skeletons";
-import { SCREEN_EDGES } from "@/theme/layout";
-import { useSearchRadius } from "@/src/hooks/useSearchRadius";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 const VISION_UNAVAILABLE_NOTICE =
   "Image search is unavailable right now. Text search is still working.";
-
-// Maps a failed photo search to what the shopper should read.
-function photoErrorMessage(error: unknown): string {
-  const code = (error as { response?: { data?: { code?: string } } })?.response
-    ?.data?.code;
-  if (code === "NO_PRODUCT_DETECTED")
-    return "We couldn't spot a product in that photo. Try another angle.";
-  return "Photo search failed. Please try again.";
-}
 
 export default function SearchScreen() {
   const styles = useThemedStyles(makeStyles);

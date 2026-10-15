@@ -1,13 +1,13 @@
 import { LISTS_KEY, createList, fetchLists } from "@/api/lists";
+import { ListCardsSkeleton } from "@/components/skeletons";
+import { InlineForm } from "@/forms/InlineForm";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { SCREEN_EDGES } from "@/theme/layout";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ListCardsSkeleton } from "@/components/skeletons";
-import { InlineForm } from "@/components/ui";
-import { SCREEN_EDGES } from "@/theme/layout";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 export default function ListsScreen() {
   const styles = useThemedStyles(makeStyles);

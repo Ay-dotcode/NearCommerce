@@ -1,4 +1,4 @@
-import { buildMapsUrl, openNativeMaps } from "@/utils/maps";
+import { buildMapsUrl, openNativeMaps } from "@/helpers/maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Linking, Platform } from "react-native";
 

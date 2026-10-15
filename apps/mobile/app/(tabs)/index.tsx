@@ -12,15 +12,15 @@ import {
   fetchCategories,
   fetchNearbyStores,
 } from "@/api/catalog";
-import type { Category } from "@/types/catalog";
-import { iconForCategory } from "@/utils/categoryIcon";
 import {
   CategoryGridSkeleton,
   StoreListSkeleton,
 } from "@/components/skeletons";
-import { SCREEN_EDGES } from "@/theme/layout";
+import { iconForCategory } from "@/helpers/categoryIcon";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { SCREEN_EDGES } from "@/theme/layout";
+import type { Category } from "@/types/catalog";
 
 export default function HomeScreen() {
   const styles = useThemedStyles(makeStyles);

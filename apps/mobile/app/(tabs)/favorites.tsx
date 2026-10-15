@@ -1,5 +1,8 @@
 import { FAVORITES_KEY, fetchFavorites } from "@/api/favorites";
-import { useRemoveFavorite } from "@/hooks/useFavorites";
+import { FavoriteListSkeleton } from "@/components/skeletons";
+import { useRemoveFavorite } from "@/src/hooks/useFavorites";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { SCREEN_EDGES } from "@/theme/layout";
 import type { FavoriteItem } from "@/types/favorites";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -7,9 +10,6 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FavoriteListSkeleton } from "@/components/skeletons";
-import { SCREEN_EDGES } from "@/theme/layout";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 type Filter = "all" | "store" | "product";
 const FILTERS: { key: Filter; label: string }[] = [

@@ -11,9 +11,13 @@ import {
   setItemChecked,
 } from "@/api/lists";
 import ListMembers from "@/components/lists/ListMembers";
-import RenameListForm from "@/components/lists/RenameListForm";
-import { useListLiveUpdates } from "@/hooks/useHouseholdList";
+import { ListDetailSkeleton } from "@/components/skeletons";
+import { useDialogs } from "@/components/ui";
+import { InlineForm } from "@/forms/InlineForm";
+import RenameListForm from "@/forms/RenameListForm";
 import { useAuth } from "@/src/context/AuthContext";
+import { useListLiveUpdates } from "@/src/hooks/useHouseholdList";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import type { HouseholdListDetail, HouseholdListItem } from "@/types/lists";
 import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,9 +27,6 @@ import { useCallback, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { ListDetailSkeleton } from "@/components/skeletons";
-import { InlineForm, useDialogs } from "@/components/ui";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 export default function ListDetailScreen() {
   const styles = useThemedStyles(makeStyles);

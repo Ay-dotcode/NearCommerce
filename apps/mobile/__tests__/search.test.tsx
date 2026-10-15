@@ -1,6 +1,6 @@
 import SearchScreen from "@/app/(tabs)/search";
+import { pickPhoto } from "@/helpers/photo";
 import { renderWithClient } from "@/testing/render";
-import { pickPhoto } from "@/utils/photo";
 import { apiClient } from "@nearcommerce/api";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 
@@ -19,7 +19,7 @@ jest.mock("@nearcommerce/api", () => ({
 jest.mock("@/src/hooks/useSessionCoords", () => ({
   useSessionCoords: jest.fn(() => ({ latitude: 35.1, longitude: 32.8 })),
 }));
-jest.mock("@/utils/photo", () => ({ pickPhoto: jest.fn() }));
+jest.mock("@/helpers/photo", () => ({ pickPhoto: jest.fn() }));
 
 const get = apiClient.get as jest.Mock;
 const post = apiClient.post as jest.Mock;

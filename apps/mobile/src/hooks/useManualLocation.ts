@@ -2,7 +2,7 @@ import {
   getManualLocation,
   loadManualLocation,
   subscribeManualLocation,
-} from "@/utils/location";
+} from "@/helpers/location";
 import { useEffect, useState } from "react";
 
 // The ZIP code the shopper entered, if any, kept in step with the saved value.

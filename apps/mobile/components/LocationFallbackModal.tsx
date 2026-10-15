@@ -1,13 +1,6 @@
-import { BottomSheet, Button, FormTextField } from "@/components/ui";
-import { POSTAL_CODE_PATTERN } from "@/constants";
-import {
-  PostalCodeError,
-  resolvePostalCode,
-  setManualLocation,
-} from "@/utils/location";
-import { FormikProvider, useFormik } from "formik";
-import { useEffect } from "react";
-import * as Yup from "yup";
+import { BottomSheet } from "@/components/ui";
+import { ZipForm } from "@/forms/ZipForm";
+import { useZipForm } from "@/forms/useZipForm";
 
 type Props = {
   visible: boolean;
@@ -17,48 +10,13 @@ type Props = {
   reason?: "denied" | "manual";
 };
 
-const MESSAGES: Record<string, string> = {
-  invalid: "Enter a valid ZIP or postal code.",
-  not_found: "We couldn't find that ZIP code. Check it and try again.",
-  unavailable: "Couldn't look up that code. Check your connection.",
-};
-
-const schema = Yup.object({
-  code: Yup.string()
-    .trim()
-    .matches(POSTAL_CODE_PATTERN, MESSAGES.invalid)
-    .required(MESSAGES.invalid),
-});
-
+// Bottom sheet for choosing a location by ZIP code. The form itself lives in forms/.
 export default function LocationFallbackModal({
   visible,
   onClose,
   reason = "denied",
 }: Props) {
-  const formik = useFormik({
-    initialValues: { code: "" },
-    validationSchema: schema,
-    validateOnChange: false,
-    onSubmit: async ({ code }, helpers) => {
-      try {
-        await setManualLocation(await resolvePostalCode(code));
-        helpers.resetForm();
-        onClose();
-      } catch (err) {
-        helpers.setFieldError(
-          "code",
-          err instanceof PostalCodeError
-            ? MESSAGES[err.reason]
-            : "Something went wrong. Please try again.",
-        );
-      }
-    },
-  });
-
-  const { resetForm } = formik;
-  useEffect(() => {
-    if (visible) resetForm();
-  }, [visible, resetForm]);
+  const formik = useZipForm(visible, onClose);
 
   return (
     <BottomSheet
@@ -75,32 +33,11 @@ export default function LocationFallbackModal({
           : "Enter a ZIP code to see stores and prices near it."
       }
     >
-      <FormikProvider value={formik}>
-        <FormTextField
-          name="code"
-          testID="zip-input"
-          label="ZIP code"
-          placeholder="ZIP code"
-          autoCapitalize="characters"
-          autoCorrect={false}
-          maxLength={10}
-          returnKeyType="done"
-          onSubmitEditing={() => formik.handleSubmit()}
-        />
-        <Button
-          testID="zip-submit"
-          title="Use this location"
-          loading={formik.isSubmitting}
-          onPress={() => formik.handleSubmit()}
-        />
-        <Button
-          testID="zip-dismiss"
-          variant="ghost"
-          title={reason === "denied" ? "Not now" : "Cancel"}
-          onPress={onClose}
-          disabled={formik.isSubmitting}
-        />
-      </FormikProvider>
+      <ZipForm
+        formik={formik}
+        dismissLabel={reason === "denied" ? "Not now" : "Cancel"}
+        onDismiss={onClose}
+      />
     </BottomSheet>
   );
 }

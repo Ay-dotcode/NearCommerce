@@ -1,7 +1,10 @@
 import { apiErrorMessage } from "@/api/errors";
+import { FormTextField } from "@/components/ui";
+import { inlineFormSchema } from "@/forms/inline.form";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { FormikProvider, useFormik } from "formik";
+import type { TextInputProps } from "react-native";
 import {
   ActivityIndicator,
   Pressable,
@@ -9,34 +12,23 @@ import {
   Text,
   View,
 } from "react-native";
-import * as Yup from "yup";
-import { FormTextField } from "./FormTextField";
-import type { TextInputProps } from "react-native";
 
 interface Props {
   initialValue?: string;
-  // Spoken name of the input (there is no visible label).
   accessibilityLabel: string;
   placeholder?: string;
   maxLength?: number;
   autoFocus?: boolean;
   autoCapitalize?: TextInputProps["autoCapitalize"];
-  // Submit button: an icon or a text label, always with an accessible name.
   submitIcon?: keyof typeof Ionicons.glyphMap;
   submitLabel?: string;
   submitAccessibilityLabel: string;
-  // Shown when onSubmit throws an error with no message of its own.
   errorFallback: string;
-  // Clear the field after a successful submit (add-style forms).
   resetOnSuccess?: boolean;
-  // Optional secondary text button (for example Cancel).
   cancel?: { label: string; accessibilityLabel: string; onPress: () => void };
   onSubmit: (value: string) => Promise<unknown> | void;
 }
 
-// One text field plus a button, as a Formik form. Problems (empty input, or an error thrown by
-// onSubmit) show inline under the field in error mode, never in a pop-up. Used to create a
-// list, add an item to a list and rename a list.
 export function InlineForm({
   initialValue = "",
   accessibilityLabel,
@@ -57,9 +49,7 @@ export function InlineForm({
 
   const formik = useFormik({
     initialValues: { value: initialValue },
-    validationSchema: Yup.object({
-      value: Yup.string().trim().required("Enter a name."),
-    }),
+    validationSchema: inlineFormSchema,
     validateOnChange: false,
     onSubmit: async ({ value }, helpers) => {
       try {

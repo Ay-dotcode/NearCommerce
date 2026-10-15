@@ -1,9 +1,9 @@
-import type { ManualLocation } from "@/utils/location";
+import type { ManualLocation } from "@/helpers/location";
 import {
   getManualLocation,
   loadManualLocation,
   subscribeManualLocation,
-} from "@/utils/location";
+} from "@/helpers/location";
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
 

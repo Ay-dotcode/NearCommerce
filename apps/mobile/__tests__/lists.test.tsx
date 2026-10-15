@@ -23,7 +23,7 @@ jest.mock("react-native-toast-message", () => ({
 jest.mock("@/src/context/AuthContext", () => ({
   useAuth: () => ({ token: "jwt-token" }),
 }));
-jest.mock("@/hooks/useHouseholdList", () => ({
+jest.mock("@/src/hooks/useHouseholdList", () => ({
   useListLiveUpdates: jest.fn(() => ({ isConnected: true })),
 }));
 jest.mock("@nearcommerce/api", () => ({

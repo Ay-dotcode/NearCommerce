@@ -40,7 +40,7 @@ jest.mock("@/src/hooks/useLocationFetcher", () => ({
     isFetching: false,
   }),
 }));
-jest.mock("@/utils/location", () => ({
+jest.mock("@/helpers/location", () => ({
   getSessionLocation: jest.fn(async () => ({ latitude: 1, longitude: 2 })),
   subscribeManualLocation: jest.fn(() => () => undefined),
 }));

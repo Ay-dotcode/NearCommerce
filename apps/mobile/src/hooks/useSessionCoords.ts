@@ -1,5 +1,8 @@
-import type { Coords } from "@/utils/location";
-import { getSessionLocation, subscribeManualLocation } from "@/utils/location";
+import type { Coords } from "@/helpers/location";
+import {
+  getSessionLocation,
+  subscribeManualLocation,
+} from "@/helpers/location";
 import { useEffect, useState } from "react";
 
 // Where nearby results are centred: a typed-in ZIP code, otherwise GPS.

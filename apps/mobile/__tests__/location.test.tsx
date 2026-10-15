@@ -1,7 +1,6 @@
 import LocationFallbackModal from "@/components/LocationFallbackModal";
 import SettingsContent from "@/components/settings/SettingsContent";
 import { DialogProvider } from "@/components/ui";
-import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import {
   PostalCodeError,
   clearManualLocation,
@@ -10,7 +9,8 @@ import {
   loadManualLocation,
   resolvePostalCode,
   setManualLocation,
-} from "@/utils/location";
+} from "@/helpers/location";
+import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   act,

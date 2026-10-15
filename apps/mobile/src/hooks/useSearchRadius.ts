@@ -4,7 +4,7 @@ import {
   milesToMeters,
   setSearchRadiusMiles,
   subscribeSearchRadius,
-} from "@/utils/searchRadius";
+} from "@/helpers/searchRadius";
 import { useEffect, useSyncExternalStore } from "react";
 
 // The shopper's "show shops within ..." distance, kept in step across every screen.

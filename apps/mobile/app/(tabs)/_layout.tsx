@@ -1,7 +1,7 @@
 import { SettingsHeaderButton } from "@/components/settings/HeaderButtons";
+import type { IconName } from "@/helpers/categoryIcon";
 import { useColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
-import type { IconName } from "@/utils/categoryIcon";
 import { Tabs } from "expo-router";
 
 const TABS: { name: string; title: string; icon: IconName }[] = [

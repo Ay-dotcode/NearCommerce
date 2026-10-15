@@ -1,7 +1,7 @@
-import { openNativeMaps } from "@/utils/maps";
+import { openNativeMaps } from "@/helpers/maps";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 import { Pressable, StyleSheet, Text } from "react-native";
 import Toast from "react-native-toast-message";
-import { useThemedStyles, type ThemeColors } from "@/theme";
 
 type Props = { latitude: number; longitude: number; label: string };
 

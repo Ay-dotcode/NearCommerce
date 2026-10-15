@@ -1,5 +1,5 @@
 import { renameList } from "@/api/lists";
-import { InlineForm } from "@/components/ui";
+import { InlineForm } from "@/forms/InlineForm";
 
 type Props = {
   listId: string;

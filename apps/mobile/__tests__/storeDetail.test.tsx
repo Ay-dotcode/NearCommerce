@@ -1,6 +1,6 @@
 import StoreDetailScreen from "@/app/store/[id]";
+import { openNativeMaps } from "@/helpers/maps";
 import { renderWithClient, serveGet } from "@/testing/render";
-import { openNativeMaps } from "@/utils/maps";
 import { apiClient } from "@nearcommerce/api";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 
@@ -26,7 +26,7 @@ jest.mock("@nearcommerce/api", () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
 }));
 
-jest.mock("@/utils/maps", () => ({ openNativeMaps: jest.fn() }));
+jest.mock("@/helpers/maps", () => ({ openNativeMaps: jest.fn() }));
 
 jest.mock("react-native-toast-message", () => ({
   __esModule: true,

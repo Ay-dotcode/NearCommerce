@@ -1,10 +1,10 @@
 import { SettingsHeaderButton } from "@/components/settings/HeaderButtons";
 import { DialogProvider } from "@/components/ui";
 import { SEARCH_RADIUS_KEY } from "@/constants";
+import { setSearchRadiusMiles } from "@/helpers/searchRadius";
 import { SettingsProvider, useSettings } from "@/src/context/SettingsContext";
-import { setSearchRadiusMiles } from "@/utils/searchRadius";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getSupportChannels } from "@nearcommerce/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Linking, Pressable, Text } from "react-native";

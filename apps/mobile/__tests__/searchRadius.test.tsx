@@ -4,14 +4,14 @@ import {
   SEARCH_RADIUS_MAX_MILES,
   SEARCH_RADIUS_MIN_MILES,
 } from "@/constants";
-import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import {
   clampRadiusMiles,
   getSearchRadiusMiles,
   loadSearchRadius,
   milesToMeters,
   setSearchRadiusMiles,
-} from "@/utils/searchRadius";
+} from "@/helpers/searchRadius";
+import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 

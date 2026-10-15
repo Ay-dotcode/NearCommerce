@@ -1,7 +1,7 @@
 import HomeScreen from "@/app/(tabs)/index";
 import CategoryScreen from "@/app/category/[id]";
+import { iconForCategory } from "@/helpers/categoryIcon";
 import { renderWithClient, serveGet } from "@/testing/render";
-import { iconForCategory } from "@/utils/categoryIcon";
 import { apiClient } from "@nearcommerce/api";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 
@@ -21,7 +21,7 @@ jest.mock("@/src/hooks/useLocationFetcher", () => ({
     isFetching: false,
   }),
 }));
-jest.mock("@/utils/location", () => ({
+jest.mock("@/helpers/location", () => ({
   getSessionLocation: jest.fn(async () => ({ latitude: 1, longitude: 2 })),
   subscribeManualLocation: jest.fn(() => () => undefined),
 }));
