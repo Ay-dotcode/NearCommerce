@@ -1,4 +1,3 @@
-import { EMAIL_PATTERN } from "@nearcommerce/api";
 import { Button, TextField } from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useResendVerification } from "@/features/auth/api/useEmailVerification";
@@ -8,6 +7,7 @@ import { UserRole } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { registerInitialValues, validateRegister } from "@/forms/register.form";
 
 // Accounts created in the store portal are always store owners; shoppers register in the mobile app.
 export const RegisterForm: React.FC = () => {
@@ -18,22 +18,8 @@ export const RegisterForm: React.FC = () => {
   const resend = useResendVerification();
 
   const formik = useFormik({
-    initialValues: { full_name: "", email: "", password: "" },
-    validate: (values) => {
-      const errors: Partial<typeof values> = {};
-      if (!values.full_name.trim()) errors.full_name = "Full name is required";
-      else if (values.full_name.trim().length < 2)
-        errors.full_name = "Full name must be at least 2 characters";
-
-      if (!values.email) errors.email = "Email is required";
-      else if (!EMAIL_PATTERN.test(values.email))
-        errors.email = "Invalid email address";
-
-      if (!values.password) errors.password = "Password is required";
-      else if (values.password.length < 8)
-        errors.password = "Password must be at least 8 characters";
-      return errors;
-    },
+    initialValues: registerInitialValues,
+    validate: validateRegister,
     onSubmit: (values, { setSubmitting }) => {
       setServerError(null);
       registerMutation.mutate(

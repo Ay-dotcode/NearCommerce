@@ -1,6 +1,6 @@
 import { useDebouncedValue } from "@nearcommerce/ui";
 import { useEffect, useState } from "react";
-import { checkImageUrl, IMAGE_URL_PATTERN } from "./image";
+import { checkImageUrl, IMAGE_URL_PATTERN } from "@/helpers/image";
 
 export type ImageUrlStatus = "idle" | "checking" | "valid" | "invalid";
 

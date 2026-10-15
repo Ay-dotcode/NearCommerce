@@ -6,24 +6,12 @@ import {
 } from "@/api/products";
 import CsvImporter from "@/components/store-owner/CsvImporter";
 import { CATEGORIES_KEY, PRODUCTS_KEY } from "@/constants";
-import { applyVerified } from "@/features/products/lib/cache";
-import {
-  Badge,
-  Button,
-  cn,
-  ConfirmDialog,
-  EmptyState,
-  formatPrice,
-  Modal,
-  Skeleton,
-  timeAgo,
-  useDebouncedValue,
-  useToast,
-} from "@nearcommerce/ui";
+import { applyVerified } from "@/helpers/productCache";
+import { Badge, Button, ConfirmDialog, EmptyState, Modal, Skeleton, useDebouncedValue, useToast } from "@nearcommerce/ui";
 import { ProductsTableSkeleton } from "@/features/products/ui/InventorySkeleton";
 import { ProductDetailsModal } from "@/features/products/ui/ProductDetailsModal";
 import { ProductImage } from "@/features/products/ui/ProductImage";
-import { ProductForm } from "@/pages/owner/ProductForm";
+import { ProductForm } from "@/forms/ProductForm";
 import type {
   ProductListResponse,
   ProductStatusFilter,
@@ -38,9 +26,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { cn, formatPrice, timeAgo } from "@nearcommerce/helpers";
+import { isStale } from "@/helpers/products";
 
 const PAGE_SIZE = 25;
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 type Editor = { mode: "create" } | { mode: "edit"; product: StoreProduct };
 
@@ -51,10 +40,6 @@ const STATUS_OPTIONS: { value: ProductStatusFilter; label: string }[] = [
   { value: "out_of_stock", label: "Out of stock" },
   { value: "stale", label: "Needs verification" },
 ];
-
-const isStale = (p: StoreProduct) =>
-  p.isStale ??
-  Date.now() - new Date(p.last_verified_at).getTime() > THIRTY_DAYS_MS;
 
 export default function StoreOwnerDashboard() {
   const queryClient = useQueryClient();

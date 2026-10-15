@@ -1,13 +1,10 @@
 import { createProduct, updateProduct } from "@/api/products";
-import {
-  checkImageUrl,
-  IMAGE_URL_PATTERN,
-} from "@/features/products/lib/image";
-import { useImageUrlCheck } from "@/features/products/lib/useImageUrlCheck";
+import { checkImageUrl, IMAGE_URL_PATTERN } from "@/helpers/image";
+import { useImageUrlCheck } from "@/hooks/useImageUrlCheck";
 import { ProductImagePicker } from "@/features/products/ui/ProductImagePicker";
 import type { Category } from "@/types/categories";
 import type { StoreProduct } from "@/types/products";
-import { hasAtMostTwoDecimals, parseApiError } from "@nearcommerce/api";
+import { parseApiError } from "@nearcommerce/api";
 import {
   Button,
   FormSelectField,
@@ -16,52 +13,14 @@ import {
 } from "@nearcommerce/ui";
 import { FormikProvider, useFormik } from "formik";
 import { useState } from "react";
-import * as Yup from "yup";
-
-const hasValidPriceDecimals = (v: unknown) =>
-  typeof v !== "number" || hasAtMostTwoDecimals(v);
-
-const ProductSchema = Yup.object().shape({
-  name: Yup.string()
-    .trim()
-    .min(2, "Enter at least 2 characters")
-    .max(255)
-    .required("Product name is required"),
-  price: Yup.number()
-    .typeError("Enter a price")
-    .moreThan(0, "Price must be greater than zero")
-    .max(99_999_999.99, "Price is too large")
-    .test(
-      "decimals",
-      "Price can have at most 2 decimal places",
-      hasValidPriceDecimals,
-    )
-    .required("Price is required"),
-  quantity: Yup.number()
-    .typeError("Enter a quantity")
-    .integer("Use a whole number")
-    .min(0, "Quantity can't be negative")
-    .required("Quantity is required"),
-  description: Yup.string().max(
-    5000,
-    "Keep the description under 5000 characters",
-  ),
-  imageUrl: Yup.string()
-    .trim()
-    .max(512)
-    .test(
-      "url",
-      "Enter a valid http(s) image URL",
-      (v) => !v || IMAGE_URL_PATTERN.test(v),
-    ),
-  isPublished: Yup.boolean().test(
-    "needs-image",
-    "Add an image before publishing",
-    function (v) {
-      return !v || Boolean(this.parent.imageUrl?.trim());
-    },
-  ),
-});
+import {
+  FIELD_NAMES,
+  NOT_AN_IMAGE,
+  ProductSchema,
+  productInitialValues,
+  toProductPayload,
+  type FieldName,
+} from "@/forms/product.form";
 
 interface Props {
   storeId: string;
@@ -72,20 +31,6 @@ interface Props {
   onCancel?: () => void;
 }
 
-const NOT_AN_IMAGE =
-  "That link doesn't lead to an image. Check the URL, or upload a photo instead.";
-
-const FIELD_NAMES = [
-  "name",
-  "description",
-  "price",
-  "quantity",
-  "imageUrl",
-  "isPublished",
-  "subcategoryId",
-] as const;
-type FieldName = (typeof FIELD_NAMES)[number];
-
 export const ProductForm = ({
   storeId,
   product,
@@ -95,24 +40,10 @@ export const ProductForm = ({
 }: Props) => {
   const editing = Boolean(product);
   const showCategories = categories.length > 0;
-  const initialCategoryId = product?.subcategory_id
-    ? (categories.find((c) =>
-        c.subcategories.some((s) => s.id === product.subcategory_id),
-      )?.id ?? "")
-    : "";
   const [formError, setFormError] = useState<string | null>(null);
 
   const formik = useFormik({
-    initialValues: {
-      name: product?.name ?? "",
-      description: product?.description ?? "",
-      price: product ? String(product.price) : "",
-      quantity: product ? String(product.quantity) : "",
-      imageUrl: product?.image_url ?? "",
-      isPublished: product?.is_published ?? false,
-      categoryId: initialCategoryId,
-      subcategoryId: initialCategoryId ? (product?.subcategory_id ?? "") : "",
-    },
+    initialValues: productInitialValues(product, categories),
     validationSchema: ProductSchema,
     onSubmit: async (values, helpers) => {
       setFormError(null);
@@ -124,19 +55,7 @@ export const ProductForm = ({
         helpers.setSubmitting(false);
         return;
       }
-      // When editing, cleared optional fields are sent as null so they are actually removed.
-      const payload = {
-        name: values.name.trim(),
-        description: values.description.trim() || (editing ? null : undefined),
-        price: Number(values.price),
-        quantity: Number(values.quantity),
-        imageUrl: values.imageUrl.trim() || (editing ? null : undefined),
-        isPublished: values.isPublished,
-        // Only sent when the picker was shown, so a form without categories never wipes one.
-        ...(showCategories && {
-          subcategoryId: values.subcategoryId || (editing ? null : undefined),
-        }),
-      };
+      const payload = toProductPayload(values, { editing, showCategories });
       try {
         if (product) await updateProduct(storeId, product.id, payload);
         else await createProduct(storeId, payload);

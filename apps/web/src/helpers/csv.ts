@@ -1,6 +1,6 @@
 import type { ProductImportRow } from "@/types/products";
-import { hasAtMostTwoDecimals } from "@nearcommerce/api";
 import Papa from "papaparse";
+import { hasAtMostTwoDecimals } from "@nearcommerce/helpers";
 
 // Keep in step with IMPORT_MAX_ROWS in @nearcommerce/api (the server rejects more).
 export const CSV_MAX_ROWS = 1000;

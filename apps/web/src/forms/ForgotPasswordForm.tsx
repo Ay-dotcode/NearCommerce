@@ -1,4 +1,3 @@
-import { EMAIL_PATTERN } from "@nearcommerce/api";
 import { Button, TextField } from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useForgotPassword } from "@/features/auth/api/usePasswordReset";
@@ -7,19 +6,18 @@ import { parseApiError } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import React from "react";
 import { Link } from "react-router-dom";
+import {
+  forgotPasswordInitialValues,
+  validateForgotPassword,
+} from "@/forms/forgotPassword.form";
 
 // Asks for an email and always shows the same confirmation, so the form never reveals which emails are registered.
 export const ForgotPasswordForm: React.FC = () => {
   const forgot = useForgotPassword();
 
   const formik = useFormik({
-    initialValues: { email: "" },
-    validate: ({ email }) => {
-      if (!email.trim()) return { email: "Email is required" };
-      if (!EMAIL_PATTERN.test(email.trim()))
-        return { email: "Enter a valid email address" };
-      return {};
-    },
+    initialValues: forgotPasswordInitialValues,
+    validate: validateForgotPassword,
     onSubmit: (values) => forgot.mutate(values.email.trim().toLowerCase()),
   });
 

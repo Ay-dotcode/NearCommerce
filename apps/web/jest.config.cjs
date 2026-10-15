@@ -4,6 +4,7 @@ module.exports = {
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
   moduleNameMapper: {
+    "^@nearcommerce/helpers$": "<rootDir>/../../packages/helpers/src/index.ts",
     "\\.svg$": "<rootDir>/../../packages/ui/src/__mocks__/fileMock.js",
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@nearcommerce/api/(.*)$": "<rootDir>/../../packages/api/$1",

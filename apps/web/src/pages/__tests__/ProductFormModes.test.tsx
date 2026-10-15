@@ -1,6 +1,6 @@
 import { installImageLoadStub } from "@/testing/image";
 import { createProduct, updateProduct } from "@/api/products";
-import { ProductForm } from "@/pages/owner/ProductForm";
+import { ProductForm } from "@/forms/ProductForm";
 import type { StoreProduct } from "@/types/products";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 

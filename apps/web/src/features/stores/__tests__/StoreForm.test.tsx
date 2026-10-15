@@ -1,4 +1,4 @@
-import { StoreForm } from "@/features/stores/ui/StoreForm";
+import { StoreForm } from "@/forms/StoreForm";
 import type { Store } from "@/types/stores";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 

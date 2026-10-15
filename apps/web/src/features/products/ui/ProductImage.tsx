@@ -1,5 +1,6 @@
-import { cn, Skeleton } from "@nearcommerce/ui";
+import { Skeleton } from "@nearcommerce/ui";
 import { useEffect, useState } from "react";
+import { cn } from "@nearcommerce/helpers";
 
 // Product photo with a skeleton while it downloads and a plain placeholder when there is no
 // image or it fails to load. The wrapper keeps a fixed size so nothing shifts as it loads.

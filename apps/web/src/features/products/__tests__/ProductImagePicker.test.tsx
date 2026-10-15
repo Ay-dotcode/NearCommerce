@@ -3,7 +3,7 @@ import {
   dataUrlToBlob,
   MAX_SOURCE_IMAGE_BYTES,
   validateImageFile,
-} from "@/features/products/lib/image";
+} from "@/helpers/image";
 import { ProductImagePicker } from "@/features/products/ui/ProductImagePicker";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 

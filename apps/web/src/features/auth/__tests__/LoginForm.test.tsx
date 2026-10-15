@@ -1,6 +1,6 @@
 import { AppRoutes } from "@/constants/routes";
 import { clearSession } from "@/features/auth/session";
-import { LoginForm } from "@/features/auth/ui/LoginForm";
+import { LoginForm } from "@/forms/LoginForm";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {

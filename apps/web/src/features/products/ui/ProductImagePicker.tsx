@@ -4,7 +4,7 @@ import {
   ACCEPTED_IMAGE_TYPES,
   dataUrlToBlob,
   validateImageFile,
-} from "@/features/products/lib/image";
+} from "@/helpers/image";
 import { parseApiError } from "@nearcommerce/api";
 import React, { lazy, Suspense, useEffect, useState } from "react";
 

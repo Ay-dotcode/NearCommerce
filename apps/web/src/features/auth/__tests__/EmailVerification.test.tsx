@@ -1,4 +1,4 @@
-import { RegisterForm } from "@/features/auth/ui/RegisterForm";
+import { RegisterForm } from "@/forms/RegisterForm";
 import { VerifyEmailPage } from "@/features/auth/ui/VerifyEmailPage";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

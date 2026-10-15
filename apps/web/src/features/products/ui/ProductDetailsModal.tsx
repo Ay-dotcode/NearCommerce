@@ -1,7 +1,9 @@
-import { Badge, Button, formatPrice, Modal, timeAgo } from "@nearcommerce/ui";
+import { Badge, Button, Modal } from "@nearcommerce/ui";
 import { ProductImage } from "@/features/products/ui/ProductImage";
 import type { Category } from "@/types/categories";
 import type { StoreProduct } from "@/types/products";
+import { formatPrice, timeAgo } from "@nearcommerce/helpers";
+import { categoryLabel } from "@/helpers/products";
 
 interface Props {
   product: StoreProduct | null;
@@ -11,17 +13,6 @@ interface Props {
   onClose: () => void;
   onEdit: (product: StoreProduct) => void;
   onConfirmStock: (product: StoreProduct) => void;
-}
-
-function categoryLabel(product: StoreProduct, categories: Category[] = []) {
-  if (!product.subcategory_id) return null;
-  for (const category of categories) {
-    const sub = category.subcategories.find(
-      (s) => s.id === product.subcategory_id,
-    );
-    if (sub) return `${category.name} › ${sub.name}`;
-  }
-  return null;
 }
 
 // Full details for one product, with the photo shown large. Opened by clicking a product row.

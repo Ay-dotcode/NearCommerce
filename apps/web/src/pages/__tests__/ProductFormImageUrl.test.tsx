@@ -1,6 +1,6 @@
 import { createProduct } from "@/api/products";
-import { ProductForm } from "@/pages/owner/ProductForm";
-import { clearImageCheckCache } from "@/features/products/lib/image";
+import { ProductForm } from "@/forms/ProductForm";
+import { clearImageCheckCache } from "@/helpers/image";
 import { installImageLoadStub } from "@/testing/image";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 

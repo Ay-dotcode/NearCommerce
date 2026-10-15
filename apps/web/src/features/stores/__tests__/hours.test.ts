@@ -1,4 +1,4 @@
-import { defaultHours, hoursFromApi, hoursToPayload } from "@/features/stores/lib/hours";
+import { defaultHours, hoursFromApi, hoursToPayload } from "@/helpers/hours";
 import { WEEKDAYS } from "@nearcommerce/api";
 
 describe("opening hours helpers", () => {

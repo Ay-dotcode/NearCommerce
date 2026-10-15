@@ -5,6 +5,10 @@ import { AuthLayout } from "@/features/auth/ui/AuthLayout";
 import { useFormik } from "formik";
 import React from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import {
+  resetPasswordInitialValues,
+  validateResetPassword,
+} from "@/forms/resetPassword.form";
 
 // Landing page for the link in the reset email: /reset-password?token=...
 export const ResetPasswordForm: React.FC = () => {
@@ -13,16 +17,8 @@ export const ResetPasswordForm: React.FC = () => {
   const reset = useResetPassword();
 
   const formik = useFormik({
-    initialValues: { password: "", confirm: "" },
-    validate: ({ password, confirm }) => {
-      const errors: { password?: string; confirm?: string } = {};
-      if (!password) errors.password = "Password is required";
-      else if (password.length < 8)
-        errors.password = "Password must be at least 8 characters";
-      if (!confirm) errors.confirm = "Please confirm your password";
-      else if (confirm !== password) errors.confirm = "Passwords do not match";
-      return errors;
-    },
+    initialValues: resetPasswordInitialValues,
+    validate: validateResetPassword,
     onSubmit: (values) =>
       reset.mutate({ token, new_password: values.password }),
   });

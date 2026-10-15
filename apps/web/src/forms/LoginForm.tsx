@@ -7,12 +7,8 @@ import { loginErrorMessage, UserRole } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
-// Only owner pages are valid return targets; anything else falls back to the dashboard.
-const safeReturnPath = (from: unknown) =>
-  typeof from === "string" && /^\/owner\/[\w/-]*$/.test(from)
-    ? from
-    : AppRoutes.storeOwnerDashboard;
+import { safeReturnPath } from "@/helpers/authRedirect";
+import { loginInitialValues, validateLogin } from "@/forms/login.form";
 
 type Notice = { tone: "error" | "info"; title?: string; body: React.ReactNode };
 
@@ -35,13 +31,8 @@ export const LoginForm: React.FC = () => {
   }, [navigate, returnTo]);
 
   const formik = useFormik({
-    initialValues: { email: "", password: "" },
-    validate: (values) => {
-      const errors: Partial<typeof values> = {};
-      if (!values.email) errors.email = "Required";
-      if (!values.password) errors.password = "Required";
-      return errors;
-    },
+    initialValues: loginInitialValues,
+    validate: validateLogin,
     onSubmit: (values, { setSubmitting }) => {
       setNotice(null);
       loginMutation.mutate(values, {

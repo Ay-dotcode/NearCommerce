@@ -1,4 +1,4 @@
-import { recordsToProducts } from "@/features/products/lib/csv";
+import { recordsToProducts } from "@/helpers/csv";
 import Papa from "papaparse";
 import { readFileSync } from "node:fs";
 import path from "node:path";

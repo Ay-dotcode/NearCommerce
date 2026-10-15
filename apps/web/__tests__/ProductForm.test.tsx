@@ -1,4 +1,4 @@
-import { ProductForm } from "@/pages/owner/ProductForm";
+import { ProductForm } from "@/forms/ProductForm";
 import { apiClient } from "@nearcommerce/api";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 

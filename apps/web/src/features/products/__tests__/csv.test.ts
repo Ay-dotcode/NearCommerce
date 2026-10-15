@@ -4,7 +4,7 @@ import {
   normaliseHeader,
   parseProductCsv,
   recordsToProducts,
-} from "@/features/products/lib/csv";
+} from "@/helpers/csv";
 
 const COLUMNS = ["name", "description", "price", "quantity", "image_url"];
 const good = {

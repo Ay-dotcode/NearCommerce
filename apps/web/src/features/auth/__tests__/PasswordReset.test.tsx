@@ -1,5 +1,5 @@
-import { ForgotPasswordForm } from "@/features/auth/ui/ForgotPasswordForm";
-import { ResetPasswordForm } from "@/features/auth/ui/ResetPasswordForm";
+import { ForgotPasswordForm } from "@/forms/ForgotPasswordForm";
+import { ResetPasswordForm } from "@/forms/ResetPasswordForm";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";

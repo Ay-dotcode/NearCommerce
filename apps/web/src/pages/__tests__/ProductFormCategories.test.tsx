@@ -1,5 +1,5 @@
 import { createProduct, updateProduct } from "@/api/products";
-import { ProductForm } from "@/pages/owner/ProductForm";
+import { ProductForm } from "@/forms/ProductForm";
 import type { Category } from "@/types/categories";
 import type { StoreProduct } from "@/types/products";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";

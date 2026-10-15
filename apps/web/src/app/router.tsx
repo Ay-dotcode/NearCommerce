@@ -20,26 +20,26 @@ const router = createBrowserRouter(
   [
     {
       path: AppRoutes.login,
-      ...lazyPage(() => import("@/features/auth/ui/LoginForm"), "LoginForm"),
+      ...lazyPage(() => import("@/forms/LoginForm"), "LoginForm"),
     },
     {
       path: AppRoutes.register,
       ...lazyPage(
-        () => import("@/features/auth/ui/RegisterForm"),
+        () => import("@/forms/RegisterForm"),
         "RegisterForm",
       ),
     },
     {
       path: AppRoutes.forgotPassword,
       ...lazyPage(
-        () => import("@/features/auth/ui/ForgotPasswordForm"),
+        () => import("@/forms/ForgotPasswordForm"),
         "ForgotPasswordForm",
       ),
     },
     {
       path: AppRoutes.resetPassword,
       ...lazyPage(
-        () => import("@/features/auth/ui/ResetPasswordForm"),
+        () => import("@/forms/ResetPasswordForm"),
         "ResetPasswordForm",
       ),
     },

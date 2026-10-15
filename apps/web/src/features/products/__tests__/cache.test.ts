@@ -1,4 +1,4 @@
-import { applyVerified } from "@/features/products/lib/cache";
+import { applyVerified } from "@/helpers/productCache";
 import type { ProductListResponse } from "@/types/products";
 
 const list = (): ProductListResponse => ({

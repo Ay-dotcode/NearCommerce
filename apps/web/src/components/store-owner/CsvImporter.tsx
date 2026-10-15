@@ -1,16 +1,17 @@
 import { importProducts } from "@/api/products";
-import { Button, cn, Modal, useToast } from "@nearcommerce/ui";
+import { Button, Modal, useToast } from "@nearcommerce/ui";
 import { PRODUCTS_KEY } from "@/constants";
 import {
   CSV_MAX_ROWS,
   downloadCsvTemplate,
   parseProductCsv,
   type CsvIssue,
-} from "@/features/products/lib/csv";
+} from "@/helpers/csv";
 import type { ImportResult } from "@/types/products";
 import { parseApiError } from "@nearcommerce/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChangeEvent, useRef, useState } from "react";
+import { cn } from "@nearcommerce/helpers";
 
 type Report =
   | { kind: "success"; result: ImportResult | null; drafts: number }

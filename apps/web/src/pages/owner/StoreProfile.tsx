@@ -2,7 +2,7 @@ import { deleteStore, getStore, updateStore } from "@/api/stores";
 import { Button, ConfirmDialog, useToast } from "@nearcommerce/ui";
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes } from "@/constants/routes";
-import { StoreForm } from "@/features/stores/ui/StoreForm";
+import { StoreForm } from "@/forms/StoreForm";
 import { StoreSettingsSkeleton } from "@/features/stores/ui/StoreSkeleton";
 import { parseApiError, STORE_KEY } from "@nearcommerce/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

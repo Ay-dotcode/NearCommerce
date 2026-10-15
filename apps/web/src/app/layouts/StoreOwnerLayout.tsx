@@ -1,6 +1,6 @@
 import { listMyStores } from "@/api/stores";
 import { PortalPageSkeleton } from "@/app/PageSkeletons";
-import { BrandIcon, Button, cn, Skeleton } from "@nearcommerce/ui";
+import { BrandIcon, Button, Skeleton } from "@nearcommerce/ui";
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes } from "@/constants/routes";
 import {
@@ -17,6 +17,7 @@ import { parseApiError, STORE_KEY } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { cn } from "@nearcommerce/helpers";
 
 const navItems = [
   { to: AppRoutes.storeOwnerDashboard, label: "Inventory" },
