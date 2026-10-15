@@ -1,5 +1,5 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
-import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { cn } from "@nearcommerce/helpers";
 import { Spinner } from "./Spinner";
 
 export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
@@ -13,12 +13,12 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand-600 text-onbrand shadow-card hover:bg-brand-700 focus-visible:ring-brand-500",
+    "press bg-brand-600 text-onbrand shadow-card hover:bg-brand-700 hover:shadow-glow focus-visible:ring-brand-500",
   secondary:
-    "border border-slate-300 bg-white text-slate-700 shadow-card hover:bg-slate-50 focus-visible:ring-brand-500",
+    "press hover-outline border border-slate-300 bg-white text-slate-700 shadow-card hover:bg-slate-50 focus-visible:ring-brand-500",
   danger:
-    "bg-red-600 text-onbrand shadow-card hover:bg-red-700 focus-visible:ring-red-500",
-  ghost: "text-slate-600 hover:bg-slate-100 focus-visible:ring-brand-500",
+    "press bg-red-600 text-onbrand shadow-card hover:bg-red-700 hover:shadow-[0_0_24px_-4px_rgb(239_68_68/0.55)] focus-visible:ring-red-500",
+  ghost: "press hover-outline text-slate-600 hover:bg-slate-100 focus-visible:ring-brand-500",
 };
 
 const sizes: Record<ButtonSize, string> = {

@@ -1,6 +1,6 @@
 import { ReactNode, useId, useRef } from "react";
 import { useDialogBehavior } from "@nearcommerce/ui/src/hooks/useDialogBehavior";
-import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { cn } from "@nearcommerce/helpers";
 import { OverlayBackdrop } from "./Modal";
 
 export interface DrawerProps {

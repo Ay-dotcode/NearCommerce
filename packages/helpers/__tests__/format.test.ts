@@ -1,4 +1,12 @@
-import { formatPrice, timeAgo } from "@nearcommerce/ui/src/lib/format";
+import {
+  formatPrice,
+  timeAgo,
+  formatDate,
+  formatMiles,
+  formatShortDate,
+  initialOf,
+  pluralize,
+} from "../src/format";
 
 describe("timeAgo", () => {
   const now = new Date("2026-10-03T12:00:00Z").getTime();
@@ -45,5 +53,29 @@ describe("formatPrice", () => {
   });
   it("returns non-numeric input unchanged", () => {
     expect(formatPrice("n/a")).toBe("n/a");
+  });
+});
+
+describe("pluralize / formatMiles", () => {
+  it("uses the singular for exactly one and adds s otherwise", () => {
+    expect(pluralize(1, "day")).toBe("1 day");
+    expect(pluralize(0, "day")).toBe("0 days");
+    expect(pluralize(2, "category", "categories")).toBe("2 categories");
+    expect(formatMiles(1)).toBe("1 mile");
+    expect(formatMiles(5)).toBe("5 miles");
+  });
+});
+
+describe("formatDate / formatShortDate / initialOf", () => {
+  it("formats real dates and refuses bad ones", () => {
+    expect(formatDate("2026-10-12T10:00:00Z")).toBe("12 Oct 2026");
+    expect(formatDate(undefined)).toBe("unknown");
+    expect(formatDate("not a date")).toBe("unknown");
+    expect(formatShortDate("2026-10-12")).toBe("12 Oct");
+  });
+
+  it("takes the first letter of a name for an avatar, with a fallback", () => {
+    expect(initialOf("  jane doe")).toBe("J");
+    expect(initialOf("")).toBe("?");
   });
 });

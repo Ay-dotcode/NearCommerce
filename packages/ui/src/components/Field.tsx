@@ -1,4 +1,4 @@
-import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { cn } from "@nearcommerce/helpers";
 import {
   InputHTMLAttributes,
   ReactNode,
@@ -7,6 +7,7 @@ import {
   forwardRef,
   useId,
 } from "react";
+import { controlClass, describedBy } from "@nearcommerce/ui/src/helpers/field";
 
 interface FieldShellProps {
   label: string;
@@ -17,16 +18,6 @@ interface FieldShellProps {
   // Keep the label for screen readers but do not show it (compact filter bars).
   hideLabel?: boolean;
 }
-
-const controlClass = (invalid: boolean) =>
-  cn(
-    "block w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-900 shadow-card",
-    "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-0",
-    "disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500",
-    invalid
-      ? "border-red-400 focus:border-red-500 focus:ring-red-200"
-      : "border-slate-300 focus:border-brand-500 focus:ring-brand-200",
-  );
 
 function Shell({
   id,
@@ -71,9 +62,6 @@ function Shell({
     </div>
   );
 }
-
-const describedBy = (id: string, error?: string, hint?: ReactNode) =>
-  error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
 export type TextFieldProps = FieldShellProps &
   Omit<InputHTMLAttributes<HTMLInputElement>, "className">;

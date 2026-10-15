@@ -1,5 +1,4 @@
 export * from "zod";
-export * from "./categoryIcons";
 export * from "./client";
 export * from "./constants";
 export * from "./errors";
@@ -9,4 +8,3 @@ export * from "./support";
 export * from "./tokenRefresh";
 export * from "./types/auth";
 export * from "./types/roles";
-export * from "./validation";

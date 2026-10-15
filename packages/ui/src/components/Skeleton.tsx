@@ -1,5 +1,5 @@
 import { HTMLAttributes } from "react";
-import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { cn } from "@nearcommerce/helpers";
 
 // A grey placeholder block with a moving highlight (the "YouTube" loading style). Give it the
 // same width/height/radius as the real element it stands in for so the page does not jump
@@ -14,7 +14,7 @@ export function Skeleton({
       className={cn(
         "relative overflow-hidden rounded-md bg-slate-200",
         "before:absolute before:inset-0 before:-translate-x-full before:animate-skeleton-shimmer",
-        "before:bg-gradient-to-r before:from-transparent before:via-onbrand/50 dark:before:via-onbrand/10 before:to-transparent",
+        "before:bg-gradient-to-r before:from-transparent before:via-shimmer/50 before:to-transparent",
         "motion-reduce:before:animate-none",
         className,
       )}

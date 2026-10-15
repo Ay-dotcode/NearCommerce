@@ -1,4 +1,4 @@
-import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { cn } from "@nearcommerce/helpers";
 import {
   ReactNode,
   createContext,

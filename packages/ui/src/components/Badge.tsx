@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { cn } from "@nearcommerce/helpers";
 
 export type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 

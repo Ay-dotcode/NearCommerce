@@ -30,3 +30,35 @@ export function formatPrice(value: number | string): string {
     maximumFractionDigits: 2,
   });
 }
+
+// 3 -> "3 days", 1 -> "1 day". Pass the plural when it is not just "+s" ("category", "categories").
+export function pluralize(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+// "12 Oct 2026". Invalid dates return "unknown".
+export function formatDate(iso: string | undefined): string {
+  const date = iso ? new Date(iso) : null;
+  if (!date || Number.isNaN(date.getTime())) return "unknown";
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+// "12 Oct", for chart axes.
+export function formatShortDate(isoDay: string): string {
+  return new Date(`${isoDay}T00:00:00`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+// "Jane Doe" -> "J": the letter shown in an avatar circle.
+export function initialOf(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || "?";
+}
+
+// 1 -> "1 mile", 5 -> "5 miles".
+export const formatMiles = (miles: number) => pluralize(miles, "mile");

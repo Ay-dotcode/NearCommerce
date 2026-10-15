@@ -29,5 +29,8 @@
     "sharp": "^0.34.4",
     "ts-jest": "^29.1.2",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@nearcommerce/helpers": "workspace:*"
   }
 }

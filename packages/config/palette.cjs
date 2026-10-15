@@ -86,6 +86,48 @@ const lightScales = {
 
 const SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
+// Extra brand colours for the portals that have their own look.
+const teal = {
+  50: "#f0fdfa",
+  100: "#ccfbf1",
+  200: "#99f6e4",
+  300: "#5eead4",
+  400: "#2dd4bf",
+  500: "#14b8a6",
+  600: "#0d9488",
+  700: "#0f766e",
+  800: "#115e59",
+  900: "#134e4a",
+  950: "#042f2e",
+};
+const violet = {
+  50: "#f5f3ff",
+  100: "#ede9fe",
+  200: "#ddd6fe",
+  300: "#c4b5fd",
+  400: "#a78bfa",
+  500: "#8b5cf6",
+  600: "#7c3aed",
+  700: "#6d28d9",
+  800: "#5b21b6",
+  900: "#4c1d95",
+  950: "#2e1065",
+};
+// Teal-600 is too light for white text, so the owner brand starts one step darker.
+const tealBrand = {
+  50: teal[50],
+  100: teal[100],
+  200: teal[200],
+  300: teal[300],
+  400: teal[400],
+  500: teal[600],
+  600: teal[700],
+  700: teal[800],
+  800: teal[900],
+  900: teal[950],
+  950: teal[950],
+};
+
 // Neutral scale is tuned by hand so surfaces, borders and text keep readable contrast on dark.
 const darkSlate = {
   50: "#0b1120",
@@ -117,15 +159,30 @@ const flipAccent = (scale) => ({
   950: scale[50],
 });
 
-const darkScales = { slate: darkSlate };
-for (const name of Object.keys(lightScales)) {
-  if (name !== "slate") darkScales[name] = flipAccent(lightScales[name]);
-}
-
-const light = { white: "#ffffff", ...lightScales };
-const dark = { white: "#0f172a", ...darkScales };
-
 // Colours that must not change with the theme (text on solid brand/danger fills, scrims).
 const constants = { onbrand: "#ffffff", scrim: "#020617" };
 
-module.exports = { light, dark, constants, SHADES };
+// One theme per product. Everything but the brand colour is shared, so the apps feel related
+// but each portal is recognisable: shoppers (blue), store owners (teal), admins (violet).
+function makeTheme(brand) {
+  const scales = { ...lightScales, brand };
+  const darkScales = { slate: darkSlate };
+  for (const name of Object.keys(scales)) {
+    if (name !== "slate") darkScales[name] = flipAccent(scales[name]);
+  }
+  return {
+    // `shimmer` is the moving highlight on skeleton placeholders.
+    light: { white: "#ffffff", shimmer: "#ffffff", ...scales },
+    dark: { white: "#0f172a", shimmer: "#64748b", ...darkScales },
+  };
+}
+
+const themes = {
+  default: makeTheme(lightScales.brand),
+  owner: makeTheme(tealBrand),
+  admin: makeTheme(violet),
+};
+
+const { light, dark } = themes.default;
+
+module.exports = { light, dark, themes, constants, SHADES };

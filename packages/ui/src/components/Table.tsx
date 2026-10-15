@@ -4,7 +4,7 @@ import {
   TdHTMLAttributes,
   ThHTMLAttributes,
 } from "react";
-import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { cn } from "@nearcommerce/helpers";
 
 export const Table = ({
   className,
@@ -37,7 +37,10 @@ export const TableRow = ({
   className,
   ...props
 }: HTMLAttributes<HTMLTableRowElement>) => (
-  <tr className={className} {...props} />
+  <tr
+    className={cn("transition-colors hover:bg-slate-50/70", className)}
+    {...props}
+  />
 );
 export const TableHead = ({
   className,

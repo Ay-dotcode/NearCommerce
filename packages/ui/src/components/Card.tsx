@@ -1,12 +1,18 @@
 import { HTMLAttributes, forwardRef } from "react";
-import { cn } from "@nearcommerce/ui/src/lib/cn";
+import { cn } from "@nearcommerce/helpers";
 
-export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  // Glows and lifts slightly under the mouse (for cards that can be opened or acted on).
+  interactive?: boolean;
+}
+
+export const Card = forwardRef<HTMLDivElement, CardProps>(
+  ({ className, interactive = false, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
         "rounded-xl border border-slate-200 bg-white shadow-card",
+        interactive && "hover-glow hover-lift",
         className,
       )}
       {...props}
