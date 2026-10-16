@@ -1,7 +1,9 @@
 import preset from "@nearcommerce/config/tailwind-preset";
 
+const theme = preset.createPreset("admin");
+
 export default {
-  presets: [preset],
+  presets: [theme],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",

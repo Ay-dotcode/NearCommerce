@@ -121,7 +121,7 @@ export function DashboardSkeleton() {
 
 export function AdminShellSkeleton() {
   return (
-    <SkeletonGroup label="Admin console" className="min-h-screen bg-slate-50">
+    <SkeletonGroup label="Admin console" className="min-h-screen">
       <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">

@@ -1,12 +1,18 @@
+import { AdminAurora } from "@/components/AdminAurora";
 import { LoginForm } from "@/forms/LoginForm";
-import { BrandIcon } from "@nearcommerce/ui";
+import { BrandIcon, PointerGlow, ThemeToggle } from "@nearcommerce/ui";
 
 // Admin-only login page. Accepts only SYSTEM_ADMIN credentials: any other
 // role receives a clear "Access denied" error rather than a silent failure.
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-overlay">
+    <div className="relative flex min-h-screen items-center justify-center px-4">
+      <AdminAurora />
+      <PointerGlow />
+      <div className="absolute right-4 top-4">
+        <ThemeToggle compact />
+      </div>
+      <div className="hover-glow w-full max-w-sm rounded-lg border border-slate-200 bg-white/90 p-8 shadow-overlay backdrop-blur">
         <BrandIcon size={48} className="rounded-2xl shadow-card" />
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
           NearCommerce

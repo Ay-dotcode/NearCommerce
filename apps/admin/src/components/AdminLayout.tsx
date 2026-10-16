@@ -1,8 +1,20 @@
+import { AdminAurora } from "@/components/AdminAurora";
+import { CommandPalette } from "@/components/CommandPalette";
+import { isPaletteShortcut, type PaletteCommand } from "@/helpers/commands";
 import { getAccessToken, getUserRole, signOutEverywhere } from "@/session";
 import { cn } from "@nearcommerce/helpers";
-import { BrandIcon, Button, Drawer } from "@nearcommerce/ui";
-import { useState } from "react";
 import {
+  BrandIcon,
+  Button,
+  Drawer,
+  PageTransition,
+  PointerGlow,
+  ThemeToggle,
+  useThemePreference,
+} from "@nearcommerce/ui";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Link,
   Navigate,
   NavLink,
   Outlet,
@@ -34,16 +46,66 @@ export const NAV_ITEMS = [
 // and a sign-out button.
 export function AdminLayout() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const { preference, setPreference } = useThemePreference();
+
+  // Ctrl+K / Cmd+K opens the command palette from anywhere in the console.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!isPaletteShortcut(e)) return;
+      e.preventDefault();
+      setPaletteOpen((open) => !open);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const signOut = () => {
     void signOutEverywhere();
     navigate("/login", { replace: true });
   };
 
+  const commands = useMemo<PaletteCommand[]>(
+    () => [
+      ...NAV_ITEMS.map(({ to, label }) => ({
+        id: `go-${to}`,
+        label,
+        group: "Go to",
+        run: () => navigate(to),
+      })),
+      {
+        id: "theme",
+        label: "Switch theme (Auto → Light → Dark)",
+        keywords: ["dark", "light", "appearance"],
+        group: "Action",
+        run: () =>
+          setPreference(
+            preference === "system"
+              ? "light"
+              : preference === "light"
+                ? "dark"
+                : "system",
+          ),
+      },
+      {
+        id: "sign-out",
+        label: "Sign out",
+        keywords: ["logout", "log out"],
+        group: "Action",
+        run: signOut,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [navigate, preference, setPreference],
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+    <div className="relative min-h-screen text-slate-900">
+      <AdminAurora />
+      <PointerGlow />
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-md sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Button
@@ -55,15 +117,22 @@ export function AdminLayout() {
             >
               <span aria-hidden="true">☰</span>
             </Button>
-            <BrandIcon size={36} className="rounded-xl" />
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
-                NearCommerce
-              </p>
-              <h1 className="text-lg font-semibold leading-tight">
-                System Admin Oversight
-              </h1>
-            </div>
+            {/* The icon and name take you back to the default page. */}
+            <Link
+              to="/dashboard"
+              aria-label="NearCommerce home"
+              className="hover-outline press flex items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            >
+              <BrandIcon size={36} className="rounded-xl" />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+                  NearCommerce
+                </p>
+                <h1 className="text-lg font-semibold leading-tight">
+                  System Admin Oversight
+                </h1>
+              </div>
+            </Link>
           </div>
           <nav aria-label="Primary" className="hidden gap-4 text-sm md:flex">
             {NAV_ITEMS.map(({ to, label }) => (
@@ -71,20 +140,44 @@ export function AdminLayout() {
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  isActive
-                    ? "font-medium text-brand-700"
-                    : "text-slate-500 hover:text-slate-900"
+                  cn(
+                    "hover-underline pb-0.5",
+                    isActive
+                      ? "font-medium text-brand-700"
+                      : "text-slate-500 hover:text-slate-900",
+                  )
                 }
               >
                 {label}
               </NavLink>
             ))}
           </nav>
-          <Button variant="secondary" size="sm" onClick={signOut}>
-            Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Open command palette"
+            >
+              <span className="text-slate-500">Quick find</span>
+              <kbd className="ml-2 rounded border border-slate-300 px-1.5 text-xs text-slate-500">
+                Ctrl K
+              </kbd>
+            </Button>
+            <ThemeToggle compact />
+            <Button variant="secondary" size="sm" onClick={signOut}>
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        commands={commands}
+      />
 
       <Drawer
         open={menuOpen}
@@ -114,7 +207,9 @@ export function AdminLayout() {
       </Drawer>
 
       <main className="mx-auto max-w-7xl p-4 sm:p-6">
-        <Outlet />
+        <PageTransition transitionKey={pathname}>
+          <Outlet />
+        </PageTransition>
       </main>
     </div>
   );
