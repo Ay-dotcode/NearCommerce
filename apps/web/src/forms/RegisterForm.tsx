@@ -54,7 +54,7 @@ export const RegisterForm: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Create your store account"
+      title="Create your store account" backTo={AppRoutes.login}
       subtitle="Set up your account, then add your store and products."
     >
       {successMessage ? (

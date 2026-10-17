@@ -23,6 +23,9 @@ jest.mock("@nearcommerce/api", () => ({
     SYSTEM_ADMIN: "SYSTEM_ADMIN",
   },
   STORE_KEY: "x-store-id",
+  getSupportChannels: jest.fn().mockResolvedValue({
+    channels: { email: "help@example.com", phone: "+90555" },
+  }),
   apiClient: {
     post: jest.fn(),
     defaults: { headers: { common: {} } },
@@ -290,5 +293,49 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     });
 
     expect(apiClient.post).not.toHaveBeenCalled();
+  });
+
+  it("offers a Contact support link to a suspended account, which opens support", async () => {
+    (apiClient.post as jest.Mock).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: { error: "Account is suspended.", code: "ACCOUNT_SUSPENDED" },
+      },
+    });
+    renderWithProviders(makeQueryClient());
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "owner@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+
+    const link = await screen.findByRole("button", { name: "Contact support" });
+    fireEvent.click(link);
+    expect(
+      await screen.findByRole("dialog", { name: /support/i }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/help@example\.com/)).toBeInTheDocument();
+  });
+
+  it("does not offer support for an ordinary wrong-password failure", async () => {
+    (apiClient.post as jest.Mock).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 401, data: { error: "Invalid credentials" } },
+    });
+    renderWithProviders(makeQueryClient());
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "owner@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "wrong-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole("button", { name: "Contact support" })).toBeNull();
   });
 });

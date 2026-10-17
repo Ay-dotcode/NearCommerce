@@ -3,14 +3,25 @@ import { AppRoutes } from "@/constants/routes";
 import { useLogin } from "@/features/auth/api/useLogin";
 import { clearSession, getUserRole } from "@/features/auth/session";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
-import { loginErrorMessage, UserRole } from "@nearcommerce/api";
+import {
+  isSuspendedError,
+  loginErrorMessage,
+  UserRole,
+} from "@nearcommerce/api";
+import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { useFormik } from "formik";
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { safeReturnPath } from "@/helpers/authRedirect";
 import { loginInitialValues, validateLogin } from "@/forms/login.form";
 
-type Notice = { tone: "error" | "info"; title?: string; body: React.ReactNode };
+type Notice = {
+  tone: "error" | "info";
+  title?: string;
+  body: React.ReactNode;
+  // A suspended account gets a "Contact support" link under the message.
+  offerSupport?: boolean;
+};
 
 // Renders the Store Portal login. Only STORE_OWNER accounts can use this portal.
 // Shoppers and administrators who sign in here are told where to go instead of
@@ -20,6 +31,7 @@ export const LoginForm: React.FC = () => {
   const location = useLocation();
   const loginMutation = useLogin();
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   const returnTo = safeReturnPath(
     (location.state as { from?: string } | null)?.from,
@@ -70,7 +82,11 @@ export const LoginForm: React.FC = () => {
         },
         onError: (err) => {
           setSubmitting(false);
-          setNotice({ tone: "error", body: loginErrorMessage(err) });
+          setNotice({
+            tone: "error",
+            body: loginErrorMessage(err),
+            offerSupport: isSuspendedError(err),
+          });
         },
       });
     },
@@ -124,6 +140,15 @@ export const LoginForm: React.FC = () => {
           >
             {notice.title && <p className="font-semibold">{notice.title}</p>}
             <p>{notice.body}</p>
+            {notice.offerSupport && (
+              <button
+                type="button"
+                onClick={() => setSupportOpen(true)}
+                className="mt-2 font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                Contact support
+              </button>
+            )}
           </div>
         )}
 
@@ -141,6 +166,7 @@ export const LoginForm: React.FC = () => {
           </Link>
         </p>
       </form>
+      <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
     </AuthLayout>
   );
 };

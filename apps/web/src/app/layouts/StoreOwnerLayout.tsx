@@ -1,6 +1,13 @@
 import { listMyStores } from "@/api/stores";
 import { PortalPageSkeleton } from "@/app/PageSkeletons";
-import { BrandIcon, Button, Skeleton } from "@nearcommerce/ui";
+import {
+  BrandIcon,
+  Button,
+  PageTransition,
+  PointerGlow,
+  Skeleton,
+  ThemeToggle,
+} from "@nearcommerce/ui";
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes } from "@/constants/routes";
 import {
@@ -16,7 +23,13 @@ import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { parseApiError, STORE_KEY } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { cn } from "@nearcommerce/helpers";
 
 const navItems = [
@@ -26,6 +39,7 @@ const navItems = [
 
 export function StoreOwnerLayout() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [supportOpen, setSupportOpen] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState(
     () => localStorage.getItem(STORE_KEY) ?? "",
@@ -76,11 +90,17 @@ export function StoreOwnerLayout() {
   const ready = Boolean(storesQuery.data && activeStore);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="relative min-h-screen text-slate-900">
+      <PointerGlow />
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <div className="flex items-center gap-3">
+            {/* The icon and name take you back to the default page. */}
+            <Link
+              to={AppRoutes.storeOwnerDashboard}
+              aria-label="NearCommerce home"
+              className="hover-outline press flex items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            >
               <BrandIcon size={36} className="rounded-xl" />
               <div>
                 <p className="text-xs font-semibold text-brand-700">
@@ -90,7 +110,7 @@ export function StoreOwnerLayout() {
                   Store Owner Portal
                 </h1>
               </div>
-            </div>
+            </Link>
 
             {storesQuery.isLoading && (
               <Skeleton className="h-9 w-72 max-w-full" />
@@ -129,6 +149,7 @@ export function StoreOwnerLayout() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle compact />
             <Button
               variant="ghost"
               size="sm"
@@ -178,7 +199,7 @@ export function StoreOwnerLayout() {
         {ready && (
           <nav
             aria-label="Primary"
-            className="mx-auto max-w-7xl overflow-x-auto px-4 sm:px-6"
+            className="no-scrollbar mx-auto max-w-7xl overflow-x-auto px-4 sm:px-6"
           >
             <ul className="flex gap-1">
               {navItems.map((item) => (
@@ -209,8 +230,15 @@ export function StoreOwnerLayout() {
           role="alert"
           className="border-b border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800"
         >
-          This store is suspended and hidden from search. Contact support for
-          assistance.
+          This store is suspended and hidden from search.{" "}
+          <button
+            type="button"
+            onClick={() => setSupportOpen(true)}
+            className="font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+          >
+            Contact support
+          </button>{" "}
+          for assistance.
         </div>
       )}
 
@@ -240,7 +268,11 @@ export function StoreOwnerLayout() {
           </div>
         )}
 
-        {ready && <Outlet key={activeStore!.id} />}
+        {ready && (
+          <PageTransition transitionKey={`${activeStore!.id}${pathname}`}>
+            <Outlet key={activeStore!.id} />
+          </PageTransition>
+        )}
       </main>
 
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />

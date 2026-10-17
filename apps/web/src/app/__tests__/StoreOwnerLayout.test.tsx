@@ -234,4 +234,21 @@ describe("StoreOwnerLayout", () => {
     expect(localStorage.getItem("access_token")).toBeNull();
     expect(localStorage.getItem("x-store-id")).toBeNull();
   });
+
+  it("has a theme toggle, a home link on the app icon and a nav that hides its scrollbar", async () => {
+    meMock.mockReturnValue({ data: { email_verified: true } });
+    resendMock.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    listMock.mockResolvedValue([store("s1", "Alpha")]);
+    renderLayout();
+    expect(await screen.findByText("Dashboard content")).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "NearCommerce home" })).toHaveAttribute(
+      "href",
+      "/owner/dashboard",
+    );
+    expect(screen.getByRole("navigation").className).toMatch(/no-scrollbar/);
+    expect(screen.getByTestId("page-transition")).toHaveTextContent(
+      "Dashboard content",
+    );
+  });
 });

@@ -1,4 +1,5 @@
 import brandIcon from "@nearcommerce/config/vite-brand-icon";
+import themeInit from "@nearcommerce/config/vite-theme-init";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -8,7 +9,7 @@ const uiPath = fileURLToPath(new URL("../../packages/ui", import.meta.url));
 
 export default defineConfig({
   envDir: fileURLToPath(new URL("../..", import.meta.url)),
-  plugins: [react(), brandIcon()],
+  plugins: [react(), brandIcon(), themeInit()],
   resolve: {
     alias: [
       { find: "@", replacement: srcPath },

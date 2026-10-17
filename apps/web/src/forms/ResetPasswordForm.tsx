@@ -31,7 +31,7 @@ export const ResetPasswordForm: React.FC = () => {
   if (!token)
     return (
       <AuthLayout
-        title="Reset link missing"
+        title="Reset link missing" backTo={AppRoutes.login}
         subtitle="Open the link from your email, or request a new one."
       >
         <Link
@@ -45,7 +45,7 @@ export const ResetPasswordForm: React.FC = () => {
 
   if (reset.isSuccess)
     return (
-      <AuthLayout title="Password updated">
+      <AuthLayout title="Password updated" backTo={AppRoutes.login}>
         <div
           role="status"
           className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"
@@ -69,7 +69,7 @@ export const ResetPasswordForm: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Choose a new password"
+      title="Choose a new password" backTo={AppRoutes.login}
       subtitle="Use at least 8 characters."
     >
       <form onSubmit={formik.handleSubmit} noValidate className="space-y-4">

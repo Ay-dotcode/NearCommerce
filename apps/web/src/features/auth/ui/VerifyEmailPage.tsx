@@ -24,7 +24,7 @@ export const VerifyEmailPage: React.FC = () => {
   if (!token)
     return (
       <AuthLayout
-        title="Verification link missing"
+        title="Verification link missing" backTo={AppRoutes.login}
         subtitle="Open the link from your email, or log in to request a new one."
       >
         <Link
@@ -38,7 +38,7 @@ export const VerifyEmailPage: React.FC = () => {
 
   if (verify.isSuccess)
     return (
-      <AuthLayout title="Email verified">
+      <AuthLayout title="Email verified" backTo={AppRoutes.login}>
         <div
           role="status"
           className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"
@@ -59,7 +59,7 @@ export const VerifyEmailPage: React.FC = () => {
 
   if (verify.isError)
     return (
-      <AuthLayout title="We couldn't verify your email">
+      <AuthLayout title="We couldn't verify your email" backTo={AppRoutes.login}>
         <div
           role="alert"
           className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
@@ -80,7 +80,7 @@ export const VerifyEmailPage: React.FC = () => {
     );
 
   return (
-    <AuthLayout title="Email verification">
+    <AuthLayout title="Email verification" backTo={AppRoutes.login}>
       <SkeletonGroup label="Confirming your email" className="space-y-2">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-5/6" />

@@ -29,7 +29,7 @@ export const ForgotPasswordForm: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Reset your password"
+      title="Reset your password" backTo={AppRoutes.login}
       subtitle="Enter the email you signed up with and we'll send you a reset link."
     >
       {forgot.isSuccess ? (
