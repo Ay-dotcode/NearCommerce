@@ -228,9 +228,10 @@ export const resetPassword = async (req: Request, res: Response) => {
     try {
       await client.query("BEGIN");
 
-      // Find valid token
       const tokenResult = await client.query(
-        `SELECT user_id FROM password_reset_tokens WHERE token_hash = $1 AND expires_at > NOW()`,
+        `DELETE FROM password_reset_tokens
+          WHERE token_hash = $1 AND expires_at > NOW()
+          RETURNING user_id`,
         [tokenHash],
       );
 
@@ -256,7 +257,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         userId,
       ]);
 
-      // Delete the used reset token
+      // Any other outstanding reset links for this account die with this one.
       await client.query(
         `DELETE FROM password_reset_tokens WHERE user_id = $1`,
         [userId],
@@ -322,7 +323,9 @@ export const loginUser = async (req: Request, res: Response) => {
 
     // Only reveal the suspension once the caller has proven they own the account.
     if (user.is_suspended)
-      return res.status(403).json({ error: "Account is suspended." });
+      return res
+        .status(403)
+        .json({ error: "Account is suspended.", code: "ACCOUNT_SUSPENDED" });
 
     await clearLoginFailures(email, ip);
 

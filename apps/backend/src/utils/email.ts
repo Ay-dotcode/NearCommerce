@@ -40,7 +40,7 @@ export async function sendVerificationEmail(
         <p style="color: #64748b; font-size: 14px;">Or copy and paste this URL into your browser:</p>
         <p style="word-break: break-all; color: #2563eb; font-size: 14px;">${verificationUrl}</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
-        <p style="color: #94a3b8; font-size: 12px;">This verification link will expire in 24 hours. If you did not create an account, you can safely ignore this email.</p>
+        <p style="color: #94a3b8; font-size: 12px;">This verification link works once and expires in 24 hours. If you did not create an account, you can safely ignore this email.</p>
       </div>
     `,
   });
@@ -75,8 +75,10 @@ export async function sendPasswordResetEmail(
         </p>
         <p style="color: #64748b; font-size: 14px;">Or copy and paste this URL into your browser:</p>
         <p style="word-break: break-all; color: #2563eb; font-size: 14px;">${resetUrl}</p>
+        <p style="color: #64748b; font-size: 14px; margin-top: 24px;">Resetting from the NearCommerce mobile app? Paste this reset code into the app instead:</p>
+        <p style="font-family: monospace; word-break: break-all; background: #f1f5f9; border-radius: 6px; padding: 12px; font-size: 14px; color: #0f172a;">${rawToken}</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
-        <p style="color: #94a3b8; font-size: 12px;">This reset link will expire in 1 hour. If you did not request a password reset, please disregard this email.</p>
+        <p style="color: #94a3b8; font-size: 12px;">The link and the code work once and expire in 1 hour. If you did not request a password reset, please disregard this email.</p>
       </div>
     `,
   });

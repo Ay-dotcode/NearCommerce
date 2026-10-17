@@ -227,6 +227,33 @@ describe("Auth Integration Tests", () => {
       expect(response.body.error).toMatch(/invalid or expired reset token/i);
     });
 
+    it("a reset link works exactly once, even when it is used twice at the same moment", async () => {
+      const userRes = await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, 'hashed_pw', $2, 'CUSTOMER') RETURNING id`,
+        [testUser.email, testUser.full_name],
+      );
+      const { rawToken, tokenHash } = generateVerificationToken();
+      await db.query(
+        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, NOW() + interval '1 hour')`,
+        [userRes.rows[0].id, tokenHash],
+      );
+
+      const attempt = (password: string) =>
+        request(app)
+          .post("/auth/reset-password")
+          .send({ token: rawToken, new_password: password });
+      const results = await Promise.all([
+        attempt("firstpassword123"),
+        attempt("secondpassword123"),
+      ]);
+      expect(results.map((r) => r.status).sort()).toEqual([200, 400]);
+
+      const later = await attempt("thirdpassword123");
+      expect(later.status).toBe(400);
+    });
+
     it("should successfully reset password, update database, clear user_sessions, and remove used token", async () => {
       const initialPassword = "oldpassword123";
       const initialHash = await bcrypt.hash(initialPassword, 12);
@@ -340,6 +367,8 @@ describe("Auth Integration Tests", () => {
 
       expect(response.status).toBe(403);
       expect(response.body.error).toBe("Account is suspended.");
+      // Clients use the code to offer a "Contact support" link.
+      expect(response.body.code).toBe("ACCOUNT_SUSPENDED");
     });
 
     it("does not reveal that an account is suspended without the right password", async () => {

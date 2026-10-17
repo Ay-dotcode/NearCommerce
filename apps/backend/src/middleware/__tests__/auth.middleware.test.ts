@@ -96,6 +96,7 @@ describe("requireAuth Middleware", () => {
     expect(mockRes.status).toHaveBeenCalledWith(403);
     expect(mockRes.json).toHaveBeenCalledWith({
       error: "Account is suspended.",
+      code: "ACCOUNT_SUSPENDED",
     });
     expect(mockNext).not.toHaveBeenCalled();
   });

@@ -210,13 +210,19 @@ export const searchStores = async (req: Request, res: Response) => {
       parsed.error.issues,
       "Invalid search parameters",
     );
-  const { lat, lng, radius_meters, q } = parsed.data;
+  const { lat, lng, radius_meters, nearby_only, q } = parsed.data;
 
   try {
     const params = new SqlParams();
     const pLat = params.add(lat);
     const pLng = params.add(lng);
-    const pRadius = params.add(radius_meters);
+    const radiusFilter = nearby_only
+      ? (() => {
+          const pRadius = params.add(radius_meters);
+          return `AND earth_box(ll_to_earth(${pLat}, ${pLng}), ${pRadius}) @> ll_to_earth(s.latitude, s.longitude)
+          AND earth_distance(ll_to_earth(${pLat}, ${pLng}), ll_to_earth(s.latitude, s.longitude)) <= ${pRadius}`;
+        })()
+      : "";
     const nameFilter = q
       ? `AND (s.name ILIKE ${params.add(containsPattern(q))} OR s.name % ${params.add(q)})`
       : "";
@@ -231,8 +237,7 @@ export const searchStores = async (req: Request, res: Response) => {
          ${storeRatingJoin("s")}
         WHERE s.is_suspended = false
           AND u.is_suspended = false
-          AND earth_box(ll_to_earth(${pLat}, ${pLng}), ${pRadius}) @> ll_to_earth(s.latitude, s.longitude)
-          AND earth_distance(ll_to_earth(${pLat}, ${pLng}), ll_to_earth(s.latitude, s.longitude)) <= ${pRadius}
+          ${radiusFilter}
           ${nameFilter}
         ORDER BY distance_meters ASC
         LIMIT ${limit}`,

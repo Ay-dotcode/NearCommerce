@@ -37,6 +37,15 @@ describe("productVisibilityWhere", () => {
     expect(sql).not.toContain("subcategory");
   });
 
+  it("drops the radius (but keeps lat/lng as $1/$2) when only-nearby is turned off", () => {
+    const params = new SqlParams();
+    const sql = productVisibilityWhere(params, { ...base, nearby_only: false });
+    expect(params.values).toEqual([35.1, 33.3]);
+    expect(sql).not.toContain("earth_box");
+    expect(sql).not.toContain("earth_distance");
+    expect(sql).toContain("p.is_published = true");
+  });
+
   it("filters by a whole category through its subcategories", () => {
     const params = new SqlParams();
     const sql = productVisibilityWhere(params, { ...base, category_id: CAT });

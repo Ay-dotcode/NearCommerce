@@ -4,7 +4,7 @@ import type { ProductSearchQueryInput } from "@nearcommerce/api";
 
 // WHERE clause shared by every product search path. A product is only ever shown when it is
 // published, in stock, its store is active, its OWNER is active (SRS 3.2.1), and the store lies
-// within the requested radius. Optional category filters are added on top.
+// within the requested radius (unless the shopper turned "only nearby" off). Optional category filters are added on top.
 //
 // Expects the aliases p (products), s (stores) and u (users, the store owner).
 export function productVisibilityWhere(
@@ -12,20 +12,29 @@ export function productVisibilityWhere(
   query: Pick<
     ProductSearchQueryInput,
     "lat" | "lng" | "radius_meters" | "category_id" | "subcategory_id"
-  >,
+  > & { nearby_only?: boolean },
 ): string {
+  // lat and lng must stay the first two parameters: the callers' distance expression refers
+  // to them as $1 and $2, with or without a radius.
   const lat = params.add(query.lat);
   const lng = params.add(query.lng);
-  const radius = params.add(query.radius_meters);
 
   const conditions = [
     "p.is_published = true",
     "p.quantity > 0",
     "s.is_suspended = false",
     "u.is_suspended = false",
-    `earth_box(ll_to_earth(${lat}, ${lng}), ${radius}) @> ll_to_earth(s.latitude, s.longitude)`,
-    `earth_distance(ll_to_earth(${lat}, ${lng}), ll_to_earth(s.latitude, s.longitude)) <= ${radius}`,
   ];
+
+  // With "only nearby" turned off the shopper searches every store; results are still sorted
+  // by distance, there is just no cut-off.
+  if (query.nearby_only !== false) {
+    const radius = params.add(query.radius_meters);
+    conditions.push(
+      `earth_box(ll_to_earth(${lat}, ${lng}), ${radius}) @> ll_to_earth(s.latitude, s.longitude)`,
+      `earth_distance(ll_to_earth(${lat}, ${lng}), ll_to_earth(s.latitude, s.longitude)) <= ${radius}`,
+    );
+  }
 
   // A subcategory is the narrower filter, so it wins when both are sent.
   if (query.subcategory_id) {

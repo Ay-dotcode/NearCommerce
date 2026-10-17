@@ -28,11 +28,10 @@ describe("GET /search", () => {
     `);
     const ownerId = userRes.rows[0].id;
 
-    // 1. Create a dummy store in Lefke
     const storeRes = await db.query(
       `
       INSERT INTO stores (owner_id, name, address, latitude, longitude, opening_hours)
-      VALUES ($1, 'Lefke Market', 'Lefke Center', 35.14, 32.83, '{}')
+      VALUES ($1, 'Lefke Market', 'Lefke Center', 0.0, 0.0, '{}')
       RETURNING id
       `,
       [ownerId],
@@ -65,7 +64,7 @@ describe("GET /search", () => {
   it("should return published, in-stock products within radius and use fallback if AI fails", async () => {
     const response = await request(app)
       .get("/search")
-      .query({ q: "Milk", lat: 35.14, lng: 32.83, radius_meters: 5000 });
+      .query({ q: "Milk", lat: 0.0, lng: 0.0, radius_meters: 5000 });
 
     expect(response.status).toBe(200);
     expect(response.body.used_fallback).toBe(true); // Because our Gemini stub throws
@@ -81,13 +80,13 @@ describe("GET /search", () => {
     );
     const stale = await request(app)
       .get("/search")
-      .query({ q: "Milk", lat: 35.14, lng: 32.83, radius_meters: 5000 });
+      .query({ q: "Milk", lat: 0.0, lng: 0.0, radius_meters: 5000 });
     expect(stale.body.data[0]).toMatchObject({
       price: 2.5,
       in_stock: true,
       isStale: true,
-      store_latitude: 35.14,
-      store_longitude: 32.83,
+      store_latitude: 0.0,
+      store_longitude: 0.0,
     });
     expect(stale.body.data[0]).not.toHaveProperty("last_verified_at");
 
@@ -96,8 +95,46 @@ describe("GET /search", () => {
     );
     const fresh = await request(app)
       .get("/search")
-      .query({ q: "Milk", lat: 35.14, lng: 32.83, radius_meters: 5000 });
+      .query({ q: "Milk", lat: 0.0, lng: 0.0, radius_meters: 5000 });
     expect(fresh.body.data[0].isStale).toBe(false);
+  });
+
+  it("with nearby_only=false searches stores of any distance, still nearest first", async () => {
+    // About 55 km north of the test store: outside the 50 km cap, so only reachable without a radius.
+    const far = await db.query(
+      `INSERT INTO stores (owner_id, name, address, latitude, longitude, opening_hours)
+       SELECT owner_id, 'Far Milk Store', 'Far', 0.5, 0.0, '{}' FROM stores WHERE id = $1
+       RETURNING id`,
+      [storeId],
+    );
+    await db.query(
+      `INSERT INTO products (store_id, name, price, quantity, is_published, image_url)
+       VALUES ($1, 'Far Milk', 2.5, 5, true, 'https://cdn.nearcommerce.test/far-milk.jpg')`,
+      [far.rows[0].id],
+    );
+    try {
+      const nearbyOnly = await request(app)
+        .get("/search")
+        .query({ q: "Milk", lat: 0.0, lng: 0.0, radius_meters: 5000 });
+      expect(nearbyOnly.body.data.map((p: any) => p.name)).toEqual([
+        "Fresh Milk",
+      ]);
+
+      const everywhere = await request(app).get("/search").query({
+        q: "Milk",
+        lat: 0.0,
+        lng: 0.0,
+        radius_meters: 5000,
+        nearby_only: "false",
+      });
+      expect(everywhere.status).toBe(200);
+      const matchedNames = everywhere.body.data
+        .map((p: any) => p.name)
+        .filter((n: string) => n === "Fresh Milk" || n === "Far Milk");
+      expect(matchedNames).toEqual(["Fresh Milk", "Far Milk"]);
+    } finally {
+      await db.query("DELETE FROM stores WHERE id = $1", [far.rows[0].id]);
+    }
   });
 
   it("should fail validation if lat/lng are missing", async () => {

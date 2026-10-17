@@ -86,6 +86,16 @@ describe("Email verification flow", () => {
     expect(again.status).toBe(400);
   });
 
+  it("a verification link used twice at the same moment succeeds only once", async () => {
+    await register();
+    const token = lastToken();
+    const results = await Promise.all([
+      request(app).post("/auth/verify-email").send({ token }),
+      request(app).post("/auth/verify-email").send({ token }),
+    ]);
+    expect(results.map((r) => r.status).sort()).toEqual([200, 400]);
+  });
+
   it("rejects unknown, expired and missing tokens", async () => {
     await register();
     const bad = await request(app)

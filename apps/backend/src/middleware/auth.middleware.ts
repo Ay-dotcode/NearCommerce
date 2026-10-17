@@ -33,7 +33,9 @@ export const requireAuth = async (
     }
 
     if (isSuspended === "true")
-      return res.status(403).json({ error: "Account is suspended." });
+      return res
+        .status(403)
+        .json({ error: "Account is suspended.", code: "ACCOUNT_SUSPENDED" });
 
     // 3. Attach user to request
     req.user = { id: decoded.id, role: decoded.role };

@@ -58,9 +58,12 @@ export async function confirmEmailVerification(
   const client = await db.connect();
   try {
     await client.query("BEGIN");
+    // Claim the token in one statement so a verification link works exactly once, even when
+    // the same link is opened twice at the same moment.
     const found = await client.query(
-      `SELECT user_id FROM email_verification_tokens
-        WHERE token_hash = $1 AND expires_at > NOW()`,
+      `DELETE FROM email_verification_tokens
+        WHERE token_hash = $1 AND expires_at > NOW()
+        RETURNING user_id`,
       [tokenHash],
     );
     if (found.rows.length === 0) {

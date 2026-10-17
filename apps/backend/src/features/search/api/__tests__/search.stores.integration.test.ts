@@ -155,6 +155,30 @@ describe("GET /search/stores", () => {
     expect((await search({ radius_meters: 1_000 })).body.data).toHaveLength(0);
   });
 
+  it("with nearby_only=false lists every store regardless of radius, nearest first", async () => {
+    await createTestStore(owner.id, "Far Store", at(30_000));
+    await createTestStore(owner.id, "Near Store", at(500));
+    await createTestStore(owner.id, "Mid Store", at(8_000));
+
+    // Default: only the store inside the 5 km default radius.
+    expect((await search()).body.data.map((s: any) => s.name)).toEqual([
+      "Near Store",
+    ]);
+
+    const expectedOrder = ["Near Store", "Mid Store", "Far Store"];
+    for (const flag of ["false", false]) {
+      const res = await search({ nearby_only: flag, radius_meters: 1_000 });
+      expect(res.status).toBe(200);
+      const names = res.body.data
+        .map((s: any) => s.name)
+        .filter((n: string) => expectedOrder.includes(n));
+      expect(names).toEqual(expectedOrder);
+    }
+    expect(
+      (await search({ nearby_only: "true", radius_meters: 1_000 })).body.data,
+    ).toHaveLength(1);
+  });
+
   it("accepts the largest radius (50 km) and rejects anything bigger or non-positive", async () => {
     expect((await search({ radius_meters: 50_000 })).status).toBe(200);
     const tooBig = await search({ radius_meters: 50_001 });
