@@ -15,8 +15,14 @@
     },
     "./tailwind-preset": "./tailwind-preset.cjs",
     "./tsconfig.base.json": "./tsconfig.base.json",
-    "./vite-brand-icon": "./vite-brand-icon.cjs",
-    "./vite-theme-init": "./vite-theme-init.cjs"
+    "./vite-brand-icon": {
+      "types": "./vite-brand-icon.d.ts",
+      "default": "./vite-brand-icon.cjs"
+    },
+    "./vite-theme-init": {
+      "types": "./vite-theme-init.d.ts",
+      "default": "./vite-theme-init.cjs"
+    }
   },
   "dependencies": {
     "tailwindcss": "^3.4.19"

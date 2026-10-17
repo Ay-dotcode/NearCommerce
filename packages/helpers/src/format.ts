@@ -60,5 +60,12 @@ export function initialOf(name: string): string {
   return name.trim().charAt(0).toUpperCase() || "?";
 }
 
-// 1 -> "1 mile", 5 -> "5 miles".
-export const formatMiles = (miles: number) => pluralize(miles, "mile");
+// 5 -> "5 km". Distances are shown in kilometres everywhere.
+export const formatKm = (km: number) => `${km} km`;
+
+// 1234 metres -> "1.2 km"; under a kilometre stays readable: 420 -> "420 m".
+export function formatDistance(meters: number): string {
+  if (!Number.isFinite(meters)) return "unknown";
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}

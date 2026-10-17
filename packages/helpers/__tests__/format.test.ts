@@ -2,7 +2,8 @@ import {
   formatPrice,
   timeAgo,
   formatDate,
-  formatMiles,
+  formatKm,
+  formatDistance,
   formatShortDate,
   initialOf,
   pluralize,
@@ -56,13 +57,13 @@ describe("formatPrice", () => {
   });
 });
 
-describe("pluralize / formatMiles", () => {
+describe("pluralize / formatKm", () => {
   it("uses the singular for exactly one and adds s otherwise", () => {
     expect(pluralize(1, "day")).toBe("1 day");
     expect(pluralize(0, "day")).toBe("0 days");
     expect(pluralize(2, "category", "categories")).toBe("2 categories");
-    expect(formatMiles(1)).toBe("1 mile");
-    expect(formatMiles(5)).toBe("5 miles");
+    expect(formatKm(1)).toBe("1 km");
+    expect(formatKm(5)).toBe("5 km");
   });
 });
 
@@ -77,5 +78,14 @@ describe("formatDate / formatShortDate / initialOf", () => {
   it("takes the first letter of a name for an avatar, with a fallback", () => {
     expect(initialOf("  jane doe")).toBe("J");
     expect(initialOf("")).toBe("?");
+  });
+});
+
+describe("formatDistance", () => {
+  it("shows kilometres with one decimal, and metres when under a kilometre", () => {
+    expect(formatDistance(1234)).toBe("1.2 km");
+    expect(formatDistance(5000)).toBe("5.0 km");
+    expect(formatDistance(420.4)).toBe("420 m");
+    expect(formatDistance(NaN)).toBe("unknown");
   });
 });

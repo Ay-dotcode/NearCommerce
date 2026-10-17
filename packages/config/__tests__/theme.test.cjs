@@ -73,11 +73,39 @@ test("the preset emits light variables by default and dark ones under prefers-co
   const handler = plugin.handler ?? plugin;
   (typeof handler === "function" ? handler : plugin.handler)({
     addBase: (rules) => (base = rules),
+    addUtilities: () => {},
   });
   assert.equal(base[":root"]["--c-white"], "255 255 255");
   assert.equal(base[":root"].colorScheme, "light dark");
-  const darkRoot = base["@media (prefers-color-scheme: dark)"][":root"];
+  const darkRoot =
+    base["@media (prefers-color-scheme: dark)"][":root:not([data-theme='light'])"];
   assert.equal(darkRoot["--c-white"], "15 23 42");
   assert.notEqual(darkRoot["--c-slate-900"], base[":root"]["--c-slate-900"]);
   assert.ok(base.body.backgroundColor.includes("--c-slate-50"));
+});
+
+test("the page keeps its scrollbar space so dialogs do not shift it", () => {
+  let base;
+  const handler = preset.plugins[0].handler ?? preset.plugins[0];
+  handler({ addBase: (rules) => (base = rules), addUtilities: () => {} });
+  assert.equal(base.html.scrollbarGutter, "stable");
+});
+
+test("createPreset gives each portal its own brand colour but shares everything else", () => {
+  const { createPreset } = preset;
+  const shopper = createPreset("default");
+  const owner = createPreset("owner");
+  const admin = createPreset("admin");
+  const brandVars = (p) => {
+    let base;
+    (p.plugins[0].handler ?? p.plugins[0])({
+      addBase: (rules) => (base = rules),
+      addUtilities: () => {},
+    });
+    return base[":root"]["--c-brand-600"];
+  };
+  assert.notEqual(brandVars(shopper), brandVars(owner));
+  assert.notEqual(brandVars(owner), brandVars(admin));
+  assert.notEqual(brandVars(shopper), brandVars(admin));
+  assert.throws(() => createPreset("nope"));
 });

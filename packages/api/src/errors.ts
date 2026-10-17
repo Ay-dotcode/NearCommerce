@@ -50,3 +50,15 @@ export function loginErrorMessage(error: unknown): string {
     return response.data.error;
   return "Invalid email or password.";
 }
+
+export const ACCOUNT_SUSPENDED_CODE = "ACCOUNT_SUSPENDED";
+
+// True when a failed request or sign-in was refused because the account is suspended. Clients
+// use it to offer a "Contact support" link next to the message.
+export function isSuspendedError(error: unknown): boolean {
+  const { status, code, message } = parseApiError(error);
+  return (
+    status === 403 &&
+    (code === ACCOUNT_SUSPENDED_CODE || /suspended/i.test(message))
+  );
+}

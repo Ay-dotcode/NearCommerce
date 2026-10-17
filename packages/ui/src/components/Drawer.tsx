@@ -35,8 +35,10 @@ export function Drawer({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          "absolute inset-y-0 flex w-72 max-w-[85vw] animate-drawer-in flex-col border-slate-200 bg-white shadow-overlay focus:outline-none motion-reduce:animate-none",
-          side === "left" ? "left-0 border-r" : "right-0 border-l",
+          "absolute inset-y-0 flex w-72 max-w-[85vw] flex-col border-slate-200 bg-white shadow-overlay focus:outline-none motion-reduce:animate-none",
+          side === "left"
+            ? "left-0 animate-drawer-in border-r"
+            : "right-0 animate-drawer-in-right border-l",
         )}
       >
         <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">

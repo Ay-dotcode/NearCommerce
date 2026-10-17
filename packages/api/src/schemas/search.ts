@@ -4,6 +4,14 @@ import { z } from "zod";
 export const SEARCH_DEFAULT_RADIUS_METERS = 5000;
 export const SEARCH_MAX_RADIUS_METERS = 50_000;
 
+// "Only nearby" is on unless a client explicitly turns it off (query strings send "false").
+// When off, the radius is ignored: every active store is searched and results are still
+// ordered by how close they are to the shopper.
+const nearbyOnly = z.preprocess(
+  (value) => !(value === false || value === "false"),
+  z.boolean(),
+);
+
 export const SearchQuerySchema = z.object({
   q: z.string().optional(), // The search term (e.g., "fresh milk")
   lat: z.coerce
@@ -22,6 +30,7 @@ export const SearchQuerySchema = z.object({
       `radius_meters must be at most ${SEARCH_MAX_RADIUS_METERS}`,
     )
     .default(SEARCH_DEFAULT_RADIUS_METERS),
+  nearby_only: nearbyOnly,
 });
 
 // Browse drill-down: restrict product search to one subcategory, or to a whole category.
@@ -55,6 +64,7 @@ export const StoreSearchQuerySchema = SearchQuerySchema.pick({
   lat: true,
   lng: true,
   radius_meters: true,
+  nearby_only: true,
 }).extend({
   q: z.string().trim().max(100).optional(),
 });

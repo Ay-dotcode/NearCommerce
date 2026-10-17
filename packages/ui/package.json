@@ -11,9 +11,10 @@
     "generate:app-icons": "node scripts/generate-app-icons.mjs"
   },
   "peerDependencies": {
+    "formik": "^2.4.6",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "formik": "^2.4.6"
+    "react-router-dom": "^6.22.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.2",
@@ -26,6 +27,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6",
     "sharp": "^0.34.4",
     "ts-jest": "^29.1.2",
     "typescript": "^5.3.3"

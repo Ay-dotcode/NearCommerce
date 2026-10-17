@@ -53,6 +53,9 @@ const effects = {
     ".hover-underline:hover": { backgroundSize: "100% 2px" },
   },
   ".press:active": { transform: "scale(0.97)" },
+  // Hides a scrollbar while keeping the element scrollable (horizontal nav bars).
+  ".no-scrollbar": { scrollbarWidth: "none", msOverflowStyle: "none" },
+  ".no-scrollbar::-webkit-scrollbar": { display: "none" },
   "@media (prefers-reduced-motion: reduce)": {
     ".hover-lift:hover, .press:active": { transform: "none" },
   },
@@ -114,6 +117,10 @@ function createPreset(themeName = "default") {
             from: { transform: "translateX(-100%)" },
             to: { transform: "none" },
           },
+          "drawer-in-right": {
+            from: { transform: "translateX(100%)" },
+            to: { transform: "none" },
+          },
           "fade-in-up": {
             from: { opacity: "0", transform: "translateY(10px)" },
             to: { opacity: "1", transform: "none" },
@@ -140,18 +147,31 @@ function createPreset(themeName = "default") {
             "0%": { transform: "translateY(-100%)" },
             "100%": { transform: "translateY(100vh)" },
           },
+          // Route change: the new page slides in a little from the right while fading in.
+          "page-in": {
+            from: { opacity: "0", transform: "translateX(18px)" },
+            to: { opacity: "1", transform: "none" },
+          },
+          // Admin aurora: slowly shifting colour bands.
+          aurora: {
+            "0%, 100%": { transform: "translate3d(-8%, 0, 0) rotate(0deg) scale(1)" },
+            "50%": { transform: "translate3d(8%, -4%, 0) rotate(8deg) scale(1.15)" },
+          },
         },
         animation: {
           "skeleton-shimmer": "skeleton-shimmer 1.6s infinite",
           "overlay-in": "overlay-in 150ms ease-out",
           "sheet-in": "sheet-in 180ms ease-out",
           "drawer-in": "drawer-in 200ms ease-out",
+          "drawer-in-right": "drawer-in-right 200ms ease-out",
           "fade-in-up": "fade-in-up 0.4s ease-out both",
           "pop-in": "pop-in 0.35s ease-out both",
           float: "float 7s ease-in-out infinite",
           drift: "drift 18s ease-in-out infinite",
           "pulse-glow": "pulse-glow 2.4s ease-in-out infinite",
           scan: "scan 9s linear infinite",
+          "page-in": "page-in 0.28s ease-out both",
+          aurora: "aurora 22s ease-in-out infinite",
         },
       },
     },
@@ -164,6 +184,9 @@ function createPreset(themeName = "default") {
           },
           ":root[data-theme='light']": { colorScheme: "light" },
           ":root[data-theme='dark']": { ...cssVars(dark), colorScheme: "dark" },
+          // Reserve the scrollbar's space always, so opening a dialog (which locks scrolling and
+          // hides the bar) does not make the page behind it jump sideways.
+          html: { scrollbarGutter: "stable" },
           "*, ::before, ::after": {
             "--tw-ring-offset-color": "rgb(var(--c-white))",
           },
