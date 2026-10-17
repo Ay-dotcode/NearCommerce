@@ -41,11 +41,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         visible={overlay === "settings"}
         onClose={close}
         title="Settings"
+        side="right"
         testID="settings-drawer"
       >
         <SettingsContent
           onOpenZip={() => setOverlay("zip")}
           onOpenSupport={() => setOverlay("support")}
+          onClose={close}
         />
       </Drawer>
       <LocationFallbackModal
@@ -56,6 +58,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       <SupportSheet visible={overlay === "support"} onClose={close} />
     </SettingsContext.Provider>
   );
+}
+
+// Like useSettings, but returns null outside the provider (screens that can also render
+// without a drawer, such as the sign-in page).
+export function useOptionalSettings() {
+  return useContext(SettingsContext);
 }
 
 export function useSettings() {

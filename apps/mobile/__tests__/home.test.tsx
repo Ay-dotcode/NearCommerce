@@ -66,9 +66,9 @@ describe("HomeScreen", () => {
     expect(await findByText("Groceries")).toBeTruthy();
     expect(getByLabelText("Browse Toys")).toBeTruthy();
     expect(await findByText("Corner Shop")).toBeTruthy();
-    expect(getByText("1.0 miles away")).toBeTruthy();
+    expect(getByText("1.6 km away")).toBeTruthy();
     expect(get).toHaveBeenCalledWith("/search/stores", {
-      params: { lat: 1, lng: 2, radius_meters: 4828 },
+      params: { lat: 1, lng: 2, radius_meters: 5000, nearby_only: true },
     });
   });
 

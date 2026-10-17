@@ -20,13 +20,18 @@ import {
   waitFor,
 } from "@testing-library/react-native";
 import * as Location from "expo-location";
+import Toast from "react-native-toast-message";
 const SettingsScreen = ({
   onOpenZip = () => {},
 }: {
   onOpenZip?: () => void;
 }) => (
   <DialogProvider>
-    <SettingsContent onOpenZip={onOpenZip} onOpenSupport={() => {}} />
+    <SettingsContent
+      onOpenZip={onOpenZip}
+      onOpenSupport={() => {}}
+      onClose={() => {}}
+    />
   </DialogProvider>
 );
 
@@ -34,6 +39,8 @@ jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),
   geocodeAsync: jest.fn(),
+  reverseGeocodeAsync: jest.fn(),
+  getLastKnownPositionAsync: jest.fn(),
   PermissionStatus: { GRANTED: "granted", DENIED: "denied" },
   Accuracy: { Balanced: 3 },
 }));
@@ -64,6 +71,10 @@ beforeEach(async () => {
   store.clear();
   await clearManualLocation();
   loc.geocodeAsync.mockResolvedValue([{ latitude: 37.77, longitude: -122.41 }]);
+  loc.reverseGeocodeAsync.mockResolvedValue([
+    { city: "Nicosia", country: "Cyprus" },
+  ]);
+  loc.getLastKnownPositionAsync.mockResolvedValue(null);
 });
 
 describe("resolvePostalCode", () => {
@@ -245,11 +256,111 @@ describe("Settings location", () => {
   });
 
   it("shows the saved ZIP code and can switch back to the device", async () => {
+    loc.requestForegroundPermissionsAsync.mockResolvedValue({ status: "granted" });
+    loc.getCurrentPositionAsync.mockResolvedValue({
+      coords: { latitude: 35.17, longitude: 33.36 },
+    });
     await setManualLocation(SF);
     const { findByText, getByText } = render(<SettingsScreen />);
     expect(await findByText("Using ZIP code 94103")).toBeTruthy();
     fireEvent.press(getByText("Use my device location"));
-    expect(await findByText("Using your device location")).toBeTruthy();
+    expect(await findByText(/^Using your device location/)).toBeTruthy();
     expect(getManualLocation()).toBeNull();
+  });
+});
+
+describe("ZIP sheet", () => {
+  it("keeps 'Use this location' disabled until a ZIP code is typed", () => {
+    const { getByTestId } = render(
+      <LocationFallbackModal visible reason="manual" onClose={jest.fn()} />,
+    );
+    const button = () => getByTestId("zip-submit");
+    expect(button().props.accessibilityState?.disabled).toBe(true);
+    fireEvent.changeText(getByTestId("zip-input"), "94103");
+    expect(button().props.accessibilityState?.disabled).toBeFalsy();
+    fireEvent.changeText(getByTestId("zip-input"), "   ");
+    expect(button().props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it("confirms with a pop-up once the location is set", async () => {
+    const { getByTestId } = render(
+      <LocationFallbackModal visible reason="manual" onClose={jest.fn()} />,
+    );
+    fireEvent.changeText(getByTestId("zip-input"), "94103");
+    fireEvent.press(getByTestId("zip-submit"));
+    await waitFor(() =>
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "success",
+          text1: "Location updated",
+          text2: expect.stringContaining("94103"),
+        }),
+      ),
+    );
+  });
+});
+
+describe("Using the device location from settings", () => {
+  const granted = () => {
+    loc.requestForegroundPermissionsAsync.mockResolvedValue({ status: "granted" });
+    loc.getCurrentPositionAsync.mockResolvedValue({
+      coords: { latitude: 35.17, longitude: 33.36 },
+    });
+  };
+
+  it("switches back, closes the drawer and says which place it is using", async () => {
+    granted();
+    await setManualLocation(SF);
+    const onClose = jest.fn();
+    const { findByText, getByText } = render(
+      <DialogProvider>
+        <SettingsContent onOpenZip={() => {}} onOpenSupport={() => {}} onClose={onClose} />
+      </DialogProvider>,
+    );
+    await findByText("Using ZIP code 94103");
+    fireEvent.press(getByText("Use my device location"));
+    await waitFor(() =>
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "success",
+          text1: "Now using your device location",
+          text2: "Showing shops near Nicosia, Cyprus.",
+        }),
+      ),
+    );
+    expect(onClose).toHaveBeenCalled();
+    expect(getManualLocation()).toBeNull();
+  });
+
+  it("says so, and keeps the ZIP code, when location access is off", async () => {
+    loc.requestForegroundPermissionsAsync.mockResolvedValue({ status: "denied" });
+    await setManualLocation(SF);
+    const { findByText, getByText } = render(
+      <DialogProvider>
+        <SettingsContent onOpenZip={() => {}} onOpenSupport={() => {}} onClose={() => {}} />
+      </DialogProvider>,
+    );
+    await findByText("Using ZIP code 94103");
+    fireEvent.press(getByText("Use my device location"));
+    await waitFor(() =>
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "error", text1: "Location access is off" }),
+      ),
+    );
+    expect(getManualLocation()).toEqual(SF);
+  });
+
+  it("shows the name of the place under the device location", async () => {
+    loc.getLastKnownPositionAsync.mockResolvedValue({
+      coords: { latitude: 35.17, longitude: 33.36 },
+    });
+    const { findByText } = render(
+      <DialogProvider>
+        <SettingsContent onOpenZip={() => {}} onOpenSupport={() => {}} onClose={() => {}} />
+      </DialogProvider>,
+    );
+    expect(
+      await findByText("Using your device location · Nicosia, Cyprus"),
+    ).toBeTruthy();
   });
 });

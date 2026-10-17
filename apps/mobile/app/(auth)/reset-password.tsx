@@ -3,7 +3,7 @@ import { ResetPasswordForm } from "@/forms/ResetPasswordForm";
 
 export default function ResetPasswordScreen() {
   return (
-    <AuthScreen title="Choose a new password">
+    <AuthScreen title="Choose a new password" showBack>
       <ResetPasswordForm />
     </AuthScreen>
   );

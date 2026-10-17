@@ -9,3 +9,8 @@ jest.mock(
   "react-native-safe-area-context",
   () => require("react-native-safe-area-context/jest/mock").default,
 );
+
+// Clipboard is a native module; tests only need to see that it was called.
+jest.mock("expo-clipboard", () => ({
+  setStringAsync: jest.fn(() => Promise.resolve(true)),
+}));

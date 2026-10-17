@@ -1,14 +1,16 @@
-import { loginErrorMessage } from "@/api/errors";
+import { isSuspendedError, loginErrorMessage } from "@/api/errors";
 import AuthLink from "@/components/auth/AuthLink";
 import { Button, FormError, FormTextField } from "@/components/ui";
 import { loginInitialValues, loginSchema } from "@/forms/login.form";
 import { useAuth } from "@/src/context/AuthContext";
+import { useOptionalSettings } from "@/src/context/SettingsContext";
 import { apiClient, type AuthResponse } from "@nearcommerce/api";
 import { router } from "expo-router";
 import { FormikProvider, useFormik } from "formik";
 
 export function LoginForm() {
   const { login } = useAuth();
+  const settings = useOptionalSettings();
 
   const formik = useFormik({
     initialValues: loginInitialValues,
@@ -25,7 +27,10 @@ export function LoginForm() {
         router.replace("/(tabs)");
       } catch (err) {
         // Shown inside the form (banner + red fields), never in a pop-up.
-        helpers.setStatus({ form: loginErrorMessage(err) });
+        helpers.setStatus({
+          form: loginErrorMessage(err),
+          suspended: isSuspendedError(err),
+        });
       }
     },
   });
@@ -66,6 +71,14 @@ export function LoginForm() {
         />
 
         <FormError message={formik.status?.form} />
+        {formik.status?.suspended && settings && (
+          <AuthLink
+            testID="contact-support-link"
+            label="Contact support"
+            align="flex-start"
+            onPress={settings.openSupport}
+          />
+        )}
 
         <Button
           testID="login-button"

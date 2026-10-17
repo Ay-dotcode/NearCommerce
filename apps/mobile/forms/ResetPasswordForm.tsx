@@ -2,6 +2,7 @@ import { apiErrorMessage } from "@/api/errors";
 import AuthLink from "@/components/auth/AuthLink";
 import { Button, FormError, FormTextField } from "@/components/ui";
 import {
+  extractResetToken,
   resetPasswordInitialValues,
   resetPasswordSchema,
 } from "@/forms/resetPassword.form";
@@ -25,7 +26,7 @@ export function ResetPasswordForm() {
       helpers.setStatus(undefined);
       try {
         await apiClient.post("/auth/reset-password", {
-          token: values.token.trim(),
+          token: extractResetToken(values.token),
           new_password: values.password,
         });
         setDone(true);
@@ -67,7 +68,7 @@ export function ResetPasswordForm() {
               name="token"
               testID="token-input"
               label="Reset code"
-              placeholder="Paste the code from your email"
+              placeholder="Paste the code or link from your email"
               autoCapitalize="none"
               autoCorrect={false}
             />

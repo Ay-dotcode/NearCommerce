@@ -3,7 +3,7 @@ export type Store = {
   name: string;
   isOpen: boolean;
   rating: number;
-  distance: number;
+  distanceMeters: number;
 };
 
 export type StoreProps = {
@@ -11,5 +11,5 @@ export type StoreProps = {
   name: string;
   isOpen: boolean;
   rating: number;
-  distance?: number;
+  distanceMeters?: number;
 };

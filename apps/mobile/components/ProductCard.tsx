@@ -1,4 +1,4 @@
-import { METERS_PER_MILE } from "@/constants";
+import { formatDistance } from "@nearcommerce/helpers";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useThemedStyles, type ThemeColors } from "@/theme";
 
@@ -27,9 +27,7 @@ export default function ProductCard({
 
   const where = [
     storeName,
-    distanceMeters !== undefined
-      ? `${(distanceMeters / METERS_PER_MILE).toFixed(1)} mi`
-      : undefined,
+    distanceMeters !== undefined ? formatDistance(distanceMeters) : undefined,
   ]
     .filter(Boolean)
     .join(" · ");

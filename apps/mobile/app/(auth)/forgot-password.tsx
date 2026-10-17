@@ -7,10 +7,11 @@ export default function ForgotPasswordScreen() {
   return (
     <AuthScreen
       title="Reset your password"
+      showBack
       subtitle={
         sent
           ? undefined
-          : "Enter the email you signed up with and we'll send you a reset link."
+          : "Enter the email you signed up with and we'll send you a reset link and a reset code."
       }
     >
       <ForgotPasswordForm onSentChange={setSent} />

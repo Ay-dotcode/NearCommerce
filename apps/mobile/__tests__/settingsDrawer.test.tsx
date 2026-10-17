@@ -1,7 +1,7 @@
 import { SettingsHeaderButton } from "@/components/settings/HeaderButtons";
 import { DialogProvider } from "@/components/ui";
 import { SEARCH_RADIUS_KEY } from "@/constants";
-import { setSearchRadiusMiles } from "@/helpers/searchRadius";
+import { setSearchRadiusKm } from "@/helpers/searchRadius";
 import { SettingsProvider, useSettings } from "@/src/context/SettingsContext";
 import { getSupportChannels } from "@nearcommerce/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -18,7 +18,7 @@ jest.mock("@nearcommerce/api", () => ({
   getSupportChannels: jest.fn(),
   apiClient: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
 }));
-jest.mock("expo-location", () => ({
+jest.mock("expo-locastion", () => ({
   geocodeAsync: jest.fn(),
   requestForegroundPermissionsAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),
@@ -56,7 +56,7 @@ function renderApp() {
 beforeEach(async () => {
   jest.clearAllMocks();
   await AsyncStorage.clear();
-  await setSearchRadiusMiles(3);
+  await setSearchRadiusKm(5);
   channels.mockResolvedValue({
     channels: { email: "help@near.test", phone: "+905551112233" },
   });
@@ -97,10 +97,10 @@ describe("settings drawer", () => {
 });
 
 describe("search distance setting", () => {
-  it("starts at 3 miles and saves a new distance for every search to use", async () => {
+  it("starts at 5 km and saves a new distance for every search to use", async () => {
     const { getByLabelText, getByTestId, getByRole } = renderApp();
     fireEvent.press(getByLabelText("Open settings"));
-    expect(getByTestId("radius-value").props.children).toBe("3 miles");
+    expect(getByTestId("radius-value").props.children).toBe("5 km");
 
     const slider = getByRole("adjustable");
     fireEvent(slider, "accessibilityAction", {
@@ -108,16 +108,16 @@ describe("search distance setting", () => {
     });
 
     await waitFor(() =>
-      expect(getByTestId("radius-value").props.children).toBe("4 miles"),
+      expect(getByTestId("radius-value").props.children).toBe("6 km"),
     );
-    expect(await AsyncStorage.getItem(SEARCH_RADIUS_KEY)).toBe("4");
+    expect(await AsyncStorage.getItem(SEARCH_RADIUS_KEY)).toBe("6");
   });
 
-  it("says 1 mile (singular) at the minimum and cannot go lower", async () => {
-    await setSearchRadiusMiles(1);
+  it("says 1 km at the minimum and cannot go lower", async () => {
+    await setSearchRadiusKm(1);
     const { getByLabelText, getByTestId, getByRole } = renderApp();
     fireEvent.press(getByLabelText("Open settings"));
-    expect(getByTestId("radius-value").props.children).toBe("1 mile");
+    expect(getByTestId("radius-value").props.children).toBe("1 km");
     fireEvent(getByRole("adjustable"), "accessibilityAction", {
       nativeEvent: { actionName: "decrement" },
     });

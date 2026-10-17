@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/ui/BackButton";
 import { SettingsHeaderButton } from "@/components/settings/HeaderButtons";
 import type { IconName } from "@/helpers/categoryIcon";
 import { useColors } from "@/theme";
@@ -11,7 +12,8 @@ const TABS: { name: string; title: string; icon: IconName }[] = [
   { name: "favorites", title: "Favorites", icon: "heart" },
 ];
 
-// Four tabs. Settings is not a tab: the gear button in the app bar opens it as a drawer.
+// Four tabs. Settings is not a tab: the gear button on the right of the app bar opens it as a
+// drawer from the right (on the Favorites tab, swiping sideways opens it too).
 export default function TabLayout() {
   const c = useColors();
   return (
@@ -19,7 +21,7 @@ export default function TabLayout() {
       screenOptions={{
         // Content slides sideways when switching tabs.
         animation: "shift",
-        headerLeft: () => <SettingsHeaderButton />,
+        headerRight: () => <SettingsHeaderButton />,
         headerStyle: { backgroundColor: c.surface },
         headerTitleStyle: { color: c.text, fontWeight: "700" },
         headerShadowVisible: false,
@@ -45,7 +47,14 @@ export default function TabLayout() {
         />
       ))}
       {/* Reached from the Lists tab; not a tab of its own. */}
-      <Tabs.Screen name="lists/join" options={{ href: null }} />
+      <Tabs.Screen
+        name="lists/join"
+        options={{
+          href: null,
+          title: "Join a list",
+          headerLeft: () => <BackButton fallback="/(tabs)/lists" inHeader />,
+        }}
+      />
     </Tabs>
   );
 }

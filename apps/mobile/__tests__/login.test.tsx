@@ -29,6 +29,12 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   removeItem: jest.fn(() => Promise.resolve()),
 }));
 
+// The sign-in page can open the support sheet through the settings provider.
+const mockOpenSupport = jest.fn();
+jest.mock("@/src/context/SettingsContext", () => ({
+  useOptionalSettings: () => ({ openSupport: mockOpenSupport }),
+}));
+
 // Lazy-require so mocks are applied first
 const getApiClient = () =>
   require("@nearcommerce/api").apiClient as jest.Mocked<{
@@ -209,5 +215,45 @@ describe("LoginScreen", () => {
     expect(require("expo-router").router.push).toHaveBeenCalledWith(
       "/(auth)/forgot-password",
     );
+  });
+
+  it("offers Contact support to a suspended account, and it opens support", async () => {
+    const { apiClient } = require("@nearcommerce/api");
+    (apiClient.post as jest.Mock).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: { error: "Account is suspended.", code: "ACCOUNT_SUSPENDED" },
+      },
+    });
+    const { getByTestId, findByTestId, queryByTestId } = render(
+      <AuthProvider>
+        <LoginScreen />
+      </AuthProvider>,
+    );
+    expect(queryByTestId("contact-support-link")).toBeNull();
+    fireEvent.changeText(getByTestId("email-input"), "a@b.com");
+    fireEvent.changeText(getByTestId("password-input"), "password123");
+    fireEvent.press(getByTestId("login-button"));
+    fireEvent.press(await findByTestId("contact-support-link"));
+    expect(mockOpenSupport).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows no support link for a wrong password", async () => {
+    const { apiClient } = require("@nearcommerce/api");
+    (apiClient.post as jest.Mock).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 401, data: { error: "Invalid credentials" } },
+    });
+    const { getByTestId, findByTestId, queryByTestId } = render(
+      <AuthProvider>
+        <LoginScreen />
+      </AuthProvider>,
+    );
+    fireEvent.changeText(getByTestId("email-input"), "a@b.com");
+    fireEvent.changeText(getByTestId("password-input"), "password123");
+    fireEvent.press(getByTestId("login-button"));
+    await findByTestId("form-error");
+    expect(queryByTestId("contact-support-link")).toBeNull();
   });
 });

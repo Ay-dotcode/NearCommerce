@@ -2,10 +2,10 @@ import { searchByImage, searchProducts } from "@/api/client";
 import ProductCard from "@/components/ProductCard";
 import { ProductListSkeleton } from "@/components/skeletons";
 import {
-  photoErrorMessage,
   pickPhoto,
   type PhotoSource,
 } from "@/helpers/photo";
+import { photoErrorMessage } from "@/helpers/photoErrors";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useSessionCoords } from "@/src/hooks/useSessionCoords";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
@@ -41,7 +41,7 @@ export default function SearchScreen() {
   const [photoNotice, setPhotoNotice] = useState<string | null>(null);
 
   const query = useQuery({
-    queryKey: ["search", searchQuery, location, radius.meters],
+    queryKey: ["search", searchQuery, location, radius.meters, radius.nearbyOnly],
     queryFn: () =>
       searchProducts(
         searchQuery.trim(),
@@ -49,6 +49,7 @@ export default function SearchScreen() {
         location!.longitude,
         {},
         radius.meters,
+        radius.nearbyOnly,
       ),
     enabled: searchQuery.trim().length > 2 && location !== null,
   });
@@ -64,6 +65,7 @@ export default function SearchScreen() {
         location!.latitude,
         location!.longitude,
         radius.meters,
+        radius.nearbyOnly,
       );
     },
     onMutate: () => setPhotoNotice(null),

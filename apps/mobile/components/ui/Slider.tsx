@@ -17,7 +17,7 @@ interface Props {
   // Called once when the finger lifts, or after an accessibility adjustment (to save).
   onChangeComplete: (value: number) => void;
   label: string;
-  // Spoken value, e.g. "5 miles".
+  // Spoken value, e.g. "5 km".
   valueText?: (value: number) => string;
   testID?: string;
 }

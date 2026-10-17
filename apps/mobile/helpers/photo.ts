@@ -42,11 +42,4 @@ export async function pickPhoto(source: PhotoSource): Promise<PhotoPickResult> {
   return { base64: saved.base64, mimeType: "image/jpeg" };
 }
 
-// Maps a failed photo search to what the shopper should read.
-export function photoErrorMessage(error: unknown): string {
-  const code = (error as { response?: { data?: { code?: string } } })?.response
-    ?.data?.code;
-  if (code === "NO_PRODUCT_DETECTED")
-    return "We couldn't spot a product in that photo. Try another angle.";
-  return "Photo search failed. Please try again.";
-}
+export { photoErrorMessage } from "@/helpers/photoErrors";

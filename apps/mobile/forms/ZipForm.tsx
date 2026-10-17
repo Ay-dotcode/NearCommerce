@@ -27,6 +27,8 @@ export function ZipForm({ formik, dismissLabel, onDismiss }: Props) {
         testID="zip-submit"
         title="Use this location"
         loading={formik.isSubmitting}
+        // Nothing to look up until a ZIP code has been typed.
+        disabled={formik.values.code.trim().length === 0}
         onPress={() => formik.handleSubmit()}
       />
       <Button

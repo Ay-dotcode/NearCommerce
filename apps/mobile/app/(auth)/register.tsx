@@ -5,6 +5,7 @@ export default function RegisterScreen() {
   return (
     <AuthScreen
       title="Create account"
+      showBack
       subtitle="Discover local stores and plan shopping trips."
     >
       <RegisterForm />

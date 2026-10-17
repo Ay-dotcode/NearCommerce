@@ -1,25 +1,35 @@
 import {
-  getSearchRadiusMiles,
+  getNearbyOnly,
+  getSearchRadiusKm,
+  kmToMeters,
   loadSearchRadius,
-  milesToMeters,
-  setSearchRadiusMiles,
+  setNearbyOnly,
+  setSearchRadiusKm,
   subscribeSearchRadius,
 } from "@/helpers/searchRadius";
 import { useEffect, useSyncExternalStore } from "react";
 
-// The shopper's "show shops within ..." distance, kept in step across every screen.
+// The shopper's "show shops within ... km" distance and the "only nearby" switch, kept in step
+// across every screen. Pass `meters` and `nearbyOnly` straight to the search calls.
 export function useSearchRadius() {
-  const miles = useSyncExternalStore(
+  const km = useSyncExternalStore(
     subscribeSearchRadius,
-    getSearchRadiusMiles,
-    getSearchRadiusMiles,
+    getSearchRadiusKm,
+    getSearchRadiusKm,
+  );
+  const nearbyOnly = useSyncExternalStore(
+    subscribeSearchRadius,
+    getNearbyOnly,
+    getNearbyOnly,
   );
   useEffect(() => {
     void loadSearchRadius();
   }, []);
   return {
-    miles,
-    meters: milesToMeters(miles),
-    setMiles: setSearchRadiusMiles,
+    km,
+    meters: kmToMeters(km),
+    setKm: setSearchRadiusKm,
+    nearbyOnly,
+    setNearbyOnly,
   };
 }

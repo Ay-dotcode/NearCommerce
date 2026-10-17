@@ -1,4 +1,5 @@
 import { FAVORITES_KEY, fetchFavorites } from "@/api/favorites";
+import { SwipeToOpenSettings } from "@/components/settings/SwipeToOpenSettings";
 import { FavoriteListSkeleton } from "@/components/skeletons";
 import { useRemoveFavorite } from "@/src/hooks/useFavorites";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
@@ -39,59 +40,61 @@ export default function FavoritesScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={SCREEN_EDGES}>
-      <Text style={styles.title}>Your Favorites</Text>
-      <View style={styles.filters}>
-        {FILTERS.map((f) => (
-          <Pressable
-            key={f.key}
-            onPress={() => setFilter(f.key)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: filter === f.key }}
-            style={[styles.chip, filter === f.key && styles.chipSelected]}
-          >
-            <Text
-              style={[
-                styles.chipText,
-                filter === f.key && styles.chipTextSelected,
-              ]}
+    <SwipeToOpenSettings>
+      <SafeAreaView style={styles.container} edges={SCREEN_EDGES}>
+        <Text style={styles.title}>Your Favorites</Text>
+        <View style={styles.filters}>
+          {FILTERS.map((f) => (
+            <Pressable
+              key={f.key}
+              onPress={() => setFilter(f.key)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: filter === f.key }}
+              style={[styles.chip, filter === f.key && styles.chipSelected]}
             >
-              {f.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {isLoading ? (
-        <FavoriteListSkeleton />
-      ) : isError ? (
-        <View style={styles.centered}>
-          <Text style={styles.empty}>Couldn't load your favorites.</Text>
-          <Pressable onPress={() => refetch()} accessibilityRole="button">
-            <Text style={styles.retry}>Try again</Text>
-          </Pressable>
+              <Text
+                style={[
+                  styles.chipText,
+                  filter === f.key && styles.chipTextSelected,
+                ]}
+              >
+                {f.label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
-      ) : (
-        <FlatList
-          data={visible}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <FavoriteRow
-              item={item}
-              removing={remove.isPending && remove.variables === item.id}
-              onRemove={() => remove.mutate(item.id)}
-            />
-          )}
-          ListEmptyComponent={
-            <Text style={styles.empty}>
-              {favorites.length === 0
-                ? "You haven't saved any favorites yet. Tap the heart on a store or product to save it."
-                : `No favorite ${filter === "store" ? "stores" : "products"} yet.`}
-            </Text>
-          }
-        />
-      )}
-    </SafeAreaView>
+
+        {isLoading ? (
+          <FavoriteListSkeleton />
+        ) : isError ? (
+          <View style={styles.centered}>
+            <Text style={styles.empty}>Couldn't load your favorites.</Text>
+            <Pressable onPress={() => refetch()} accessibilityRole="button">
+              <Text style={styles.retry}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            data={visible}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <FavoriteRow
+                item={item}
+                removing={remove.isPending && remove.variables === item.id}
+                onRemove={() => remove.mutate(item.id)}
+              />
+            )}
+            ListEmptyComponent={
+              <Text style={styles.empty}>
+                {favorites.length === 0
+                  ? "You haven't saved any favorites yet. Tap the heart on a store or product to save it."
+                  : `No favorite ${filter === "store" ? "stores" : "products"} yet.`}
+              </Text>
+            }
+          />
+        )}
+      </SafeAreaView>
+    </SwipeToOpenSettings>
   );
 }
 

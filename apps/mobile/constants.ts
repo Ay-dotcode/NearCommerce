@@ -12,15 +12,19 @@ export const POSTAL_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 -]{2,9}$/;
 // AsyncStorage key for the "avoid tolls" routing preference (SRS 5.4.2).
 export const AVOID_TOLLS_KEY = "@routing_avoid_tolls";
 
-// Metres in a mile, for showing distances.
-export const METERS_PER_MILE = 1609.34;
+// Metres in a kilometre, for sending and showing distances.
+export const METERS_PER_KM = 1000;
 
-// AsyncStorage key and limits for "how far shops can be from me" (Settings). The default is
-// about the server's own 5 km default; the maximum stays under the server's 50 km cap.
-export const SEARCH_RADIUS_KEY = "@search_radius_miles";
-export const SEARCH_RADIUS_MIN_MILES = 1;
-export const SEARCH_RADIUS_MAX_MILES = 25;
-export const SEARCH_RADIUS_DEFAULT_MILES = 3;
+// AsyncStorage keys and limits for "how far shops can be from me" (Settings), in kilometres.
+// The default matches the server's 5 km default; the maximum is the server's 50 km cap.
+export const SEARCH_RADIUS_KEY = "@search_radius_km";
+export const SEARCH_RADIUS_MIN_KM = 1;
+export const SEARCH_RADIUS_MAX_KM = 50;
+export const SEARCH_RADIUS_DEFAULT_KM = 5;
+
+// AsyncStorage key for "only show shops near me". When off, every shop is searched and the
+// results are sorted by distance instead.
+export const NEARBY_ONLY_KEY = "@search_nearby_only";
 
 // Backend base URL. Expo only inlines a direct `process.env.EXPO_PUBLIC_*` read, so keep it
 // exactly in this form.

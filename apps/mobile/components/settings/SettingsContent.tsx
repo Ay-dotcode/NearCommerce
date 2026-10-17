@@ -1,39 +1,65 @@
 import { apiErrorMessage } from "@/api/errors";
 import VerifyEmailPrompt from "@/components/VerifyEmailPrompt";
-import { Button, Slider, useDialogs } from "@/components/ui";
+import {
+  Button,
+  SegmentedControl,
+  Slider,
+  useDialogs,
+} from "@/components/ui";
 import {
   AVOID_TOLLS_KEY,
-  SEARCH_RADIUS_MAX_MILES,
-  SEARCH_RADIUS_MIN_MILES,
+  SEARCH_RADIUS_MAX_KM,
+  SEARCH_RADIUS_MIN_KM,
 } from "@/constants";
-import { clearManualLocation } from "@/helpers/location";
+import { switchToDeviceLocation } from "@/helpers/location";
+import { notify } from "@/helpers/notify";
 import { useAuth } from "@/src/context/AuthContext";
+import { useDeviceLocationName } from "@/src/hooks/useDeviceLocationName";
 import { useManualLocation } from "@/src/hooks/useManualLocation";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
+import { useThemePreference } from "@/src/hooks/useThemePreference";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
-import { Ionicons } from "@expo/vector-icons";
 import { apiClient } from "@nearcommerce/api";
-import { formatMiles } from "@nearcommerce/helpers";
+import {
+  formatKm,
+  THEME_LABELS,
+  THEME_PREFERENCES,
+  type ThemePreference,
+} from "@nearcommerce/helpers";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
-import Toast from "react-native-toast-message";
 
 interface Props {
   onOpenZip: () => void;
   onOpenSupport: () => void;
+  // Closes the drawer. Used before leaving the screen (signing out) and after actions whose
+  // confirmation pop-up must not be hidden behind the drawer.
+  onClose: () => void;
 }
 
-// Everything a shopper can configure, shown inside the left-hand settings drawer.
-export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
+const THEME_OPTIONS = THEME_PREFERENCES.map((value) => ({
+  value,
+  label: THEME_LABELS[value],
+}));
+
+// Everything a shopper can configure, shown inside the settings drawer.
+export default function SettingsContent({
+  onOpenZip,
+  onOpenSupport,
+  onClose,
+}: Props) {
   const styles = useThemedStyles(makeStyles);
   const { confirm } = useDialogs();
   const c = useColors();
   const { logout } = useAuth();
   const manualLocation = useManualLocation();
   const radius = useSearchRadius();
-  const [draftMiles, setDraftMiles] = useState<number | null>(null);
+  const theme = useThemePreference();
+  const [draftKm, setDraftKm] = useState<number | null>(null);
   const [avoidTolls, setAvoidTolls] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const deviceName = useDeviceLocationName(!manualLocation);
 
   useEffect(() => {
     AsyncStorage.getItem(AVOID_TOLLS_KEY).then((stored) => {
@@ -46,16 +72,46 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
     await AsyncStorage.setItem(AVOID_TOLLS_KEY, String(value));
   };
 
+  const switchToDevice = async () => {
+    setLocating(true);
+    const result = await switchToDeviceLocation();
+    setLocating(false);
+    // Close first: pop-ups cannot show on top of the drawer.
+    onClose();
+    if (result.ok)
+      notify.success(
+        "Now using your device location",
+        result.placeName
+          ? `Showing shops near ${result.placeName}.`
+          : "Showing shops near where you are.",
+      );
+    else
+      notify.error(
+        result.reason === "denied"
+          ? "Location access is off"
+          : "Couldn't read your location",
+        result.reason === "denied"
+          ? "Allow location in your phone's settings, or set a ZIP code instead."
+          : "Please try again, or set a ZIP code instead.",
+      );
+  };
+
+  // Close the drawer, let it finish sliding away, then sign out (which goes to the login page).
+  const signOut = async () => {
+    onClose();
+    await new Promise((resolve) => setTimeout(resolve, SIGN_OUT_DELAY_MS));
+    await logout();
+  };
+
   const deleteAccount = async () => {
     try {
       await apiClient.delete("/users/me");
-      await logout();
+      await signOut();
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Couldn't delete account",
-        text2: apiErrorMessage(error, "Please try again."),
-      });
+      notify.error(
+        "Couldn't delete account",
+        apiErrorMessage(error, "Please try again."),
+      );
     }
   };
 
@@ -70,7 +126,7 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
     if (ok) await deleteAccount();
   };
 
-  const shownMiles = draftMiles ?? radius.miles;
+  const shownKm = draftKm ?? radius.km;
 
   return (
     <ScrollView
@@ -82,36 +138,49 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
       <Text style={styles.section}>Search distance</Text>
       <View style={styles.card}>
         <View style={styles.rowBetween}>
-          <Text style={styles.label}>Show shops within</Text>
-          <Text testID="radius-value" style={styles.value}>
-            {formatMiles(shownMiles)}
-          </Text>
+          <View style={styles.flex}>
+            <Text style={styles.label}>Only show shops near me</Text>
+            <Text style={styles.hint}>
+              {radius.nearbyOnly
+                ? "Shops farther away are hidden."
+                : "Every shop is shown, nearest first."}
+            </Text>
+          </View>
+          <Switch
+            testID="nearby-switch"
+            value={radius.nearbyOnly}
+            onValueChange={(value) => void radius.setNearbyOnly(value)}
+            trackColor={{ true: c.primary, false: c.borderStrong }}
+          />
         </View>
-        <Slider
-          testID="radius-slider"
-          label="Search distance"
-          value={radius.miles}
-          min={SEARCH_RADIUS_MIN_MILES}
-          max={SEARCH_RADIUS_MAX_MILES}
-          step={1}
-          valueText={formatMiles}
-          onChange={setDraftMiles}
-          onChangeComplete={(miles) => {
-            setDraftMiles(null);
-            void radius.setMiles(miles);
-          }}
-        />
-        <View style={styles.rowBetween}>
-          <Text style={styles.hint}>
-            {formatMiles(SEARCH_RADIUS_MIN_MILES)}
-          </Text>
-          <Text style={styles.hint}>
-            {formatMiles(SEARCH_RADIUS_MAX_MILES)}
-          </Text>
-        </View>
-        <Text style={styles.hint}>
-          Home, search and categories only show stores this close to you.
-        </Text>
+        {radius.nearbyOnly && (
+          <>
+            <View style={[styles.rowBetween, styles.gapTop]}>
+              <Text style={styles.label}>Show shops within</Text>
+              <Text testID="radius-value" style={styles.value}>
+                {formatKm(shownKm)}
+              </Text>
+            </View>
+            <Slider
+              testID="radius-slider"
+              label="Search distance"
+              value={radius.km}
+              min={SEARCH_RADIUS_MIN_KM}
+              max={SEARCH_RADIUS_MAX_KM}
+              step={1}
+              valueText={formatKm}
+              onChange={setDraftKm}
+              onChangeComplete={(km) => {
+                setDraftKm(null);
+                void radius.setKm(km);
+              }}
+            />
+            <View style={styles.rowBetween}>
+              <Text style={styles.hint}>{formatKm(SEARCH_RADIUS_MIN_KM)}</Text>
+              <Text style={styles.hint}>{formatKm(SEARCH_RADIUS_MAX_KM)}</Text>
+            </View>
+          </>
+        )}
       </View>
 
       <Text style={styles.section}>Routing preferences</Text>
@@ -130,7 +199,9 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
         <Text style={styles.label}>
           {manualLocation
             ? `Using ZIP code ${manualLocation.postalCode}`
-            : "Using your device location"}
+            : deviceName
+              ? `Using your device location · ${deviceName}`
+              : "Using your device location"}
         </Text>
         <View style={styles.actions}>
           <Button
@@ -142,7 +213,8 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
             <Button
               variant="secondary"
               title="Use my device location"
-              onPress={() => void clearManualLocation()}
+              loading={locating}
+              onPress={() => void switchToDevice()}
             />
           )}
         </View>
@@ -158,24 +230,23 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
       </View>
 
       <Text style={styles.section}>Appearance</Text>
-      <View style={[styles.card, styles.rowBetween]}>
-        <Text style={styles.label}>Theme</Text>
-        <View style={styles.inline}>
-          <Ionicons
-            name="phone-portrait-outline"
-            size={16}
-            color={c.textMuted}
-          />
-          <Text style={styles.hint}>Matches your device</Text>
-        </View>
+      <View style={styles.card}>
+        <SegmentedControl<ThemePreference>
+          label="Theme"
+          testID="theme-control"
+          options={THEME_OPTIONS}
+          value={theme.preference}
+          onChange={(value) => void theme.setPreference(value)}
+        />
+        <Text style={[styles.hint, styles.gapTop]}>
+          {theme.preference === "system"
+            ? "Matches your phone's light or dark setting."
+            : `Always ${THEME_LABELS[theme.preference].toLowerCase()}.`}
+        </Text>
       </View>
 
       <View style={styles.actions}>
-        <Button
-          title="Sign out"
-          variant="danger"
-          onPress={() => void logout()}
-        />
+        <Button title="Sign out" variant="danger" onPress={() => void signOut()} />
         <Button
           title="Delete account"
           variant="danger"
@@ -185,6 +256,9 @@ export default function SettingsContent({ onOpenZip, onOpenSupport }: Props) {
     </ScrollView>
   );
 }
+
+// A little longer than the drawer's slide-out animation (220 ms).
+const SIGN_OUT_DELAY_MS = process.env.JEST_WORKER_ID ? 0 : 260;
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
@@ -208,9 +282,10 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: "space-between",
       alignItems: "center",
     },
-    inline: { flexDirection: "row", alignItems: "center", gap: 6 },
     label: { color: c.text, fontSize: 16, fontWeight: "600" },
     value: { color: c.primaryText, fontSize: 16, fontWeight: "800" },
     hint: { color: c.textMuted, fontSize: 13 },
+    flex: { flex: 1, paddingRight: 12 },
+    gapTop: { marginTop: 14 },
     actions: { gap: 10, marginTop: 12 },
   });

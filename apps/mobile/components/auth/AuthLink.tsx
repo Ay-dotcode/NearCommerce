@@ -14,7 +14,7 @@ export default function AuthLink({
   prefix?: string;
   onPress: () => void;
   testID?: string;
-  align?: "center" | "flex-end";
+  align?: "center" | "flex-start" | "flex-end";
 }) {
   const styles = useThemedStyles(makeStyles);
   return (

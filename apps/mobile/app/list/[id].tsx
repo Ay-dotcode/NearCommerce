@@ -1,4 +1,5 @@
 import { apiErrorMessage } from "@/api/errors";
+import { InviteCodeCard } from "@/components/lists/InviteCodeCard";
 import {
   LISTS_KEY,
   addListItem,
@@ -196,7 +197,7 @@ export default function ListDetailScreen() {
       </View>
 
       <View style={styles.header}>
-        <Text style={styles.inviteCode}>Invite code: {data.invite_code}</Text>
+        <InviteCodeCard code={data.invite_code} listName={data.name} />
         <ListMembers
           listId={id!}
           members={data.members}
@@ -311,7 +312,6 @@ const makeStyles = (c: ThemeColors) =>
       padding: 16,
       marginBottom: 12,
     },
-    inviteCode: { color: c.text, fontWeight: "700" },
     actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
     actionButton: {
       flexDirection: "row",

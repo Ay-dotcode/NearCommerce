@@ -1,6 +1,7 @@
 import { POSTAL_CODE_PATTERN } from "@/constants";
 import type { Coords, ManualLocation } from "@/types/location";
 import { PostalCodeError } from "@/types/location";
+import { formatPlaceName } from "@/helpers/placeName";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import Toast from "react-native-toast-message";
@@ -121,6 +122,55 @@ async function fetchSessionLocation() {
     return null;
   } finally {
     if (!keepErrorToastVisible) Toast.hide();
+  }
+}
+
+// Looks up the name of the place at some coordinates. Returns null if the phone can't say.
+export async function lookupPlaceName(coords: Coords): Promise<string | null> {
+  try {
+    const [address] = await Location.reverseGeocodeAsync({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+    });
+    return formatPlaceName(address);
+  } catch {
+    return null;
+  }
+}
+
+// Where the phone last was, without asking for permission or showing any pop-up. Null if the
+// phone has nothing cached.
+export async function peekDeviceCoords(): Promise<Coords | null> {
+  if (sessionLocation) return sessionLocation;
+  try {
+    const last = await Location.getLastKnownPositionAsync();
+    return last?.coords ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export type DeviceLocationResult =
+  | { ok: true; placeName: string | null }
+  | { ok: false; reason: "denied" | "unavailable" };
+
+// Stops using a typed-in ZIP code and goes back to the phone's own location. Asks for permission
+// if needed, reads a fresh position, and finds the place name for it.
+export async function switchToDeviceLocation(): Promise<DeviceLocationResult> {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== Location.PermissionStatus.GRANTED)
+      return { ok: false, reason: "denied" };
+    const position = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    sessionLocation = position.coords;
+    // Later readers of the session location get this fresh position, not an old failed lookup.
+    locationRequest = Promise.resolve(sessionLocation);
+    await clearManualLocation();
+    return { ok: true, placeName: await lookupPlaceName(position.coords) };
+  } catch {
+    return { ok: false, reason: "unavailable" };
   }
 }
 

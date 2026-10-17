@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/ui/BackButton";
 import { BrandIcon } from "@/components/ui";
 import { useThemedStyles, type ThemeColors } from "@/theme";
 import type { ReactNode } from "react";
@@ -14,12 +15,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 interface Props {
   title: string;
   subtitle?: string;
+  // Shows a back arrow above the brand (every page except the sign-in page itself).
+  showBack?: boolean;
   children: ReactNode;
 }
 
 // Shared frame for sign in, register, forgot and reset password: safe area, brand mark,
 // heading, and a form area that scrolls above the keyboard.
-export default function AuthScreen({ title, subtitle, children }: Props) {
+export default function AuthScreen({
+  title,
+  subtitle,
+  showBack = false,
+  children,
+}: Props) {
   const styles = useThemedStyles(makeStyles);
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -32,6 +40,7 @@ export default function AuthScreen({ title, subtitle, children }: Props) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {showBack && <BackButton fallback="/(auth)/login" />}
           <View style={styles.brand}>
             <BrandIcon size={44} />
             <Text style={styles.eyebrow}>NEARCOMMERCE</Text>

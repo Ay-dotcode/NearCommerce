@@ -36,7 +36,14 @@ export default function CategoryScreen() {
   const category = categories.data?.find((c) => c.id === id);
 
   const products = useQuery({
-    queryKey: ["category-products", id, subcategoryId, coords, radius.meters],
+    queryKey: [
+      "category-products",
+      id,
+      subcategoryId,
+      coords,
+      radius.meters,
+      radius.nearbyOnly,
+    ],
     queryFn: () =>
       searchProducts(
         "",
@@ -47,6 +54,7 @@ export default function CategoryScreen() {
           subcategoryId,
         },
         radius.meters,
+        radius.nearbyOnly,
       ),
     enabled: Boolean(id) && coords !== null,
   });

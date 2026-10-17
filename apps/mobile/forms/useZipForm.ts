@@ -4,6 +4,14 @@ import {
   resolvePostalCode,
   setManualLocation,
 } from "@/helpers/location";
+
+// Looks the ZIP code up and, if it is real, makes it the shopper's location.
+async function setManualLocationFromZip(code: string) {
+  const location = await resolvePostalCode(code);
+  await setManualLocation(location);
+  return location;
+}
+import { notify } from "@/helpers/notify";
 import { useFormik } from "formik";
 import { useEffect } from "react";
 
@@ -16,9 +24,13 @@ export function useZipForm(visible: boolean, onDone: () => void) {
     validateOnChange: false,
     onSubmit: async ({ code }, helpers) => {
       try {
-        await setManualLocation(await resolvePostalCode(code));
+        const location = await setManualLocationFromZip(code);
         helpers.resetForm();
         onDone();
+        notify.success(
+          "Location updated",
+          `Showing shops near ZIP code ${location.postalCode}.`,
+        );
       } catch (err) {
         helpers.setFieldError(
           "code",

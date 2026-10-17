@@ -11,6 +11,7 @@ export async function searchProducts(
   longitude: number,
   filters: SearchFilters = {},
   radiusMeters?: number,
+  nearbyOnly = true,
 ): Promise<SearchResponse> {
   const response = await apiClient.get<SearchResponse>("/search", {
     params: {
@@ -20,6 +21,7 @@ export async function searchProducts(
       category_id: filters.categoryId,
       subcategory_id: filters.subcategoryId,
       radius_meters: radiusMeters,
+      nearby_only: nearbyOnly,
     },
   });
 
@@ -33,6 +35,7 @@ export async function searchByImage(
   latitude: number,
   longitude: number,
   radiusMeters?: number,
+  nearbyOnly = true,
 ): Promise<ImageSearchResponse> {
   const response = await apiClient.post<ImageSearchResponse>("/search/image", {
     image: image.base64,
@@ -40,6 +43,7 @@ export async function searchByImage(
     lat: latitude,
     lng: longitude,
     radius_meters: radiusMeters,
+    nearby_only: nearbyOnly,
   });
   return response.data;
 }

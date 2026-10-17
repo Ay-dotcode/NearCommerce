@@ -81,10 +81,14 @@ beforeEach(() => {
 describe("ListDetailScreen", () => {
   it("renders items using custom or catalogue names and shows the invite code", async () => {
     serveGet(api.get, { "/lists/list-1": detail() });
-    const { findByText, getByText } = renderWithClient(<ListDetailScreen />);
+    const { findByText, getByText, getByTestId } = renderWithClient(
+      <ListDetailScreen />,
+    );
     expect(await findByText("Eggs (x2)")).toBeTruthy();
     expect(getByText("Milk (x1)")).toBeTruthy();
-    expect(getByText("Invite code: ABC123")).toBeTruthy();
+    expect(getByTestId("invite-code").props.children).toBe("ABC123");
+    expect(getByTestId("copy-invite")).toBeTruthy();
+    expect(getByTestId("share-invite")).toBeTruthy();
   });
 
   it("toggles an item by its id via PATCH", async () => {
@@ -162,7 +166,9 @@ describe("ListDetailScreen", () => {
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith("/lists/list-1/regenerate-invite"),
     );
-    expect(await owner.findByText("Invite code: NEW999")).toBeTruthy();
+    await waitFor(() =>
+      expect(owner.getByTestId("invite-code").props.children).toBe("NEW999"),
+    );
   });
 
   it("shows a fallback when the list can't be loaded", async () => {

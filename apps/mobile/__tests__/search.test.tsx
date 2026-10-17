@@ -96,7 +96,8 @@ describe("SearchScreen photo search", () => {
       mime_type: "image/jpeg",
       lat: 35.1,
       lng: 32.8,
-      radius_meters: 4828,
+      radius_meters: 5000,
+      nearby_only: true,
     });
   });
 

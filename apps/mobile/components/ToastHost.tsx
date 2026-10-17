@@ -26,6 +26,9 @@ export default function ToastHost() {
     };
   return (
     <Toast
+      // Near the bottom, above the tab bar: easy to reach and it never covers the app bar.
+      position="bottom"
+      bottomOffset={96}
       config={{
         success: make(c.success),
         error: make(c.danger),

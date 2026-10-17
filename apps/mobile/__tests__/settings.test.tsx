@@ -11,7 +11,11 @@ const SettingsScreen = ({
   onOpenZip?: () => void;
 }) => (
   <DialogProvider>
-    <SettingsContent onOpenZip={onOpenZip} onOpenSupport={() => {}} />
+    <SettingsContent
+      onOpenZip={onOpenZip}
+      onOpenSupport={() => {}}
+      onClose={() => {}}
+    />
   </DialogProvider>
 );
 
@@ -24,7 +28,7 @@ jest.mock("react-native-toast-message", () => ({
   __esModule: true,
   default: { show: jest.fn() },
 }));
-
+-
 const mockLogout = jest.fn();
 jest.mock("@/src/context/AuthContext", () => ({
   useAuth: () => ({ logout: mockLogout }),
@@ -58,10 +62,21 @@ describe("SettingsScreen", () => {
     });
   });
 
-  it("signs out from the settings screen", () => {
-    const { getByText } = render(<SettingsScreen />);
+  it("closes the drawer first, then signs out", async () => {
+    const order: string[] = [];
+    mockLogout.mockImplementationOnce(() => order.push("logout"));
+    const { getByText } = render(
+      <DialogProvider>
+        <SettingsContent
+          onOpenZip={() => {}}
+          onOpenSupport={() => {}}
+          onClose={() => order.push("close")}
+        />
+      </DialogProvider>,
+    );
     fireEvent.press(getByText("Sign out"));
-    expect(mockLogout).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockLogout).toHaveBeenCalledTimes(1));
+    expect(order).toEqual(["close", "logout"]);
   });
 
   describe("delete account", () => {

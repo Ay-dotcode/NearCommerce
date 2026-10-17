@@ -77,8 +77,8 @@ jest.mock("@/components/settings/SupportSheet", () => () => null);
 jest.mock("@/components/ToastHost", () => () => null);
 
 import AuthLayout from "@/app/(auth)/_layout";
-import RootLayout from "@/app/_layout";
 import TabLayout from "@/app/(tabs)/_layout";
+import RootLayout from "@/app/_layout";
 import { SettingsHeaderButton } from "@/components/settings/HeaderButtons";
 
 beforeEach(() => {
@@ -100,15 +100,18 @@ describe("bottom tabs", () => {
     ]);
     expect(names).not.toContain("settings");
     expect(
-      captured.tabScreens.map((s) => s.options?.title).filter(Boolean),
+      captured.tabScreens
+        .filter((s) => s.options?.href !== null)
+        .map((s) => s.options?.title)
+        .filter(Boolean),
     ).toEqual(["Home", "Search", "Lists", "Favorites"]);
   });
 
-  it("does not show the join screen as its own tab", () => {
+  it("does not show the join screen as its own tab, but gives it a back arrow", () => {
     render(<TabLayout />);
-    expect(
-      captured.tabScreens.find((s) => s.name === "lists/join")?.options?.href,
-    ).toBeNull();
+    const join = captured.tabScreens.find((s) => s.name === "lists/join");
+    expect(join?.options?.href).toBeNull();
+    expect(typeof join?.options?.headerLeft).toBe("function");
   });
 
   it("animate when switching tabs", () => {
@@ -116,10 +119,11 @@ describe("bottom tabs", () => {
     expect(captured.tabsOptions?.animation).toBe("shift");
   });
 
-  it("put the settings button in the app bar of every tab screen", () => {
+  it("put the settings button on the right of the app bar of every tab screen", () => {
     render(<TabLayout />);
-    const left = captured.tabsOptions?.headerLeft();
-    expect(left.type).toBe(SettingsHeaderButton);
+    expect(captured.tabsOptions?.headerLeft).toBeUndefined();
+    const right = captured.tabsOptions?.headerRight();
+    expect(right.type).toBe(SettingsHeaderButton);
   });
 });
 

@@ -191,7 +191,7 @@ describe("Slider", () => {
         min={1}
         max={10}
         label="Distance"
-        valueText={(v) => `${v} miles`}
+        valueText={(v) => `${v} km`}
         onChangeComplete={onChangeComplete}
       />,
     );
@@ -206,7 +206,7 @@ describe("Slider", () => {
       min: 1,
       max: 10,
       now: 5,
-      text: "5 miles",
+      text: "5 km",
     });
   });
 

@@ -1,9 +1,9 @@
 import StoreCard from "@/components/StoreCard";
-import { METERS_PER_MILE } from "@/constants";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
+import { useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -16,6 +16,10 @@ import {
   CategoryGridSkeleton,
   StoreListSkeleton,
 } from "@/components/skeletons";
+import {
+  COLLAPSED_CATEGORY_COUNT,
+  visibleCategories,
+} from "@/helpers/categories";
 import { iconForCategory } from "@/helpers/categoryIcon";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
@@ -37,8 +41,9 @@ export default function HomeScreen() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["nearby-stores", lat, lng, radius.meters],
-    queryFn: () => fetchNearbyStores(lat!, lng!, radius.meters),
+    queryKey: ["nearby-stores", lat, lng, radius.meters, radius.nearbyOnly],
+    queryFn: () =>
+      fetchNearbyStores(lat!, lng!, radius.meters, radius.nearbyOnly),
     enabled: lat !== undefined && lng !== undefined,
   });
 
@@ -49,13 +54,17 @@ export default function HomeScreen() {
     staleTime: 5 * 60 * 1000,
   });
   const categories: Category[] = categoriesQuery.data ?? [];
+  // Only two rows of categories show at first; the rest wait behind "Show more".
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const { shown: shownCategories, hidden: hiddenCategories } =
+    visibleCategories(categories, showAllCategories);
 
   const storeCards = stores.map((s) => ({
     id: s.id,
     name: s.name,
     isOpen: s.is_open,
     rating: s.rating,
-    distance: s.distance_meters / METERS_PER_MILE,
+    distanceMeters: s.distance_meters,
   }));
 
   return (
@@ -94,7 +103,7 @@ export default function HomeScreen() {
               <Text style={styles.emptyText}>No categories yet.</Text>
             )}
             <View style={styles.categoryGrid}>
-              {categories.map((category) => (
+              {shownCategories.map((category) => (
                 <Link
                   key={category.id}
                   href={{
@@ -118,11 +127,37 @@ export default function HomeScreen() {
                 </Link>
               ))}
             </View>
+            {categories.length > COLLAPSED_CATEGORY_COUNT && (
+                <Pressable
+                  testID="categories-toggle"
+                  onPress={() => setShowAllCategories((v) => !v)}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: showAllCategories }}
+                  style={styles.showMore}
+                >
+                  <Text style={styles.showMoreText}>
+                    {showAllCategories
+                      ? "Show fewer"
+                      : `Show ${hiddenCategories} more`}
+                  </Text>
+                  <Ionicons
+                    name={showAllCategories ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color={c.primaryText}
+                  />
+                </Pressable>
+              )}
 
             {/* Section heading */}
             <View style={styles.sectionHeading}>
-              <Text style={styles.sectionTitle}>Stores near you</Text>
-              <Text style={styles.caption}>Updated with local hours</Text>
+              <Text style={styles.sectionTitle}>
+                {radius.nearbyOnly ? "Stores near you" : "All stores"}
+              </Text>
+              <Text style={styles.caption}>
+                {radius.nearbyOnly
+                  ? "Updated with local hours"
+                  : "Nearest first"}
+              </Text>
             </View>
           </View>
         }
@@ -136,7 +171,11 @@ export default function HomeScreen() {
               Couldn't load nearby stores. Check your connection.
             </Text>
           ) : (
-            <Text style={styles.emptyText}>No stores found nearby.</Text>
+            <Text style={styles.emptyText}>
+              {radius.nearbyOnly
+                ? "No stores found nearby."
+                : "No stores found."}
+            </Text>
           )
         }
       />
@@ -193,6 +232,17 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.surface,
       borderRadius: 12,
     },
+    showMore: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "center",
+      gap: 6,
+      marginTop: -14,
+      marginBottom: 24,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+    },
+    showMoreText: { color: c.primaryText, fontSize: 14, fontWeight: "700" },
     categoryLabel: { color: c.text, fontSize: 14, fontWeight: "700" },
     sectionHeading: {
       flexDirection: "row",

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { formatDistance } from "@nearcommerce/helpers";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { StoreProps } from "@/types/store";
@@ -9,7 +10,7 @@ export default function StoreCard({
   name,
   isOpen,
   rating,
-  distance,
+  distanceMeters,
 }: StoreProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useColors();
@@ -42,9 +43,9 @@ export default function StoreCard({
               {rating > 0 ? rating.toFixed(1) : "New"}
             </Text>
           </View>
-          {distance !== undefined && (
+          {distanceMeters !== undefined && (
             <Text style={styles.distance}>
-              {distance.toFixed(1)} miles away
+              {formatDistance(distanceMeters)} away
             </Text>
           )}
         </View>
