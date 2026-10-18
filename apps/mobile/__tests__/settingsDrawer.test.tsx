@@ -18,7 +18,7 @@ jest.mock("@nearcommerce/api", () => ({
   getSupportChannels: jest.fn(),
   apiClient: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
 }));
-jest.mock("expo-locastion", () => ({
+jest.mock("expo-location", () => ({
   geocodeAsync: jest.fn(),
   requestForegroundPermissionsAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),

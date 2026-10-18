@@ -1,10 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import SettingsContent from "@/components/settings/SettingsContent";
+import { DialogProvider } from "@/components/ui";
 import { apiClient } from "@nearcommerce/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
-import SettingsContent from "@/components/settings/SettingsContent";
-import { DialogProvider } from "@/components/ui";
 const SettingsScreen = ({
   onOpenZip = () => {},
 }: {
@@ -28,7 +28,6 @@ jest.mock("react-native-toast-message", () => ({
   __esModule: true,
   default: { show: jest.fn() },
 }));
--
 const mockLogout = jest.fn();
 jest.mock("@/src/context/AuthContext", () => ({
   useAuth: () => ({ logout: mockLogout }),
