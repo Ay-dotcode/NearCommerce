@@ -31,7 +31,7 @@ Shared code lives in `packages/`: `@nearcommerce/api` (HTTP client, schemas, sha
 - **Official Support Channel:** Standardized `/support` endpoint providing dedicated support channels for shoppers and store owners.
 - **Light & Dark Mode:** All three apps follow the device or browser appearance by default, and each has a Light / Dark / Auto toggle (settings drawer on mobile, header on the portals). The choice is saved and restored on the next visit. Colours come from one shared palette (`packages/config/palette.cjs`) used by the Tailwind preset (web, admin) and the mobile theme; each portal has its own brand colour (shopper blue, store owner teal, admin violet).
 - **Skeleton Loading & Blurred Pop-ups:** Pages show skeleton placeholders sized like the real content instead of loading text, and every modal, drawer and bottom sheet blurs the page behind it, built from one shared component per platform.
-- **Search Distance:** Shoppers choose how far shops may be (1 to 50 km) in the mobile settings drawer (a drawer from the right; on the Favorites tab a sideways swipe also opens it). It is saved on the device and sent as `radius_meters`. Turning **Only show shops near me** off sends `nearby_only=false`: every shop is searched and results are still sorted by distance.
+- **Search Distance:** Shoppers choose how far shops may be (1 to 50 km) in the mobile settings drawer (a drawer from the right, opened with the gear button in the app bar). It is saved on the device and sent as `radius_meters`. Turning **Only show shops near me** off sends `nearby_only=false`: every shop is searched and results are still sorted by distance.
 - **Portal polish:** The store owner portal and admin console animate between pages, show a mouse-following glow, and have back arrows on non-main pages; the app icon always returns to the default page. The admin console adds an aurora background and a Ctrl/Cmd+K command palette. A suspended account that signs in sees a **Contact support** link on every app.
 - **One-time email links:** Password-reset and email-verification links work exactly once (they are claimed atomically, so two simultaneous uses cannot both succeed). The reset email also contains a reset code for the mobile app, which accepts either the code or the pasted link.
 
@@ -42,6 +42,7 @@ Shared code lives in `packages/`: `@nearcommerce/api` (HTTP client, schemas, sha
 - The bundled cropper model (`apps/web/public/models/yolo.onnx`) is an Ultralytics YOLOv8n export. Note that Ultralytics models are licensed under AGPL-3.0; verify licensing requirements before commercial distribution.
 - In development mode, email verification and password reset tokens are logged to the backend console if SMTP credentials are not configured, enabling full local testing without an external mail provider.
 - Categories are created automatically: an empty catalog is filled with the standard categories on first start, and admins can add anything missing with **Generate default catalog** (or `pnpm --filter @nearcommerce/backend seed:catalog`). Category icons are derived from the name, so admins only type a name.
+- Production: `pnpm --filter @nearcommerce/backend start` runs the API, and `db:migrate` brings any database up to date (it only runs migrations it has not run before; `db:clear` is for wiping a development database).
 - `samples/nearcommerce-sample-products.csv` is a ready-to-import product list for the store owner CSV importer.
 
 ## Repository structure
@@ -313,6 +314,7 @@ pnpm --filter @nearcommerce/ui generate:app-icons   # re-render the mobile icons
 
 - [Software Requirements Specification (SRS)](./NearCommerce_SRS.md): Complete product requirements, data models, architectural boundaries, and performance benchmarks.
 - [Implementation Blueprint](./Implementation.md): Detailed architectural rules, testing guidelines, and phase-by-phase implementation details.
+- [Publishing guide](./docs/DEPLOYMENT.md): Hosting each app for free, releasing the Android app, and the GitHub workflows that deploy on every push.
 
 ## License
 

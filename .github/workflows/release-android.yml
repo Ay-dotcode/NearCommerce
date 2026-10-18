@@ -1,0 +1,51 @@
+name: Release Android app
+
+# Builds an installable Android app (APK) in Expo's cloud and attaches it to a GitHub Release,
+# so anyone can download and install it without Google Play. Run it by pushing a version tag:
+#   git tag v1.0.0 && git push origin v1.0.0
+# or by hand from the Actions tab. Bump "version" in apps/mobile/app.json first whenever the
+# release changes native code, so over-the-air updates only reach compatible installs.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Build profile: preview = APK to share, production = app bundle for Google Play"
+        default: preview
+        type: choice
+        options: [preview, production]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build in the Expo cloud
+        working-directory: apps/mobile
+        run: eas build --platform android --profile "${{ inputs.profile || 'preview' }}" --non-interactive --json > build.json
+      - name: Download the build
+        run: |
+          URL=$(jq -r '.[0].artifacts.buildUrl' apps/mobile/build.json)
+          EXT=$([ "${{ inputs.profile || 'preview' }}" = production ] && echo aab || echo apk)
+          curl --fail --location "$URL" --output "NearCommerce-${GITHUB_REF_NAME//\//-}.$EXT"
+      - name: Attach it to a GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: NearCommerce-*
+          generate_release_notes: true

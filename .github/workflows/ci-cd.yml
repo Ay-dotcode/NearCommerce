@@ -1,0 +1,139 @@
+name: CI/CD
+
+# Every push and pull request runs the full test suite. Pushes to `main` that pass then deploy
+# (once DEPLOY_ENABLED is set to "true", see docs/DEPLOYMENT.md):
+#   - the store-owner portal and the admin console -> Cloudflare Pages
+#   - the API                                      -> database migrations, then Render
+#   - the mobile app                               -> an over-the-air update through Expo (EAS Update)
+# New Android installs (APK files) are built by release-android.yml when you push a version tag.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: nc
+          POSTGRES_PASSWORD: nc_pass
+          POSTGRES_DB: nearcommerce
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U nc -d nearcommerce"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://nc:nc_pass@localhost:5432/nearcommerce
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-access-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
+      FRONTEND_URL: http://localhost:3001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create the database tables
+        run: pnpm --filter @nearcommerce/backend db:migrate
+      - name: Run every test
+        run: pnpm test
+
+  deploy-portals:
+    name: Deploy ${{ matrix.name }}
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: store-owner portal
+            app: web
+            project: ${{ vars.CLOUDFLARE_PROJECT_WEB }}
+          - name: admin console
+            app: admin
+            project: ${{ vars.CLOUDFLARE_PROJECT_ADMIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm --filter @nearcommerce/${{ matrix.app }} build
+        env:
+          VITE_API_URL: ${{ vars.API_URL }}
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/${{ matrix.app }}/dist --project-name=${{ matrix.project }} --branch=main
+
+  deploy-api:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # New tables and columns must exist before the new code starts.
+      - name: Update the production database
+        run: pnpm --filter @nearcommerce/backend db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Deploy the API on Render
+        run: curl --fail --silent --show-error -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+  update-mobile:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      # Phones that already have the app download this JavaScript update the next time they open
+      # it. Changes to native code need a new build (see release-android.yml) instead.
+      - name: Publish the over-the-air update
+        working-directory: apps/mobile
+        run: eas update --branch production --message "${{ github.event.head_commit.message }}" --non-interactive
+        env:
+          EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
