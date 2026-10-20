@@ -30,6 +30,16 @@
     ],
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "946855c9-19fa-411d-ba20-9010c1c9265f"
+      }
+    },
+    "owner": "ay-dotecode",
+    "updates": {
+      "url": "https://u.expo.dev/946855c9-19fa-411d-ba20-9010c1c9265f"
     }
   }
 }
