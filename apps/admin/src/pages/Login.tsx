@@ -15,7 +15,7 @@ export default function LoginPage() {
       <div className="hover-glow w-full max-w-sm rounded-lg border border-slate-200 bg-white/90 p-8 shadow-overlay backdrop-blur">
         <BrandIcon size={48} className="rounded-2xl shadow-card" />
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
-          NearCommerce
+          Near Commerce
         </p>
         <h1 className="mt-1 text-2xl font-bold">System Admin Portal</h1>
         <p className="mt-1 text-sm text-slate-500">

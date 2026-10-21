@@ -98,13 +98,13 @@ export function StoreOwnerLayout() {
             {/* The icon and name take you back to the default page. */}
             <Link
               to={AppRoutes.storeOwnerDashboard}
-              aria-label="NearCommerce home"
+              aria-label="Near Commerce home"
               className="hover-outline press flex items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <BrandIcon size={36} className="rounded-xl" />
               <div>
                 <p className="text-xs font-semibold text-brand-700">
-                  NearCommerce
+                  Near Commerce
                 </p>
                 <h1 className="text-lg font-semibold leading-tight">
                   Store Owner Portal

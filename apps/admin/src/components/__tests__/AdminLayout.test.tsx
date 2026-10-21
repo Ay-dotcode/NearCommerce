@@ -28,13 +28,13 @@ describe("AdminLayout", () => {
       screen.getByRole("radiogroup", { name: "Theme" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "NearCommerce home" }),
+      screen.getByRole("link", { name: "Near Commerce home" }),
     ).toHaveAttribute("href", "/dashboard");
   });
 
   it("clicking the app icon goes to the default page", () => {
     renderLayout("/users");
-    fireEvent.click(screen.getByRole("link", { name: "NearCommerce home" }));
+    fireEvent.click(screen.getByRole("link", { name: "Near Commerce home" }));
     expect(screen.getByText("dashboard page")).toBeInTheDocument();
   });
 

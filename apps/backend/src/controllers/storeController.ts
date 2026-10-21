@@ -80,7 +80,7 @@ export async function listMyStores(req: Request, res: Response) {
   if (req.user?.role !== "STORE_OWNER")
     return res.status(403).json({
       error:
-        "This portal is for store owners. Shoppers can use the NearCommerce mobile app, or register a store owner account to sell here.",
+        "This portal is for store owners. Shoppers can use the Near Commerce mobile app, or register a store owner account to sell here.",
       code: "OWNER_ROLE_REQUIRED",
     });
 

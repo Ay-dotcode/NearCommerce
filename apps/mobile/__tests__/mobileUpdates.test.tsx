@@ -129,6 +129,7 @@ describe("invite code", () => {
     const message = inviteShareMessage("Weekly shop", "AB12CD");
     expect(message).toContain("Weekly shop");
     expect(message).toContain("AB12CD");
+    expect(message).toContain("Near Commerce");
   });
 
   it("has Copy and Share buttons that copy / share the code", async () => {

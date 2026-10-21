@@ -4,7 +4,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>
-        NearCommerce Mobile Shopper App is working
+        Near Commerce Mobile Shopper App is working
       </Text>
     </View>
   );

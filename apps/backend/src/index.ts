@@ -31,7 +31,7 @@ const httpServer = http.createServer(app);
   }
 
   httpServer.listen(PORT, () => {
-    console.log(`🚀 NearCommerce Backend running on http://localhost:${PORT}`);
+    console.log(`🚀 Near Commerce Backend running on http://localhost:${PORT}`);
     console.log(`🔌 Socket.io listening on ws://localhost:${PORT}`);
   });
 })();

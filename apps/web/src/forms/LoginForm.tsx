@@ -68,7 +68,7 @@ export const LoginForm: React.FC = () => {
               body: (
                 <>
                   Your account is a shopper account. Shopping and household
-                  lists live in the NearCommerce mobile app. To sell here,{" "}
+                  lists live in the Near Commerce mobile app. To sell here,{" "}
                   <Link
                     className="font-medium underline"
                     to={AppRoutes.register}

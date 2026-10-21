@@ -27,11 +27,11 @@ export function StoreOnboardingPage() {
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
           <Link
             to={AppRoutes.storeOwnerDashboard}
-            aria-label="NearCommerce home"
+            aria-label="Near Commerce home"
             className="hover-outline press flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             <BrandIcon size={28} className="rounded-lg" />
-            <p className="text-xs font-semibold text-brand-700">NearCommerce</p>
+            <p className="text-xs font-semibold text-brand-700">Near Commerce</p>
           </Link>
           <ThemeToggle compact />
         </div>

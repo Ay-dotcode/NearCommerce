@@ -25,7 +25,7 @@ export function AuthLayout({
         <div className="mb-6 flex flex-col items-center gap-2">
           <BrandIcon size={48} className="rounded-2xl shadow-card" />
           <p className="text-sm font-semibold text-brand-700">
-            NearCommerce Store Portal
+            Near Commerce Store Portal
           </p>
         </div>
         <div className="hover-glow rounded-xl border border-slate-200 bg-white/90 p-6 shadow-card backdrop-blur sm:p-8">

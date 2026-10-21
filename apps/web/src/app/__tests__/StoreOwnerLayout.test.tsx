@@ -242,7 +242,7 @@ describe("StoreOwnerLayout", () => {
     renderLayout();
     expect(await screen.findByText("Dashboard content")).toBeInTheDocument();
     expect(screen.getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "NearCommerce home" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Near Commerce home" })).toHaveAttribute(
       "href",
       "/owner/dashboard",
     );
