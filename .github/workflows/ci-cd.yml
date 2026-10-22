@@ -89,11 +89,10 @@ jobs:
         env:
           VITE_API_URL: ${{ vars.API_URL }}
       - name: Publish to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/${{ matrix.app }}/dist --project-name=${{ matrix.project }} --branch=main
+        run: npx wrangler pages deploy apps/${{ matrix.app }}/dist --project-name=${{ matrix.project }} --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-api:
     needs: test
