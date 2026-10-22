@@ -1,8 +1,17 @@
-# NearCommerce
+# Near Commerce
 
-NearCommerce is a modular, AI-assisted local commerce platform that helps people discover products available at nearby physical stores and plan shopping trips together.
+Near Commerce is a modular, AI-assisted local commerce platform that helps people discover products available at nearby physical stores and plan shopping trips together.
 
-> NearCommerce is focused on discovery and in-person shopping. It does not process in-app payments, digital checkout, or order fulfillment.
+> Near Commerce is focused on discovery and in-person shopping. It does not process in-app payments, digital checkout, or order fulfillment.
+
+## Live Deployments & Applications
+
+| App                                  | Live URL                                                                      | Platform / Host              | Audience                                                            |
+| ------------------------------------ | ----------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------- |
+| **Store Owner Portal**               | [nearcommerce-owner.pages.dev](https://nearcommerce-owner.pages.dev)           | Cloudflare Pages             | Store owners managing stores, inventory & YOLO AI crops             |
+| **System Admin Portal**              | [nearcommerce-admin.pages.dev](https://nearcommerce-admin.pages.dev)           | Cloudflare Pages             | Platform moderators managing users, stores, categories & audit logs |
+| **Backend REST & WebSocket API**      | [nearcommerce-api.onrender.com](https://nearcommerce-api.onrender.com)         | Render (Web Service)         | API consumed by mobile and web frontends                            |
+| **Shopper Mobile App (Android APK)** | [Latest GitHub Release](https://github.com/Ay-dotcode/NearCommerce/releases) | GitHub Releases / EAS Update | Shoppers discovering nearby stores, lists & camera search           |
 
 ## What's in the box
 
@@ -312,9 +321,9 @@ pnpm --filter @nearcommerce/ui generate:app-icons   # re-render the mobile icons
 
 ## Documentation
 
-- [Software Requirements Specification (SRS)](./NearCommerce_SRS.md): Complete product requirements, data models, architectural boundaries, and performance benchmarks.
-- [Implementation Blueprint](./Implementation.md): Detailed architectural rules, testing guidelines, and phase-by-phase implementation details.
-- [Publishing guide](./docs/DEPLOYMENT.md): Hosting each app for free, releasing the Android app, and the GitHub workflows that deploy on every push.
+- [Software Requirements Specification (SRS)](./Documents/NearCommerce_SRS.md): Complete product requirements, data models, architectural boundaries, and performance benchmarks.
+- [Implementation Blueprint](./Documents/Implementation.md): Detailed architectural rules, testing guidelines, and phase-by-phase implementation details.
+- [Publishing & Deployment Guide](./docs/DEPLOYMENT.md): Hosting each app for free (Cloudflare Pages, Render, Neon, Upstash), releasing the Android APK via GitHub Actions, and Expo EAS over-the-air updates.
 
 ## License
 
