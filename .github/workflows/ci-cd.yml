@@ -60,6 +60,7 @@ jobs:
         run: pnpm --filter @nearcommerce/backend db:migrate
       - name: Run every test
         run: pnpm test
+        timeout-minutes: 15
 
   deploy-portals:
     name: Deploy ${{ matrix.name }}

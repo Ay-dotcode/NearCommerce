@@ -6,7 +6,7 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "test": "jest --detectOpenHandles --silent"
+    "test": "jest --runInBand --detectOpenHandles --forceExit --silent"
   },
   "main": "expo-router/entry",
   "dependencies": {

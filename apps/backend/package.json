@@ -6,7 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc && tsc-alias",
-    "test": "jest --config jest.config.js --runInBand --detectOpenHandles --silent",
+    "test": "jest --config jest.config.js --runInBand --detectOpenHandles --forceExit --silent",
     "embeddings:backfill": "tsx src/db/backfillEmbeddings.ts",
     "seed:admin": "tsx src/db/seedAdmin.ts",
     "seed:owner": "tsx src/db/seedOwner.ts",
