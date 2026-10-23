@@ -198,11 +198,11 @@ export default function StoreOwnerDashboard() {
                 aria-pressed={status === tile.key}
                 onClick={() => chooseStatus(tile.key)}
                 className={cn(
-                  "w-full rounded-xl border bg-white px-4 py-3 text-left shadow-card transition",
+                  "w-full cursor-pointer rounded-xl border bg-white px-4 py-3 text-left shadow-card transition",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
                   status === tile.key
-                    ? "border-brand-500 ring-1 ring-brand-500"
-                    : "border-slate-200 hover:border-slate-300",
+                    ? "border-brand-500 ring-2 ring-brand-500"
+                    : "border-slate-200 hover:border-brand-500 hover:ring-2 hover:ring-brand-500/30 hover:shadow-md",
                 )}
               >
                 <span className="block text-xs font-medium text-slate-500">

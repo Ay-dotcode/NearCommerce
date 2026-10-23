@@ -39,7 +39,7 @@ const effects = {
       boxShadow: `0 0 0 1px ${brandGlow(0.35)}, 0 10px 34px -8px ${brandGlow(0.55)}`,
     },
     ".hover-outline:hover": {
-      boxShadow: `0 0 0 2px ${brandGlow(0.65)}`,
+      boxShadow: `0 0 0 2px ${brandGlow(0.85)}`,
     },
     ".hover-lift:hover": { transform: "translateY(-2px)" },
     // Underline that grows from the left (navigation links).

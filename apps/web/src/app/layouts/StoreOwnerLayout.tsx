@@ -99,7 +99,7 @@ export function StoreOwnerLayout() {
             <Link
               to={AppRoutes.storeOwnerDashboard}
               aria-label="Near Commerce home"
-              className="hover-outline press flex items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              className="press flex items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <BrandIcon size={36} className="rounded-xl" />
               <div>

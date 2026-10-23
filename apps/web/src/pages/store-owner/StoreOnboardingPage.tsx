@@ -28,7 +28,7 @@ export function StoreOnboardingPage() {
           <Link
             to={AppRoutes.storeOwnerDashboard}
             aria-label="Near Commerce home"
-            className="hover-outline press flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="press flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             <BrandIcon size={28} className="rounded-lg" />
             <p className="text-xs font-semibold text-brand-700">Near Commerce</p>
