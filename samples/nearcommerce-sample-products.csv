@@ -1,43 +1,54 @@
 name,description,price,quantity,image_url
-Whole Milk 1L,Fresh pasteurised whole milk,2.49,40,https://picsum.photos/seed/milk/600/600
-Semi-Skimmed Milk 1L,Fresh pasteurised semi-skimmed milk,2.39,36,https://picsum.photos/seed/milk-semi/600/600
-Oat Drink 1L,"Barista-style oat drink, unsweetened",2.95,22,https://picsum.photos/seed/oat/600/600
-"Free Range Eggs, 12 pack","Large free range eggs, packed fresh",3.99,30,https://picsum.photos/seed/eggs/600/600
-Salted Butter 250g,Creamy salted butter block,2.69,28,https://picsum.photos/seed/butter/600/600
-Greek Yoghurt 500g,Thick and creamy natural Greek yoghurt,2.35,26,https://picsum.photos/seed/yoghurt/600/600
-Cheddar Cheese 400g,"Mature cheddar, block",4.79,18,https://picsum.photos/seed/cheddar/600/600
-Halloumi 250g,Traditional Cypriot halloumi,3.49,24,https://picsum.photos/seed/halloumi/600/600
-Sourdough Loaf,Baked this morning,3.20,12,https://picsum.photos/seed/sourdough/600/600
-"Pitta Bread, 6 pack",Soft white pitta breads,1.45,32,https://picsum.photos/seed/pitta/600/600
-"Croissants, 4 pack","Butter croissants, ready to eat",2.99,15,https://picsum.photos/seed/croissant/600/600
-Bananas 1kg,"Ripe bananas, loose",1.69,45,https://picsum.photos/seed/bananas/600/600
-Red Apples 1kg,Crisp red apples,2.29,38,https://picsum.photos/seed/apples/600/600
-"Lemons, 4 pack",Unwaxed lemons,1.59,27,https://picsum.photos/seed/lemons/600/600
-Tomatoes 500g,Vine tomatoes,1.99,34,https://picsum.photos/seed/tomatoes/600/600
-Cucumber,Fresh whole cucumber,0.89,40,https://picsum.photos/seed/cucumber/600/600
-Potatoes 2kg,Washed baking potatoes,2.49,25,https://picsum.photos/seed/potatoes/600/600
-Brown Onions 1kg,Cooking onions,1.19,42,https://picsum.photos/seed/onions/600/600
-Chicken Breast Fillets 500g,Skinless British chicken breast,5.49,14,https://picsum.photos/seed/chicken/600/600
-Minced Beef 500g,"Lean beef mince, 5% fat",5.99,10,https://picsum.photos/seed/beef/600/600
-Pasta Penne 500g,Italian dried penne pasta,1.29,60,https://picsum.photos/seed/penne/600/600
-Basmati Rice 1kg,Long grain basmati rice,2.89,35,https://picsum.photos/seed/rice/600/600
-Extra Virgin Olive Oil 500ml,Cold pressed Greek olive oil,6.49,20,https://picsum.photos/seed/olive-oil/600/600
-Chopped Tomatoes 400g,Tinned chopped tomatoes in juice,0.79,80,https://picsum.photos/seed/tinned-tomatoes/600/600
-Chickpeas 400g,"Tinned chickpeas, ready to use",0.85,64,https://picsum.photos/seed/chickpeas/600/600
-Plain Flour 1.5kg,Plain wheat flour for baking,1.79,22,https://picsum.photos/seed/flour/600/600
-Granulated Sugar 1kg,White granulated sugar,1.49,30,https://picsum.photos/seed/sugar/600/600
-Table Salt 750g,Fine table salt,0.65,28,https://picsum.photos/seed/salt/600/600
-Cornflakes 500g,Crunchy golden cornflakes,2.75,24,https://picsum.photos/seed/cornflakes/600/600
-Porridge Oats 1kg,Whole rolled oats,1.95,26,https://picsum.photos/seed/oats/600/600
-Orange Juice 1L,"Pressed orange juice, not from concentrate",2.55,20,https://picsum.photos/seed/orange-juice/600/600
-Still Water 6 x 1.5L,Natural still spring water,3.30,16,https://picsum.photos/seed/water/600/600
-Sparkling Water 1.5L,Naturally sparkling mineral water,0.95,0,https://picsum.photos/seed/sparkling/600/600
-Ground Coffee 227g,Medium roast ground coffee,4.99,13,https://picsum.photos/seed/coffee/600/600
-"Black Tea Bags, 80",Everyday black tea,2.45,29,https://picsum.photos/seed/tea/600/600
-Milk Chocolate Bar 100g,Smooth milk chocolate,1.25,70,https://picsum.photos/seed/chocolate/600/600
-Salted Crisps 150g,Classic ready salted crisps,1.69,48,https://picsum.photos/seed/crisps/600/600
-Washing-up Liquid 500ml,Lemon fresh washing-up liquid,1.35,33,https://picsum.photos/seed/washing-up/600/600
-"Kitchen Roll, 2 pack",Absorbent two-ply kitchen towels,2.15,0,https://picsum.photos/seed/kitchen-roll/600/600
-Fresh Basil Pot,Live basil plant in a pot,1.99,8,
-Handmade Baklava Box,"Assorted baklava, box of 12",7.50,6,
-Seasonal Fruit Basket,Ask in store for today's selection,12.00,3,
+Fresh Hellim (Halloumi) 250g,Traditional North Cyprus sheep and goat milk cheese with mint,85.00,45,https://picsum.photos/seed/hellim/600/600
+"Old Hellim (Aged Halloumi), 500g",Hard aged grated halloumi ideal for traditional macaroni,175.50,30,https://picsum.photos/seed/aged-hellim/600/600
+Nor Cheese (Fresh Anari) 400g,Soft delicate fresh whey cheese great with carob syrup,65.00,25,https://picsum.photos/seed/nor-cheese/600/600
+"Dry Salted Nor (Anari), 300g",Dry salted white cheese block for grating over pasta,70.00,20,https://picsum.photos/seed/dry-nor/600/600
+Karpaz Carob Molasses (Harnup Pekmezi) 700g,100% pure cold-pressed carob molasses from Karpaz peninsula,140.00,35,https://picsum.photos/seed/pekmez/600/600
+Traditional Carob Chocolate Crunch 150g,Healthy local carob snack sweetened naturally,45.00,50,https://picsum.photos/seed/carob-crunch/600/600
+Güzelyurt Valencia Oranges 2kg,Sweet and juicy freshly picked citrus from Güzelyurt orchards,55.00,60,https://picsum.photos/seed/guzelyurt-oranges/600/600
+Lefke Jaffa Oranges 2kg,Sweet seedless oranges grown along Lefke valley,58.00,40,https://picsum.photos/seed/jaffa-oranges/600/600
+Lefke Dates (Hurma) 500g,Naturally dried premium palm dates from Lefke,95.00,30,https://picsum.photos/seed/dates/600/600
+Lefke Walnut Jam (Ceviz Macunu) 450g,Traditional green walnut spoon sweet preserved in clove syrup,120.00,28,https://picsum.photos/seed/ceviz-macunu/600/600
+Bergamot Preserves (Macun) 450g,Traditional aromatic citrus peel spoon dessert,115.00,22,https://picsum.photos/seed/bergamot-macun/600/600
+Watermelon Rind Spoon Sweet (Karpuz Macunu) 400g,Crisp sweetened watermelon rind preserves,90.00,18,https://picsum.photos/seed/karpuz-macun/600/600
+Karpaz Extra Virgin Olive Oil 1L,First cold-pressed golden olive oil from ancient Karpaz groves,280.00,25,https://picsum.photos/seed/karpaz-olive-oil/600/600
+Cracked Green Olives (Çakıstes) 700g,Cracked green olives marinated with wild coriander and garlic,95.00,40,https://picsum.photos/seed/cakistes/600/600
+Black Sele Olives 500g,Dry salt-cured wrinkled black olives,85.00,35,https://picsum.photos/seed/sele-olives/600/600
+"Hellimli Bread (Olive and Halloumi), 400g",Freshly baked rustic village loaf packed with halloumi and mint,45.00,20,https://picsum.photos/seed/hellimli-bread/600/600
+Zeytinli Roll (Olive Bread) 200g,Fresh savoury roll filled with black olives and onions,25.00,35,https://picsum.photos/seed/zeytinli/600/600
+Pilavuna Pastry 2 pack,Traditional Easter pastry stuffed with spiced aged cheese and raisins,60.00,18,https://picsum.photos/seed/pilavuna/600/600
+Tahini Roll (Tahinli Çörek) 180g,Flaky sweet spiral pastry layered with pure sesame paste,32.00,45,https://picsum.photos/seed/tahinli/600/600
+Village Pide Bread 3 pack,Stone oven baked soft flatbread,24.00,50,https://picsum.photos/seed/pide-bread/600/600
+Con Kahve Turkish Coffee 250g,Classic finely ground Cypriot-style roasted coffee,75.00,60,https://picsum.photos/seed/con-coffee/600/600
+Oza Filter Coffee 250g,Locally roasted premium blend ground coffee,110.00,25,https://picsum.photos/seed/oza-coffee/600/600
+Cyprus Mountain Sage Tea (Adaçayı) 50g,Handpicked wild mountain sage bunches,35.00,40,https://picsum.photos/seed/adacayi/600/600
+Wild Thyme Tea (Kekik) 40g,Fragrant dried thyme from the Five Finger Mountains,30.00,32,https://picsum.photos/seed/kekik-tea/600/600
+Rose Water (Gül Suyu) 350ml,Natural distilled rose petal water for sweets and desserts,65.00,24,https://picsum.photos/seed/rose-water/600/600
+Orange Blossom Water (Çiçek Suyu) 350ml,Fragrant aromatic distilled citrus flower water,65.00,22,https://picsum.photos/seed/flower-water/600/600
+Girne Almond Sweets (Badem Ezmesi) 250g,Delicate handmade crushed almond confection,135.00,16,https://picsum.photos/seed/badem-ezmesi/600/600
+Cyprus Turkish Delight (Lokum) 400g,Assorted rose and mastic Turkish delight cubes with pistachios,85.00,30,https://picsum.photos/seed/lokum/600/600
+Karpaz Wild Honey 450g,Pure raw wild flower and thyme honey,210.00,19,https://picsum.photos/seed/karpaz-honey/600/600
+Traditional Sucuk (Grape & Walnut Sweet Roll) 300g,Chewy grape molasses jelly threaded around walnuts,95.00,26,https://picsum.photos/seed/grape-sucuk/600/600
+Koçan Rice (Golosha) 1kg,Short grain rice commonly used in Cypriot stuffed vine leaves,52.00,35,https://picsum.photos/seed/cyprus-rice/600/600
+Village Kolokas (Taro Root) 1.5kg,Traditional starchy winter root vegetable cooked with celery,75.00,28,https://picsum.photos/seed/kolokas/600/600
+Molehiya Leaves (Dried) 100g,Sun-dried jute leaves for authentic Cypriot lamb stew,65.00,40,https://picsum.photos/seed/molehiya/600/600
+"Vine Leaves in Brine, 800g",Tender picked green leaves ready for stuffed dolma,85.00,22,https://picsum.photos/seed/vine-leaves/600/600
+Maras/Cyprus Ice Cream Mastic 500ml,Elastic goat milk ice cream with fragrant mastic resin,95.00,15,https://picsum.photos/seed/mastic-ice-cream/600/600
+Fresh Cow & Sheep Pasteurized Milk 1L,Fresh daily whole milk produced in Mesarya plains,34.50,30,https://picsum.photos/seed/local-milk/600/600
+Strained Village Yoghurt (Süzme Yoğurt) 750g,Thick strained creamy village style yoghurt,72.00,25,https://picsum.photos/seed/suzme-yogurt/600/600
+"Free Range Village Eggs, 15 pack",Fresh farm eggs collected from free-ranging village hens,85.00,30,https://picsum.photos/seed/village-eggs/600/600
+Cypriot Seftali Kebab (Raw) 6 pack,Traditional spiced ground meat wrapped in caul fat ready to grill,195.00,14,https://picsum.photos/seed/seftali-kebab/600/600
+Fresh Village Halloumi Ravioli 500g,Hand-pinched pasta parcels stuffed with minty grated halloumi,110.00,18,https://picsum.photos/seed/halloumi-ravioli/600/600
+Cypriot Magarina Çubuk (Tubular Pasta) 500g,Classic long hollow pasta cooked with boiled chicken and dried nor,38.00,45,https://picsum.photos/seed/magarina-cubuk/600/600
+"Mesarya Chickpeas, 1kg",Locally harvested whole dried chickpeas,55.00,40,https://picsum.photos/seed/chickpeas/600/600
+Red Split Lentils 1kg,Essential pantry red lentils for hot village soups,48.00,50,https://picsum.photos/seed/red-lentils/600/600
+"Coarse Bulgur (Pilavlık), 1kg",Stone-ground wheat bulgur for village tomato pilaf,36.00,42,https://picsum.photos/seed/bulgur/600/600
+Lefke Olive Oil Soap Bar 150g,Handmade natural pure olive oil bar soap,30.00,60,https://picsum.photos/seed/olive-soap/600/600
+Bay Leaf (Defne Yaprağı) 50g,Sun-dried aromatic whole bay leaves from Karpaz,22.00,35,https://picsum.photos/seed/bay-leaves/600/600
+Cypriot Coriander Seeds (Golyandro) 100g,Crushed whole coriander seeds for marinating olives and meats,28.00,50,https://picsum.photos/seed/golyandro/600/600
+Lefkara Lace Embroidered Linen Coaster,Handmade decorative linen coaster made with traditional craft,160.00,0,https://picsum.photos/seed/lefkara-lace/600/600
+Natural Sea Salt Flakes from Karpaz 250g,Hand-harvested sun-dried crystal rock sea salt,45.00,0,https://picsum.photos/seed/karpaz-salt/600/600
+Cyprus Carob Liqueur 500ml,Handcrafted sweet digestif made from roasted carob pods,240.00,12,https://picsum.photos/seed/carob-liqueur/600/600
+Freshly Squeezed Pomegranate Juice 1L,Seasonal cold-pressed sweet and tart pomegranate juice,85.00,10,
+Handmade Pistachio Baklava Box,"Assorted handmade Turkish baklava with Gaziantep pistachios, box of 12",220.00,8,
+Seasonal North Cyprus Citrus Gift Basket,Assorted freshly picked oranges grapefruits and mandarins in a wicker basket,350.00,4,
