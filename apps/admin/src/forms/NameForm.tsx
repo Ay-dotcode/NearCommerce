@@ -1,5 +1,5 @@
 import type { NameValues } from "@/forms/name.form";
-import { FormTextField } from "@nearcommerce/ui";
+import { BusyFieldset, FormTextField } from "@nearcommerce/ui";
 import { FormikProvider, type FormikProps } from "formik";
 
 interface Props {
@@ -11,19 +11,16 @@ interface Props {
 export function NameForm({ formik, formId }: Props) {
   return (
     <FormikProvider value={formik}>
-      <form
-        id={formId}
-        onSubmit={formik.handleSubmit}
-        noValidate
-        className="space-y-4"
-      >
-        <FormTextField
-          name="name"
-          label="Name"
-          data-autofocus
-          autoComplete="off"
-          error={formik.errors.name}
-        />
+      <form id={formId} onSubmit={formik.handleSubmit} noValidate>
+        <BusyFieldset busy={formik.isSubmitting} className="space-y-4">
+          <FormTextField
+            name="name"
+            label="Name"
+            data-autofocus
+            autoComplete="off"
+            error={formik.errors.name}
+          />
+        </BusyFieldset>
       </form>
     </FormikProvider>
   );

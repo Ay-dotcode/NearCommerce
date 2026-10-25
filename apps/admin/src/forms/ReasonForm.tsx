@@ -1,5 +1,5 @@
 import type { ReasonValues } from "@/forms/reason.form";
-import { FormTextAreaField } from "@nearcommerce/ui";
+import { BusyFieldset, FormTextAreaField } from "@nearcommerce/ui";
 import { FormikProvider, type FormikProps } from "formik";
 
 interface Props {
@@ -13,20 +13,17 @@ interface Props {
 export function ReasonForm({ formik, formId, hint }: Props) {
   return (
     <FormikProvider value={formik}>
-      <form
-        id={formId}
-        onSubmit={formik.handleSubmit}
-        noValidate
-        className="space-y-4"
-      >
-        <FormTextAreaField
-          name="reason"
-          label="Reason"
-          rows={3}
-          data-autofocus
-          hint={hint}
-          error={formik.errors.reason}
-        />
+      <form id={formId} onSubmit={formik.handleSubmit} noValidate>
+        <BusyFieldset busy={formik.isSubmitting} className="space-y-4">
+          <FormTextAreaField
+            name="reason"
+            label="Reason"
+            rows={3}
+            data-autofocus
+            hint={hint}
+            error={formik.errors.reason}
+          />
+        </BusyFieldset>
       </form>
     </FormikProvider>
   );

@@ -10,7 +10,12 @@ import {
   UserRole,
   type AuthResponse,
 } from "@nearcommerce/api";
-import { Button, FormTextField } from "@nearcommerce/ui";
+import {
+  BusyFieldset,
+  Button,
+  FormPasswordField,
+  FormTextField,
+} from "@nearcommerce/ui";
 import { FormikProvider, useFormik } from "formik";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -47,34 +52,34 @@ export function LoginForm() {
 
   return (
     <FormikProvider value={formik}>
-      <form
-        onSubmit={formik.handleSubmit}
-        noValidate
-        className="mt-6 flex flex-col gap-4"
-      >
-        <FormTextField
-          name="email"
-          type="email"
-          label="Email"
-          autoComplete="username"
-          data-autofocus
-        />
-        <FormTextField
-          name="password"
-          type="password"
-          label="Password"
-          autoComplete="current-password"
-        />
+      <form onSubmit={formik.handleSubmit} noValidate>
+        <BusyFieldset
+          busy={formik.isSubmitting}
+          className="mt-6 flex flex-col gap-4"
+        >
+          <FormTextField
+            name="email"
+            type="email"
+            label="Email"
+            autoComplete="username"
+            data-autofocus
+          />
+          <FormPasswordField
+            name="password"
+            label="Password"
+            autoComplete="current-password"
+          />
 
-        {error && (
-          <p role="alert" className="text-sm text-red-600">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p role="alert" className="text-sm text-red-600">
+              {error}
+            </p>
+          )}
 
-        <Button type="submit" loading={formik.isSubmitting}>
-          {formik.isSubmitting ? "Signing in…" : "Sign in"}
-        </Button>
+          <Button type="submit" loading={formik.isSubmitting}>
+            {formik.isSubmitting ? "Signing in…" : "Sign in"}
+          </Button>
+        </BusyFieldset>
       </form>
     </FormikProvider>
   );

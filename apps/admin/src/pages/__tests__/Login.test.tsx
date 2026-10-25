@@ -65,9 +65,12 @@ describe("Admin LoginPage & Routing", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "admin@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "secret123" },
-    });
+    fireEvent.change(
+      screen.getByLabelText(/password/i, { selector: "input" }),
+      {
+        target: { value: "secret123" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
@@ -88,9 +91,12 @@ describe("Admin LoginPage & Routing", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "owner@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "secret123" },
-    });
+    fireEvent.change(
+      screen.getByLabelText(/password/i, { selector: "input" }),
+      {
+        target: { value: "secret123" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
@@ -110,9 +116,12 @@ describe("Admin LoginPage & Routing", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "admin@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "wrongpass" },
-    });
+    fireEvent.change(
+      screen.getByLabelText(/password/i, { selector: "input" }),
+      {
+        target: { value: "wrongpass" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
@@ -137,9 +146,12 @@ describe("Admin LoginPage & Routing", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "admin@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "wrongpass" },
-    });
+    fireEvent.change(
+      screen.getByLabelText(/password/i, { selector: "input" }),
+      {
+        target: { value: "wrongpass" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
@@ -159,13 +171,64 @@ describe("Admin LoginPage & Routing", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "admin@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "wrongpass" },
-    });
+    fireEvent.change(
+      screen.getByLabelText(/password/i, { selector: "input" }),
+      {
+        target: { value: "wrongpass" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/can't reach the server/i)).toBeInTheDocument();
     });
+  });
+
+  it("has one show/hide password button that reveals what was typed", () => {
+    renderWithProviders();
+    const input = screen.getByLabelText(/password/i, { selector: "input" });
+    expect(
+      screen.getAllByRole("button", { name: /show password/i }),
+    ).toHaveLength(1);
+    expect(input).toHaveAttribute("type", "password");
+    fireEvent.click(screen.getByRole("button", { name: /show password/i }));
+    expect(input).toHaveAttribute("type", "text");
+    fireEvent.click(screen.getByRole("button", { name: /hide password/i }));
+    expect(input).toHaveAttribute("type", "password");
+  });
+
+  it("locks the fields while signing in and unlocks them if it fails", async () => {
+    let fail!: () => void;
+    (apiClient.post as jest.Mock).mockReturnValueOnce(
+      new Promise((_, reject) => {
+        fail = () =>
+          reject({
+            response: { status: 401, data: { error: "Invalid credentials" } },
+          });
+      }),
+    );
+    renderWithProviders();
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "admin@test.com" },
+    });
+    fireEvent.change(
+      screen.getByLabelText(/password/i, { selector: "input" }),
+      {
+        target: { value: "secret123" },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => expect(screen.getByLabelText(/email/i)).toBeDisabled());
+    expect(
+      screen.getByLabelText(/password/i, { selector: "input" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /show password/i }),
+    ).toBeDisabled();
+
+    fail();
+    await waitFor(() => expect(screen.getByLabelText(/email/i)).toBeEnabled());
+    expect(screen.getByLabelText(/email/i)).toHaveValue("admin@test.com");
   });
 });
