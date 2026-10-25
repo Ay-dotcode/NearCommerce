@@ -1,5 +1,10 @@
 import AuthLink from "@/components/auth/AuthLink";
-import { Button, FormError, FormTextField } from "@/components/ui";
+import {
+  Button,
+  FormError,
+  FormPasswordField,
+  FormTextField,
+} from "@/components/ui";
 import { registerInitialValues, registerSchema } from "@/forms/register.form";
 import { useAuth } from "@/src/context/AuthContext";
 import { apiClient, type AuthResponse } from "@nearcommerce/api";
@@ -81,12 +86,11 @@ export function RegisterForm() {
           autoComplete="email"
           returnKeyType="next"
         />
-        <FormTextField
+        <FormPasswordField
           name="password"
           testID="password-input"
           label="Password"
           placeholder="At least 8 characters"
-          secureTextEntry
           autoComplete="new-password"
           returnKeyType="done"
           onSubmitEditing={() => formik.handleSubmit()}

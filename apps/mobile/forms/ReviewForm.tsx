@@ -81,6 +81,7 @@ export function ReviewForm({ target, reviewId, rating, comment }: Props) {
         {isEdit ? "Edit your review" : "Write a review"}
       </Text>
       <StarPicker
+        disabled={formik.isSubmitting}
         value={formik.values.rating}
         onChange={(n) => {
           formik.setFieldValue("rating", n);

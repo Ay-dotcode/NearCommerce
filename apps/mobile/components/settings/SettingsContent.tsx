@@ -1,11 +1,6 @@
 import { apiErrorMessage } from "@/api/errors";
 import VerifyEmailPrompt from "@/components/VerifyEmailPrompt";
-import {
-  Button,
-  SegmentedControl,
-  Slider,
-  useDialogs,
-} from "@/components/ui";
+import { Button, SegmentedControl, Slider, useDialogs } from "@/components/ui";
 import {
   AVOID_TOLLS_KEY,
   SEARCH_RADIUS_MAX_KM,
@@ -14,6 +9,7 @@ import {
 import { switchToDeviceLocation } from "@/helpers/location";
 import { notify } from "@/helpers/notify";
 import { useAuth } from "@/src/context/AuthContext";
+import { useOptionalOnboarding } from "@/src/context/OnboardingContext";
 import { useDeviceLocationName } from "@/src/hooks/useDeviceLocationName";
 import { useManualLocation } from "@/src/hooks/useManualLocation";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
@@ -53,6 +49,7 @@ export default function SettingsContent({
   const { confirm } = useDialogs();
   const c = useColors();
   const { logout } = useAuth();
+  const onboarding = useOptionalOnboarding();
   const manualLocation = useManualLocation();
   const radius = useSearchRadius();
   const theme = useThemePreference();
@@ -222,6 +219,19 @@ export default function SettingsContent({
 
       <Text style={styles.section}>Help</Text>
       <View style={styles.card}>
+        {onboarding && (
+          <Button
+            testID="replay-onboarding"
+            variant="secondary"
+            title="How Near Commerce works"
+            style={styles.gapBottom}
+            onPress={() => {
+              // Close the drawer first so the guide is not hidden behind it.
+              onClose();
+              onboarding.open();
+            }}
+          />
+        )}
         <Button
           variant="secondary"
           title="Contact support"
@@ -246,7 +256,11 @@ export default function SettingsContent({
       </View>
 
       <View style={styles.actions}>
-        <Button title="Sign out" variant="danger" onPress={() => void signOut()} />
+        <Button
+          title="Sign out"
+          variant="danger"
+          onPress={() => void signOut()}
+        />
         <Button
           title="Delete account"
           variant="danger"
@@ -287,5 +301,6 @@ const makeStyles = (c: ThemeColors) =>
     hint: { color: c.textMuted, fontSize: 13 },
     flex: { flex: 1, paddingRight: 12 },
     gapTop: { marginTop: 14 },
+    gapBottom: { marginBottom: 10 },
     actions: { gap: 10, marginTop: 12 },
   });

@@ -1,5 +1,5 @@
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
-import { forwardRef } from "react";
+import { forwardRef, type ReactNode } from "react";
 import {
   StyleSheet,
   Text,
@@ -18,13 +18,25 @@ export interface TextFieldProps extends TextInputProps {
   // Red "error mode" without a message of its own (a form-level message explains it).
   invalid?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
+  // A control drawn inside the input at its right edge (for example the show-password eye).
+  rightAccessory?: ReactNode;
 }
 
 // Labelled input with an inline error mode. Validation problems appear right under the field
 // (red border + message) instead of in a pop-up, and are announced to screen readers.
 export const TextField = forwardRef<TextInput, TextFieldProps>(
   (
-    { label, error, hint, invalid, containerStyle, style, testID, ...rest },
+    {
+      label,
+      error,
+      hint,
+      invalid,
+      containerStyle,
+      style,
+      testID,
+      rightAccessory,
+      ...rest
+    },
     ref,
   ) => {
     const styles = useThemedStyles(makeStyles);
@@ -32,20 +44,28 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(
     return (
       <View style={[styles.group, containerStyle]}>
         {label ? <Text style={styles.label}>{label}</Text> : null}
-        <TextInput
-          ref={ref}
-          testID={testID}
-          accessibilityLabel={label}
-          accessibilityHint={error ?? hint}
-          aria-invalid={Boolean(error) || Boolean(invalid)}
-          placeholderTextColor={c.placeholder}
-          style={[
-            styles.input,
-            error || invalid ? styles.inputError : null,
-            style,
-          ]}
-          {...rest}
-        />
+        <View>
+          <TextInput
+            ref={ref}
+            testID={testID}
+            accessibilityLabel={label}
+            accessibilityHint={error ?? hint}
+            accessibilityState={{ disabled: rest.editable === false }}
+            aria-invalid={Boolean(error) || Boolean(invalid)}
+            placeholderTextColor={c.placeholder}
+            style={[
+              styles.input,
+              error || invalid ? styles.inputError : null,
+              rest.editable === false ? styles.inputDisabled : null,
+              rightAccessory ? styles.inputWithAccessory : null,
+              style,
+            ]}
+            {...rest}
+          />
+          {rightAccessory ? (
+            <View style={styles.accessory}>{rightAccessory}</View>
+          ) : null}
+        </View>
         {error ? (
           <Text
             accessibilityLiveRegion="polite"
@@ -83,6 +103,18 @@ const makeStyles = (c: ThemeColors) =>
       color: c.text,
     },
     inputError: { borderColor: c.danger, backgroundColor: c.dangerSoft },
+    // Locked while a form is being sent.
+    inputDisabled: { opacity: 0.6, backgroundColor: c.surfaceAlt },
+    inputWithAccessory: { paddingRight: 52 },
+    accessory: {
+      position: "absolute",
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 48,
+      alignItems: "center",
+      justifyContent: "center",
+    },
     error: { color: c.danger, fontSize: 13, fontWeight: "600", marginTop: 6 },
     hint: { color: c.textMuted, fontSize: 13, marginTop: 6 },
   });

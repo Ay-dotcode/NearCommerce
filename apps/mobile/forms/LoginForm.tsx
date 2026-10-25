@@ -1,6 +1,11 @@
 import { isSuspendedError, loginErrorMessage } from "@/api/errors";
 import AuthLink from "@/components/auth/AuthLink";
-import { Button, FormError, FormTextField } from "@/components/ui";
+import {
+  Button,
+  FormError,
+  FormPasswordField,
+  FormTextField,
+} from "@/components/ui";
 import { loginInitialValues, loginSchema } from "@/forms/login.form";
 import { useAuth } from "@/src/context/AuthContext";
 import { useOptionalSettings } from "@/src/context/SettingsContext";
@@ -51,12 +56,11 @@ export function LoginForm() {
           returnKeyType="next"
           invalid={failed}
         />
-        <FormTextField
+        <FormPasswordField
           name="password"
           testID="password-input"
           label="Password"
           placeholder="Your password"
-          secureTextEntry
           autoComplete="password"
           returnKeyType="done"
           onSubmitEditing={() => formik.handleSubmit()}

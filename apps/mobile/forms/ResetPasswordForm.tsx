@@ -1,6 +1,11 @@
 import { apiErrorMessage } from "@/api/errors";
 import AuthLink from "@/components/auth/AuthLink";
-import { Button, FormError, FormTextField } from "@/components/ui";
+import {
+  Button,
+  FormError,
+  FormPasswordField,
+  FormTextField,
+} from "@/components/ui";
 import {
   extractResetToken,
   resetPasswordInitialValues,
@@ -73,20 +78,18 @@ export function ResetPasswordForm() {
               autoCorrect={false}
             />
           )}
-          <FormTextField
+          <FormPasswordField
             name="password"
             testID="new-password-input"
             label="New password"
             placeholder="At least 8 characters"
-            secureTextEntry
             autoComplete="new-password"
           />
-          <FormTextField
+          <FormPasswordField
             name="confirm"
             testID="confirm-password-input"
             label="Confirm new password"
             placeholder="Re-enter password"
-            secureTextEntry
             autoComplete="new-password"
             returnKeyType="done"
             onSubmitEditing={() => formik.handleSubmit()}

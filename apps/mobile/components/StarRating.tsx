@@ -27,9 +27,14 @@ export function Stars({ rating, size = 16 }: DisplayProps) {
   );
 }
 
-type PickerProps = { value: number; onChange: (value: number) => void };
+type PickerProps = {
+  value: number;
+  onChange: (value: number) => void;
+  // Locks the stars (for example while the review is being sent).
+  disabled?: boolean;
+};
 
-export function StarPicker({ value, onChange }: PickerProps) {
+export function StarPicker({ value, onChange, disabled }: PickerProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useColors();
 
@@ -39,10 +44,14 @@ export function StarPicker({ value, onChange }: PickerProps) {
         <Pressable
           key={n}
           onPress={() => onChange(n)}
+          disabled={disabled}
           hitSlop={6}
           accessibilityRole="button"
           accessibilityLabel={`${n} star${n === 1 ? "" : "s"}`}
-          accessibilityState={{ selected: n === value }}
+          accessibilityState={{
+            selected: n === value,
+            disabled: Boolean(disabled),
+          }}
         >
           <Ionicons
             name={n <= value ? "star" : "star-outline"}

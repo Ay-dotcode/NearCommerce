@@ -13,13 +13,19 @@ interface Props {
 
 // "‹ Back" for screens that have no native app bar. Goes to the previous screen, or to
 // `fallback` when there is none.
-export function BackButton({ fallback, label = "Back", inHeader = false }: Props) {
+export function BackButton({
+  fallback,
+  label = "Back",
+  inHeader = false,
+}: Props) {
   const styles = useThemedStyles(makeStyles);
   const c = useColors();
   return (
     <Pressable
       testID="back-button"
-      onPress={() => (router.canGoBack() ? router.back() : router.replace(fallback))}
+      onPress={() =>
+        router.canGoBack() ? router.back() : router.replace(fallback)
+      }
       accessibilityRole="button"
       accessibilityLabel="Go back"
       hitSlop={10}

@@ -1,8 +1,14 @@
+import { AnimatedSplash } from "@/components/AnimatedSplash";
 import LocationFallbackModal from "@/components/LocationFallbackModal";
+import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
 import ToastHost from "@/components/ToastHost";
-import { BrandIcon, DialogProvider } from "@/components/ui";
+import { DialogProvider } from "@/components/ui";
 import { API_URL } from "@/constants";
 import { AuthProvider, useAuth } from "@/src/context/AuthContext";
+import {
+  OnboardingProvider,
+  useOnboarding,
+} from "@/src/context/OnboardingContext";
 import { SettingsProvider } from "@/src/context/SettingsContext";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import {
@@ -23,28 +29,19 @@ configureApiClient({ baseURL: API_URL });
 
 const queryClient = new QueryClient();
 
-//  Inner layout — rendered inside AuthProvider so it can read auth state.
-//  Redirects unauthenticated users to the login screen.
-function AppShell() {
+// Asks for the phone's location and shows the "fetching location" pill. It is kept apart from
+// the rest of the shell so a first-time shopper can read why location is needed (in the
+// introduction) before the phone's permission prompt appears.
+function LocationLayer({ signedIn }: { signedIn: boolean }) {
   const styles = useThemedStyles(makeStyles);
-  const c = useColors();
-  const { token, isLoading } = useAuth();
   const {
     isFetching: isFetchingLocation,
     permissionDenied,
     manualLocation,
   } = useLocationFetcher();
   const [fallbackDismissed, setFallbackDismissed] = useState(false);
-
-  if (isLoading)
-    return (
-      <View style={styles.splash}>
-        <BrandIcon size={72} />
-      </View>
-    );
-
   return (
-    <View style={styles.root}>
+    <>
       {isFetchingLocation && (
         <View style={styles.dynamicIslandFallback}>
           <Text style={styles.notificationText}>
@@ -52,48 +49,80 @@ function AppShell() {
           </Text>
         </View>
       )}
-
-      <SettingsProvider>
-        <Stack
-          screenOptions={{
-            // Every page change slides in from the right (and back out on return).
-            animation: "slide_from_right",
-            headerStyle: { backgroundColor: c.surface },
-            headerTintColor: c.text,
-            headerTitleStyle: { color: c.text, fontWeight: "700" },
-            headerShadowVisible: false,
-            contentStyle: { backgroundColor: c.background },
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="(auth)"
-            options={{ headerShown: false, animation: "fade" }}
-          />
-          <Stack.Screen name="category/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="list/[id]" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="review/index"
-            options={{ title: "Review", animation: "slide_from_bottom" }}
-          />
-        </Stack>
-      </SettingsProvider>
-
-      {/* Redirect based on auth state */}
-      {!token && <Redirect href="/(auth)/login" />}
-
       {/* Without GPS permission the shopper can still pick a location by ZIP */}
       <LocationFallbackModal
         visible={
-          Boolean(token) &&
-          permissionDenied &&
-          !manualLocation &&
-          !fallbackDismissed
+          signedIn && permissionDenied && !manualLocation && !fallbackDismissed
         }
         onClose={() => setFallbackDismissed(true)}
       />
+    </>
+  );
+}
+
+//  Inner layout — rendered inside AuthProvider so it can read auth state.
+//  Redirects unauthenticated users to the login screen.
+function AppShell() {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
+  const { token, isLoading } = useAuth();
+  const onboarding = useOnboarding();
+  const [splashDone, setSplashDone] = useState(false);
+  // The opening animation stays until sign-in state and the "seen the guide" flag are known.
+  const ready = !isLoading && onboarding.loaded;
+
+  return (
+    <View style={styles.root}>
+      {!isLoading && (
+        <>
+          {onboarding.loaded && !onboarding.firstRun && (
+            <LocationLayer signedIn={Boolean(token)} />
+          )}
+
+          <SettingsProvider>
+            <Stack
+              screenOptions={{
+                // Every page change slides in from the right (and back out on return).
+                animation: "slide_from_right",
+                headerStyle: { backgroundColor: c.surface },
+                headerTintColor: c.text,
+                headerTitleStyle: { color: c.text, fontWeight: "700" },
+                headerShadowVisible: false,
+                contentStyle: { backgroundColor: c.background },
+              }}
+            >
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="(auth)"
+                options={{ headerShown: false, animation: "fade" }}
+              />
+              <Stack.Screen
+                name="category/[id]"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen name="list/[id]" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="review/index"
+                options={{ title: "Review", animation: "slide_from_bottom" }}
+              />
+            </Stack>
+          </SettingsProvider>
+
+          {/* Redirect based on auth state */}
+          {!token && <Redirect href="/(auth)/login" />}
+        </>
+      )}
+
+      {/* First launch (or replayed from Settings): the introduction covers the app. */}
+      {ready && onboarding.visible && (
+        <OnboardingScreen onFinish={onboarding.finish} />
+      )}
 
       <ToastHost />
+
+      {!splashDone && (
+        <AnimatedSplash ready={ready} onDone={() => setSplashDone(true)} />
+      )}
     </View>
   );
 }
@@ -106,7 +135,9 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <DialogProvider>
-            <AppShell />
+            <OnboardingProvider>
+              <AppShell />
+            </OnboardingProvider>
           </DialogProvider>
         </AuthProvider>
       </QueryClientProvider>
@@ -117,12 +148,6 @@ export default function RootLayout() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.background },
-    splash: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: c.background,
-    },
     dynamicIslandFallback: {
       position: "absolute",
       top: 50,

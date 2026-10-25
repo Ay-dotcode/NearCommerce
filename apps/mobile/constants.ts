@@ -32,3 +32,6 @@ const defaultApiUrl =
   Platform.OS === "android" ? "http://10.0.2.2:4000" : "http://localhost:4000";
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? defaultApiUrl;
+
+// AsyncStorage key that remembers the first-launch introduction was seen ("1").
+export const ONBOARDING_SEEN_KEY = "@onboarding_seen";

@@ -6,6 +6,7 @@ export * from "./DialogProvider";
 export * from "./Drawer";
 export * from "./FormError";
 export * from "./FormTextField";
+export * from "./PasswordField";
 export * from "./SegmentedControl";
 export * from "./Skeleton";
 export * from "./Slider";
