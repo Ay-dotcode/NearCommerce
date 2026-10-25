@@ -25,6 +25,19 @@ describe("Modal", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("renders into document.body, outside the page's own stacking context", () => {
+    const { container } = render(
+      <div className="animate-page-in">
+        <Modal open onClose={() => {}} title="Details">x</Modal>
+      </div>,
+    );
+    const dialog = screen.getByRole("dialog", { name: "Details" });
+    // A sticky header can only paint over the dialog if the dialog lives inside the page
+    // wrapper; as a direct child of <body> the dialog's z-50 always wins.
+    expect(container).not.toContainElement(dialog);
+    expect(dialog.closest("body > div")).toHaveClass("fixed", "z-50");
+  });
+
   it("is an accessible, labelled modal dialog", () => {
     render(<Modal open onClose={() => {}} title="Edit thing" description="Make changes">x</Modal>);
     const dialog = screen.getByRole("dialog", { name: "Edit thing" });

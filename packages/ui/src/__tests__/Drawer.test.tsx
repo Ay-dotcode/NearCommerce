@@ -23,6 +23,19 @@ describe("Drawer", () => {
     );
   });
 
+  it("renders into document.body so page stacking contexts can't cover it", () => {
+    const { container } = render(
+      <div className="animate-page-in">
+        <Drawer open onClose={() => {}} title="Menu">
+          x
+        </Drawer>
+      </div>,
+    );
+    expect(container).not.toContainElement(
+      screen.getByRole("dialog", { name: "Menu" }),
+    );
+  });
+
   it("closes from the backdrop, the close button and Escape", () => {
     const onClose = jest.fn();
     render(

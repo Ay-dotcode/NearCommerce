@@ -1,4 +1,5 @@
 import { ReactNode, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useDialogBehavior } from "@nearcommerce/ui/src/hooks/useDialogBehavior";
 import { cn } from "@nearcommerce/helpers";
 import { OverlayBackdrop } from "./Modal";
@@ -12,6 +13,7 @@ export interface DrawerProps {
 }
 
 // Side drawer with the same blurred backdrop, focus handling and Escape behaviour as Modal.
+// Like Modal it renders into document.body so page stacking contexts can't cover it.
 export function Drawer({
   open,
   onClose,
@@ -25,7 +27,7 @@ export function Drawer({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50">
       <OverlayBackdrop onClick={onClose} testId="drawer-backdrop" />
       <div
@@ -56,6 +58,7 @@ export function Drawer({
         </header>
         <div className="flex-1 overflow-y-auto p-2">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

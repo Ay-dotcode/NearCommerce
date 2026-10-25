@@ -104,9 +104,15 @@ export const PRODUCT_STATUS_FILTERS = [
   "out_of_stock",
 ] as const;
 
+// "none" selects products that have no category yet.
+export const UNCATEGORIZED_FILTER = "none";
+
 export const ProductListQuerySchema = z.object({
   q: z.string().trim().max(100).optional(),
   status: z.enum(PRODUCT_STATUS_FILTERS).default("all"),
+  categoryId: z
+    .union([z.literal(UNCATEGORIZED_FILTER), z.string().uuid()])
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });

@@ -1,4 +1,5 @@
 import { ReactNode, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useDialogBehavior } from "@nearcommerce/ui/src/hooks/useDialogBehavior";
 import { cn } from "@nearcommerce/helpers";
 
@@ -41,6 +42,9 @@ export function OverlayBackdrop({
 
 // Accessible modal dialog (bottom sheet on small screens): role="dialog", labelled, Escape
 // closes, focus is trapped, and the page behind is blurred and scroll-locked while open.
+// It renders into document.body (a portal) so it is never trapped inside a page's stacking
+// context: the route transition keeps an animation on the page wrapper, which would otherwise
+// leave the sticky header painted on top of the dialog.
 export function Modal({
   open,
   onClose,
@@ -58,7 +62,7 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <OverlayBackdrop onClick={dismissible ? onClose : undefined} />
       <div
@@ -92,6 +96,7 @@ export function Modal({
           </footer>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
