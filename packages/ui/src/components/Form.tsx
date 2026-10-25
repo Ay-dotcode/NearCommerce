@@ -1,5 +1,9 @@
+import { cn } from "@nearcommerce/helpers";
 import { useField } from "formik";
+import type { ReactNode } from "react";
 import {
+  PasswordField,
+  PasswordFieldProps,
   SelectField,
   SelectFieldProps,
   TextAreaField,
@@ -67,5 +71,45 @@ export function FormSelectField({
       onChange={onChange ?? field.onChange}
       error={error ?? (meta.touched ? meta.error : undefined)}
     />
+  );
+}
+
+export function FormPasswordField({
+  name,
+  error,
+  onChange,
+  ...rest
+}: Bound<PasswordFieldProps>) {
+  const [field, meta] = useField(name);
+  return (
+    <PasswordField
+      {...field}
+      {...rest}
+      onChange={onChange ?? field.onChange}
+      error={error ?? (meta.touched ? meta.error : undefined)}
+    />
+  );
+}
+
+// Wraps the controls of a <form>. While `busy` (the form is submitting) every input, select,
+// checkbox and button inside is disabled by the browser, so nothing can be edited or sent twice.
+// Layout classes (such as space-y-4) go on this element, not on the <form>.
+export function BusyFieldset({
+  busy,
+  className,
+  children,
+}: {
+  busy: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <fieldset
+      disabled={busy}
+      aria-busy={busy || undefined}
+      className={cn("m-0 min-w-0 border-0 p-0", className)}
+    >
+      {children}
+    </fieldset>
   );
 }

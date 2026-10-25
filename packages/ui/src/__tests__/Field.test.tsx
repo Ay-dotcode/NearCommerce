@@ -1,4 +1,12 @@
-import { Button, TextField, ToastProvider, useToast } from "@nearcommerce/ui/src/index";
+import {
+  BusyFieldset,
+  Button,
+  PasswordField,
+  SelectField,
+  TextField,
+  ToastProvider,
+  useToast,
+} from "@nearcommerce/ui/src/index";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 describe("TextField", () => {
@@ -98,5 +106,77 @@ describe("Toast", () => {
   it("useToast is a harmless no-op without a provider", () => {
     render(<Trigger />);
     expect(() => fireEvent.click(screen.getByText("ok"))).not.toThrow();
+  });
+});
+
+describe("PasswordField", () => {
+  it("hides the password until the show button is pressed", () => {
+    render(<PasswordField label="Password" />);
+    const input = screen.getByLabelText("Password");
+    expect(input).toHaveAttribute("type", "password");
+
+    const toggle = screen.getByRole("button", { name: "Show password" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(toggle);
+
+    expect(input).toHaveAttribute("type", "text");
+    expect(
+      screen.getByRole("button", { name: "Hide password" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Hide password" }));
+    expect(input).toHaveAttribute("type", "password");
+  });
+
+  it("has exactly one reveal button and switches off the browser's own (Edge)", () => {
+    const { container } = render(<PasswordField label="Password" />);
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    const cls = container.querySelector("input")!.className;
+    expect(cls).toContain("[&::-ms-reveal]:hidden");
+    expect(cls).toContain("[&::-ms-clear]:hidden");
+  });
+
+  it("keeps the typed value and never submits the form when toggled", () => {
+    const onSubmit = jest.fn((e) => e.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <PasswordField label="Password" defaultValue="hunter22" />
+      </form>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show password" }));
+    expect(screen.getByLabelText("Password")).toHaveValue("hunter22");
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("is disabled together with the input, and shows errors like other fields", () => {
+    render(<PasswordField label="Password" disabled error="Too short" />);
+    expect(screen.getByLabelText("Password")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Show password" })).toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent("Too short");
+  });
+});
+
+describe("BusyFieldset", () => {
+  it("disables every control inside while busy and re-enables them after", () => {
+    const Form = ({ busy }: { busy: boolean }) => (
+      <form>
+        <BusyFieldset busy={busy}>
+          <TextField label="Email" />
+          <SelectField label="Role">
+            <option>a</option>
+          </SelectField>
+          <button type="submit">Save</button>
+        </BusyFieldset>
+      </form>
+    );
+    const { rerender } = render(<Form busy={false} />);
+    expect(screen.getByLabelText("Email")).toBeEnabled();
+
+    rerender(<Form busy />);
+    expect(screen.getByLabelText("Email")).toBeDisabled();
+    expect(screen.getByLabelText("Role")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+
+    rerender(<Form busy={false} />);
+    expect(screen.getByLabelText("Email")).toBeEnabled();
   });
 });

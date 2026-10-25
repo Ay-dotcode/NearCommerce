@@ -6,6 +6,7 @@ import {
   TextareaHTMLAttributes,
   forwardRef,
   useId,
+  useState,
 } from "react";
 import { controlClass, describedBy } from "@nearcommerce/ui/src/helpers/field";
 
@@ -86,6 +87,67 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
   },
 );
 TextField.displayName = "TextField";
+
+function EyeIcon({ off }: { off: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+      {off && <path d="M4 4l16 16" />}
+    </svg>
+  );
+}
+
+export type PasswordFieldProps = Omit<TextFieldProps, "type">;
+
+// A password input with a show/hide button inside it. Edge and some other browsers draw their
+// own reveal icon in password fields; it is hidden here so there is only ever this one button.
+export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
+  ({ label, hint, error, required, className, hideLabel, id: idProp, ...rest }, ref) => {
+    const generated = useId();
+    const id = idProp ?? generated;
+    const [visible, setVisible] = useState(false);
+    return (
+      <Shell {...{ id, label, hint, error, required, className, hideLabel }}>
+        <div className="relative">
+          <input
+            ref={ref}
+            id={id}
+            type={visible ? "text" : "password"}
+            aria-required={required || undefined}
+            aria-invalid={Boolean(error) || undefined}
+            aria-describedby={describedBy(id, error, hint)}
+            className={cn(
+              controlClass(Boolean(error)),
+              "pr-11 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden",
+            )}
+            {...rest}
+          />
+          <button
+            type="button"
+            onClick={() => setVisible((v) => !v)}
+            aria-label={visible ? "Hide password" : "Show password"}
+            aria-pressed={visible}
+            disabled={rest.disabled}
+            className="absolute inset-y-0 right-0 flex w-10 cursor-pointer items-center justify-center rounded-r-md text-slate-500 transition-colors hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <EyeIcon off={visible} />
+          </button>
+        </div>
+      </Shell>
+    );
+  },
+);
+PasswordField.displayName = "PasswordField";
 
 export type TextAreaFieldProps = FieldShellProps &
   Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className">;

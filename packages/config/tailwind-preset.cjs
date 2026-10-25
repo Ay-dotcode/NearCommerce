@@ -152,6 +152,24 @@ function createPreset(themeName = "default") {
             from: { opacity: "0", transform: "translateX(18px)" },
             to: { opacity: "1", transform: "none" },
           },
+          // Opening animation: the logo springs in, rings ripple out, then the screen fades away.
+          "splash-logo": {
+            "0%": { opacity: "0", transform: "scale(0.45) rotate(-14deg)" },
+            "55%": { opacity: "1", transform: "scale(1.1) rotate(3deg)" },
+            "100%": { opacity: "1", transform: "scale(1) rotate(0deg)" },
+          },
+          "splash-ring": {
+            from: { opacity: "0.55", transform: "scale(0.6)" },
+            to: { opacity: "0", transform: "scale(2.4)" },
+          },
+          "splash-bar": {
+            from: { transform: "scaleX(0)" },
+            to: { transform: "scaleX(1)" },
+          },
+          "splash-out": {
+            from: { opacity: "1", transform: "none" },
+            to: { opacity: "0", transform: "scale(1.04)" },
+          },
           // Admin aurora: slowly shifting colour bands.
           aurora: {
             "0%, 100%": { transform: "translate3d(-8%, 0, 0) rotate(0deg) scale(1)" },
@@ -172,6 +190,10 @@ function createPreset(themeName = "default") {
           scan: "scan 9s linear infinite",
           "page-in": "page-in 0.28s ease-out both",
           aurora: "aurora 22s ease-in-out infinite",
+          "splash-logo": "splash-logo 0.9s cubic-bezier(0.34, 1.4, 0.5, 1) both",
+          "splash-ring": "splash-ring 1.6s ease-out infinite",
+          "splash-bar": "splash-bar var(--splash-ms, 1.8s) ease-in-out both",
+          "splash-out": "splash-out 0.35s ease-in both",
         },
       },
     },
