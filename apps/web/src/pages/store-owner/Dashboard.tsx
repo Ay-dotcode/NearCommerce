@@ -8,11 +8,18 @@ import CsvImporter from "@/components/store-owner/CsvImporter";
 import { CATEGORIES_KEY, PRODUCTS_KEY } from "@/constants";
 import { applyVerified } from "@/helpers/productCache";
 import { Badge, Button, ConfirmDialog, EmptyState, Modal, Skeleton, useDebouncedValue, useToast } from "@nearcommerce/ui";
-import { ProductsTableSkeleton } from "@/features/products/ui/InventorySkeleton";
+import { CategoryChips } from "@/features/products/ui/CategoryChips";
+import {
+  ProductsGridSkeleton,
+  ProductsTableSkeleton,
+} from "@/features/products/ui/InventorySkeleton";
 import { ProductDetailsModal } from "@/features/products/ui/ProductDetailsModal";
+import { ProductGrid } from "@/features/products/ui/ProductGrid";
 import { ProductImage } from "@/features/products/ui/ProductImage";
+import { ViewToggle } from "@/features/products/ui/ViewToggle";
 import { ProductForm } from "@/forms/ProductForm";
 import type {
+  InventoryView,
   ProductListResponse,
   ProductStatusFilter,
   ProductSummary,
@@ -30,6 +37,17 @@ import { cn, formatPrice, timeAgo } from "@nearcommerce/helpers";
 import { isStale } from "@/helpers/products";
 
 const PAGE_SIZE = 25;
+const VIEW_STORAGE_KEY = "nc-inventory-view";
+
+// The owner's last layout choice is remembered on this device. Storage can be unavailable
+// (private mode, blocked cookies), so any failure falls back to the table.
+function readStoredView(): InventoryView {
+  try {
+    return localStorage.getItem(VIEW_STORAGE_KEY) === "grid" ? "grid" : "list";
+  } catch {
+    return "list";
+  }
+}
 
 type Editor = { mode: "create" } | { mode: "edit"; product: StoreProduct };
 
@@ -49,12 +67,20 @@ export default function StoreOwnerDashboard() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
   const [status, setStatus] = useState<ProductStatusFilter>("all");
+  const [categoryId, setCategoryId] = useState("");
+  const [view, setView] = useState<InventoryView>(readStoredView);
   const [page, setPage] = useState(1);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [deleting, setDeleting] = useState<StoreProduct | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
 
-  const params = { q: debouncedSearch, status, page, pageSize: PAGE_SIZE };
+  const params = {
+    q: debouncedSearch,
+    status,
+    categoryId,
+    page,
+    pageSize: PAGE_SIZE,
+  };
   const productsQuery = useQuery({
     queryKey: [...PRODUCTS_KEY, storeId, params],
     queryFn: () => listProducts(params),
@@ -77,7 +103,8 @@ export default function StoreOwnerDashboard() {
   const summary: ProductSummary | undefined = meta?.summary;
   const totalPages = meta?.totalPages ?? 1;
   const total = meta?.total ?? products.length;
-  const filtersActive = debouncedSearch !== "" || status !== "all";
+  const filtersActive =
+    debouncedSearch !== "" || status !== "all" || categoryId !== "";
 
   // Deleting the last item on the final page leaves us past the end: step back.
   useEffect(() => {
@@ -145,7 +172,22 @@ export default function StoreOwnerDashboard() {
   const clearFilters = () => {
     setSearch("");
     setStatus("all");
+    setCategoryId("");
     setPage(1);
+  };
+
+  const chooseCategory = (next: string) => {
+    setCategoryId(next);
+    setPage(1);
+  };
+
+  const chooseView = (next: InventoryView) => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      // Not remembered, but the switch itself still works.
+    }
   };
 
   const chooseStatus = (next: ProductStatusFilter) => {
@@ -274,9 +316,19 @@ export default function StoreOwnerDashboard() {
             ))}
           </select>
         </div>
+        <ViewToggle value={view} onChange={chooseView} />
       </div>
 
-      {productsQuery.isLoading && <ProductsTableSkeleton />}
+      <CategoryChips
+        categories={categoriesQuery.data}
+        counts={summary?.categories}
+        total={summary?.total}
+        selected={categoryId}
+        onSelect={chooseCategory}
+      />
+
+      {productsQuery.isLoading &&
+        (view === "grid" ? <ProductsGridSkeleton /> : <ProductsTableSkeleton />)}
 
       {productsQuery.isError && (
         <div
@@ -315,7 +367,7 @@ export default function StoreOwnerDashboard() {
           ) : (
             <EmptyState
               title="No products match your filters"
-              description="Try a different search or status."
+              description="Try a different search, status or category."
               action={
                 <Button variant="secondary" onClick={clearFilters}>
                   Clear filters
@@ -326,7 +378,21 @@ export default function StoreOwnerDashboard() {
         </>
       )}
 
-      {products.length > 0 && (
+      {products.length > 0 && view === "grid" && (
+        <ProductGrid
+          products={products}
+          categories={categoriesQuery.data}
+          dimmed={productsQuery.isPlaceholderData}
+          confirmingId={confirmStock.isPending ? confirmStock.variables : null}
+          confirmDisabled={confirmStock.isPending}
+          onView={(product) => setViewingId(product.id)}
+          onEdit={(product) => setEditor({ mode: "edit", product })}
+          onDelete={setDeleting}
+          onConfirmStock={(product) => confirmStock.mutate(product.id)}
+        />
+      )}
+
+      {products.length > 0 && view === "list" && (
         <div
           className={cn(
             "overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-card",

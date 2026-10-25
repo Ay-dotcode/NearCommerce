@@ -20,8 +20,8 @@ export function validateRegister(values: RegisterValues) {
   else if (values.full_name.trim().length < 2)
     errors.full_name = "Full name must be at least 2 characters";
 
-  if (!values.email) errors.email = "Email is required";
-  else if (!EMAIL_PATTERN.test(values.email))
+  if (!values.email.trim()) errors.email = "Email is required";
+  else if (!EMAIL_PATTERN.test(values.email.trim()))
     errors.email = "Invalid email address";
 
   if (!values.password) errors.password = "Password is required";

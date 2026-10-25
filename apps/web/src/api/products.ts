@@ -15,6 +15,7 @@ export async function listProducts(
     params: {
       ...params,
       q: params.q || undefined,
+      categoryId: params.categoryId || undefined,
       status:
         params.status && params.status !== "all" ? params.status : undefined,
     },

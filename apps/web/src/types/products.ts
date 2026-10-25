@@ -20,9 +20,13 @@ export type ProductStatusFilter =
   | "stale"
   | "out_of_stock";
 
+export type InventoryView = "list" | "grid";
+
 export interface ProductListParams {
   q?: string;
   status?: ProductStatusFilter;
+  // A category id, or "none" for products without a category.
+  categoryId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -33,6 +37,8 @@ export interface ProductSummary {
   drafts: number;
   outOfStock: number;
   stale: number;
+  // Products per category across the whole store (id null = no category).
+  categories?: { id: string | null; count: number }[];
 }
 
 export interface ProductListMeta {

@@ -25,12 +25,13 @@ export const RegisterForm: React.FC = () => {
       registerMutation.mutate(
         {
           ...values,
+          email: values.email.trim(),
           full_name: values.full_name.trim(),
           role: UserRole.STORE_OWNER,
         },
         {
           onSuccess: (data) => {
-            setRegisteredEmail(values.email);
+            setRegisteredEmail(values.email.trim());
             setSuccessMessage(data.message);
             setSubmitting(false);
           },

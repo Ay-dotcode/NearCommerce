@@ -41,6 +41,31 @@ export function ProductsTableSkeleton({ rows = 6 }: { rows?: number }) {
   );
 }
 
+// Placeholder for the card grid; cards match the real ones (square photo, text, two buttons).
+export function ProductsGridSkeleton({ cards = 8 }: { cards?: number }) {
+  return (
+    <SkeletonGroup
+      label="Inventory"
+      className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+    >
+      {Array.from({ length: cards }, (_, i) => (
+        <div
+          key={i}
+          className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"
+        >
+          <Skeleton className="aspect-square w-full rounded-none" />
+          <div className="space-y-2 p-3">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-5 w-24 rounded-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        </div>
+      ))}
+    </SkeletonGroup>
+  );
+}
+
 // Whole-page placeholder for the inventory screen: heading, summary tiles, filters and table,
 // each sized like the real thing.
 export function InventoryPageSkeleton() {

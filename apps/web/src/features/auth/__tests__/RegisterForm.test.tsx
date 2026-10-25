@@ -64,6 +64,19 @@ describe("RegisterForm", () => {
     ).toBeInTheDocument();
   });
 
+  it("accepts a pasted email with stray spaces and sends it trimmed", async () => {
+    post.mockResolvedValue({ data: { message: "Welcome aboard" } });
+    renderForm();
+    fill("Jane Doe", "  jane@example.com ", "password123");
+
+    await waitFor(() =>
+      expect(post).toHaveBeenCalledWith(
+        "/auth/register",
+        expect.objectContaining({ email: "jane@example.com" }),
+      ),
+    );
+  });
+
   it("validates before calling the API", async () => {
     renderForm();
     fill("J", "not-an-email", "short");
