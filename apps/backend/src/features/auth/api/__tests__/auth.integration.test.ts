@@ -164,6 +164,26 @@ describe("Auth Integration Tests", () => {
       expect(tokens.rows[0].token_hash).not.toBe(oldTokenHash);
     });
 
+    it("finds the account however the email was typed (case and stray spaces)", async () => {
+      const userRes = await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, 'hashed_pw', $2, 'CUSTOMER') RETURNING id`,
+        [testUser.email, testUser.full_name],
+      );
+      const userId = userRes.rows[0].id;
+
+      const response = await request(app)
+        .post("/auth/forgot-password")
+        .send({ email: `  ${testUser.email.toUpperCase()} ` });
+
+      expect(response.status).toBe(200);
+      const tokens = await db.query(
+        "SELECT 1 FROM password_reset_tokens WHERE user_id = $1",
+        [userId],
+      );
+      expect(tokens.rows).toHaveLength(1);
+    });
+
     it("should return 429 after exceeding max forgot-password requests", async () => {
       // Send 5 requests (the max limit)
       for (let i = 0; i < 5; i++) {
@@ -424,6 +444,48 @@ describe("Auth Integration Tests", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.error).toBe("Invalid credentials");
+    });
+
+    it.each([
+      ["upper case", (e: string) => e.toUpperCase()],
+      ["capitalised", (e: string) => e[0].toUpperCase() + e.slice(1)],
+      ["surrounded by spaces", (e: string) => `  ${e} `],
+    ])("logs in when the email is typed %s", async (_name, transform) => {
+      const passwordHash = await bcrypt.hash(testUser.password, 12);
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, 'CUSTOMER')`,
+        [testUser.email, passwordHash, testUser.full_name],
+      );
+
+      const response = await request(app)
+        .post("/auth/login")
+        .send({ email: transform(testUser.email), password: testUser.password });
+
+      expect(response.status).toBe(200);
+      expect(response.body.access_token).toBeDefined();
+    });
+
+    it("counts failed attempts across spellings of the same email", async () => {
+      const passwordHash = await bcrypt.hash(testUser.password, 12);
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, 'CUSTOMER')`,
+        [testUser.email, passwordHash, testUser.full_name],
+      );
+      // Alternating the case must not hand out a fresh set of attempts.
+      for (let i = 0; i < LOGIN_MAX_FAILURES; i++)
+        await request(app)
+          .post("/auth/login")
+          .send({
+            email: i % 2 ? testUser.email.toUpperCase() : testUser.email,
+            password: "wrongpassword",
+          });
+
+      const locked = await request(app)
+        .post("/auth/login")
+        .send({ email: testUser.email, password: testUser.password });
+      expect(locked.status).toBe(429);
     });
 
     it("should login successfully, return tokens, store hashed refresh token in DB, and prime Redis", async () => {

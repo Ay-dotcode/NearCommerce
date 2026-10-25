@@ -1,15 +1,32 @@
 import nodemailer from "nodemailer";
 
+const smtpPort = Number(process.env.SMTP_PORT);
+
 // Configure standard SMTP transporter using environment variables.
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: Number(process.env.SMTP_PORT) === 465,
+  port: smtpPort,
+  secure: smtpPort === 465,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
+
+// Base URL of the store-owner portal, without a trailing slash so links never contain "//".
+function frontendBaseUrl(): string {
+  const url =
+    process.env.FRONTEND_URL ||
+    process.env.WEB_APP_URL ||
+    "http://localhost:3001";
+  return url.trim().replace(/\/+$/, "");
+}
+
+// Fails with a clear message instead of a confusing connection error to localhost.
+function assertSmtpConfigured(): void {
+  if (!process.env.SMTP_HOST)
+    throw new Error("SMTP_HOST is not set, so no email can be sent");
+}
 
 // Sends account verification email with the 24-hour verification token.
 export async function sendVerificationEmail(
@@ -17,12 +34,9 @@ export async function sendVerificationEmail(
   rawToken: string,
 ): Promise<void> {
   if (process.env.NODE_ENV === "test") return;
+  assertSmtpConfigured();
 
-  const frontendUrl =
-    process.env.FRONTEND_URL ||
-    process.env.WEB_APP_URL ||
-    "http://localhost:3001";
-  const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(rawToken)}`;
+  const verificationUrl = `${frontendBaseUrl()}/verify-email?token=${encodeURIComponent(rawToken)}`;
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || "noreply@nearcommerce.local",
@@ -52,13 +66,10 @@ export async function sendPasswordResetEmail(
   rawToken: string,
 ): Promise<void> {
   if (process.env.NODE_ENV === "test") return;
+  assertSmtpConfigured();
 
   // The reset form lives in the web app; the API has no page at this path.
-  const frontendUrl =
-    process.env.FRONTEND_URL ||
-    process.env.WEB_APP_URL ||
-    "http://localhost:3001";
-  const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+  const resetUrl = `${frontendBaseUrl()}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || "noreply@nearcommerce.local",

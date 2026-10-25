@@ -226,6 +226,109 @@ describe("Owner product management API", () => {
     });
   });
 
+  describe("GET /products (category filter)", () => {
+    const suffix = Date.now().toString(36);
+    let dairyId: string;
+    let bakeryId: string;
+    let milkSubId: string;
+    let breadSubId: string;
+
+    beforeAll(async () => {
+      const dairy = await db.query(
+        "INSERT INTO categories (name) VALUES ($1) RETURNING id",
+        [`Dairy ${suffix}`],
+      );
+      const bakery = await db.query(
+        "INSERT INTO categories (name) VALUES ($1) RETURNING id",
+        [`Bakery ${suffix}`],
+      );
+      dairyId = dairy.rows[0].id;
+      bakeryId = bakery.rows[0].id;
+      milkSubId = (
+        await db.query(
+          "INSERT INTO subcategories (parent_category_id, name) VALUES ($1, 'Milk') RETURNING id",
+          [dairyId],
+        )
+      ).rows[0].id;
+      breadSubId = (
+        await db.query(
+          "INSERT INTO subcategories (parent_category_id, name) VALUES ($1, 'Bread') RETURNING id",
+          [bakeryId],
+        )
+      ).rows[0].id;
+    });
+
+    afterAll(async () => {
+      await db.query("DELETE FROM products WHERE store_id = ANY($1::uuid[])", [
+        [storeId, otherStoreId],
+      ]);
+      await db.query("DELETE FROM categories WHERE id = ANY($1::uuid[])", [
+        [dairyId, bakeryId],
+      ]);
+    });
+
+    beforeEach(async () => {
+      await createTestProduct(storeId, {
+        name: "Whole Milk",
+        subcategoryId: milkSubId,
+      });
+      await createTestProduct(storeId, {
+        name: "Rye Bread",
+        subcategoryId: breadSubId,
+        quantity: 0,
+      });
+      await createTestProduct(storeId, { name: "Mystery Box" });
+      await createTestProduct(otherStoreId, {
+        name: "Not mine",
+        subcategoryId: milkSubId,
+      });
+    });
+
+    it("filters by the parent category of a product's subcategory", async () => {
+      const res = await request(app)
+        .get(`/products?categoryId=${dairyId}`)
+        .set(auth());
+      expect(res.status).toBe(200);
+      expect(res.body.data.map((p: any) => p.name)).toEqual(["Whole Milk"]);
+      expect(res.body.meta.total).toBe(1);
+    });
+
+    it("filters to products without a category with categoryId=none", async () => {
+      const res = await request(app)
+        .get("/products?categoryId=none")
+        .set(auth());
+      expect(res.body.data.map((p: any) => p.name)).toEqual(["Mystery Box"]);
+    });
+
+    it("combines the category with the status filter", async () => {
+      const res = await request(app)
+        .get(`/products?categoryId=${bakeryId}&status=out_of_stock`)
+        .set(auth());
+      expect(res.body.data.map((p: any) => p.name)).toEqual(["Rye Bread"]);
+      const none = await request(app)
+        .get(`/products?categoryId=${dairyId}&status=out_of_stock`)
+        .set(auth());
+      expect(none.body.data).toEqual([]);
+    });
+
+    it("reports per-category counts for this store only", async () => {
+      const res = await request(app).get("/products").set(auth());
+      const counts = new Map<string | null, number>(
+        res.body.meta.summary.categories.map((c: any) => [c.id, c.count]),
+      );
+      expect(counts.get(dairyId)).toBe(1);
+      expect(counts.get(bakeryId)).toBe(1);
+      expect(counts.get(null)).toBe(1);
+    });
+
+    it("rejects a malformed category id", async () => {
+      const res = await request(app)
+        .get("/products?categoryId=not-a-uuid")
+        .set(auth());
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("PATCH /products/:productId", () => {
     it("refreshes last_verified_at when the price changes (SRS 3.2.4)", async () => {
       const id = await createTestProduct(storeId, {

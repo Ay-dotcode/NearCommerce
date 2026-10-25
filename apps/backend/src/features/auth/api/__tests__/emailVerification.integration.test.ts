@@ -140,6 +140,19 @@ describe("Email verification flow", () => {
       expect(fresh.status).toBe(200);
     });
 
+    it("finds the account however the email was typed", async () => {
+      await register();
+      sendEmail.mockClear();
+
+      const res = await request(app)
+        .post("/auth/resend-verification")
+        .send({ email: `  ${user.email.toUpperCase()} ` });
+
+      expect(res.status).toBe(200);
+      expect(sendEmail).toHaveBeenCalledTimes(1);
+      expect(sendEmail.mock.calls[0][0]).toBe(user.email);
+    });
+
     it("answers the same and sends nothing for verified or unknown emails", async () => {
       await register();
       await db.query(

@@ -3,11 +3,12 @@ import { PRODUCT_FRESHNESS_THRESHOLD_DAYS } from "@/constants";
 import { isProductStale } from "@/utils/freshness";
 import { HttpError } from "@/utils/http";
 import { escapeLike } from "@/utils/like";
-import type {
-  CreateProductInput,
-  ImportProductRow,
-  ProductListQuery,
-  UpdateProductInput,
+import {
+  UNCATEGORIZED_FILTER,
+  type CreateProductInput,
+  type ImportProductRow,
+  type ProductListQuery,
+  type UpdateProductInput,
 } from "@nearcommerce/api";
 
 // Never select `embedding` (768 floats) or `search_tsv`; they are internal.
@@ -68,8 +69,15 @@ export async function listStoreProducts(
     params.push(`%${escapeLike(query.q)}%`);
     where += ` AND name ILIKE $${params.length}`;
   }
+  if (query.categoryId === UNCATEGORIZED_FILTER)
+    where += " AND subcategory_id IS NULL";
+  else if (query.categoryId) {
+    params.push(query.categoryId);
+    where += ` AND subcategory_id IN (
+      SELECT id FROM subcategories WHERE parent_category_id = $${params.length})`;
+  }
 
-  const [count, page, summary] = await Promise.all([
+  const [count, page, summary, categoryCounts] = await Promise.all([
     db.query(
       `SELECT COUNT(*)::int AS total FROM products WHERE ${where}`,
       params,
@@ -89,6 +97,15 @@ export async function listStoreProducts(
          FROM products WHERE store_id = $1`,
       [storeId],
     ),
+    // How many of the store's products sit in each category (null = no category yet).
+    db.query(
+      `SELECT sc.parent_category_id AS id, COUNT(*)::int AS count
+         FROM products p
+         LEFT JOIN subcategories sc ON sc.id = p.subcategory_id
+        WHERE p.store_id = $1
+        GROUP BY sc.parent_category_id`,
+      [storeId],
+    ),
   ]);
 
   const total: number = count.rows[0].total;
@@ -105,6 +122,10 @@ export async function listStoreProducts(
         drafts: summary.rows[0].drafts,
         outOfStock: summary.rows[0].out_of_stock,
         stale: summary.rows[0].stale,
+        categories: categoryCounts.rows as {
+          id: string | null;
+          count: number;
+        }[],
       },
     },
   };
