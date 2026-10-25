@@ -1,4 +1,4 @@
-import { Button, TextField } from "@nearcommerce/ui";
+import { BusyFieldset, Button, PasswordField } from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useResetPassword } from "@/features/auth/api/usePasswordReset";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
@@ -31,7 +31,8 @@ export const ResetPasswordForm: React.FC = () => {
   if (!token)
     return (
       <AuthLayout
-        title="Reset link missing" backTo={AppRoutes.login}
+        title="Reset link missing"
+        backTo={AppRoutes.login}
         subtitle="Open the link from your email, or request a new one."
       >
         <Link
@@ -69,50 +70,54 @@ export const ResetPasswordForm: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Choose a new password" backTo={AppRoutes.login}
+      title="Choose a new password"
+      backTo={AppRoutes.login}
       subtitle="Use at least 8 characters."
     >
-      <form onSubmit={formik.handleSubmit} noValidate className="space-y-4">
-        <TextField
-          label="New password"
-          type="password"
-          required
-          autoComplete="new-password"
-          {...formik.getFieldProps("password")}
-          error={shown("password")}
-        />
-        <TextField
-          label="Confirm new password"
-          type="password"
-          required
-          autoComplete="new-password"
-          {...formik.getFieldProps("confirm")}
-          error={shown("confirm")}
-        />
-        {reset.isError && (
-          <div
-            role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          >
-            {status === 400 ? (
-              <>
-                This reset link is invalid or has expired.{" "}
-                <Link
-                  to={AppRoutes.forgotPassword}
-                  className="font-medium underline"
-                >
-                  Request a new one
-                </Link>
-                .
-              </>
-            ) : (
-              "We couldn't reset your password. Please try again."
-            )}
-          </div>
-        )}
-        <Button type="submit" className="w-full" loading={reset.isPending}>
-          {reset.isPending ? "Saving…" : "Reset password"}
-        </Button>
+      <form onSubmit={formik.handleSubmit} noValidate>
+        <BusyFieldset
+          busy={reset.isPending}
+          className="space-y-4"
+        >
+          <PasswordField
+            label="New password"
+            required
+            autoComplete="new-password"
+            {...formik.getFieldProps("password")}
+            error={shown("password")}
+          />
+          <PasswordField
+            label="Confirm new password"
+            required
+            autoComplete="new-password"
+            {...formik.getFieldProps("confirm")}
+            error={shown("confirm")}
+          />
+          {reset.isError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            >
+              {status === 400 ? (
+                <>
+                  This reset link is invalid or has expired.{" "}
+                  <Link
+                    to={AppRoutes.forgotPassword}
+                    className="font-medium underline"
+                  >
+                    Request a new one
+                  </Link>
+                  .
+                </>
+              ) : (
+                "We couldn't reset your password. Please try again."
+              )}
+            </div>
+          )}
+          <Button type="submit" className="w-full" loading={reset.isPending}>
+            {reset.isPending ? "Saving…" : "Reset password"}
+          </Button>
+        </BusyFieldset>
       </form>
     </AuthLayout>
   );

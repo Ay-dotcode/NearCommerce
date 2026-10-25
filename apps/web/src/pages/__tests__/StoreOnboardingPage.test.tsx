@@ -87,4 +87,15 @@ describe("StoreOnboardingPage", () => {
     expect(localStorage.getItem("x-store-id")).toBeNull();
     expect(screen.queryByText("Dashboard page")).toBeNull();
   });
+
+  it("introduces the app to a brand-new owner with the tour, once", () => {
+    localStorage.removeItem("nc-owner-tour-seen");
+    renderPage();
+    expect(
+      screen.getByRole("dialog", { name: "Welcome to Near Commerce" }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
+    expect(screen.queryByRole("dialog", { name: /Welcome/ })).not.toBeInTheDocument();
+    expect(localStorage.getItem("nc-owner-tour-seen")).toBe("1");
+  });
 });

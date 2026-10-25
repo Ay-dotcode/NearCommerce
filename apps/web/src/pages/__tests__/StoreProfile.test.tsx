@@ -159,4 +159,41 @@ describe("StoreProfile (store settings)", () => {
       expect(screen.queryByText("Dashboard page")).toBeNull();
     });
   });
+
+  it("uses the whole page width, with details and opening hours side by side on wide screens", async () => {
+    const { container } = renderPage();
+    await screen.findByLabelText(/Store name/);
+    // No narrow column: nothing caps the page below the layout's own width.
+    expect(container.querySelector(".max-w-3xl")).toBeNull();
+    const columns = container.querySelector(".lg\\:grid-cols-2");
+    expect(columns).not.toBeNull();
+    expect(columns!.children).toHaveLength(2);
+    expect(
+      within(columns!.children[0] as HTMLElement).getByLabelText(/Store name/),
+    ).toBeInTheDocument();
+    expect(
+      within(columns!.children[1] as HTMLElement).getByText(/opening hours/i),
+    ).toBeInTheDocument();
+  });
+
+  it("locks every field and button while the changes are being saved", async () => {
+    let finish!: () => void;
+    updateMock.mockReturnValue(new Promise<void>((r) => (finish = r)));
+    renderPage();
+    const name = await screen.findByLabelText(/Store name/);
+    fireEvent.change(name, { target: { value: "Corner Market 2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => expect(name).toBeDisabled());
+    expect(screen.getByLabelText(/Street address/)).toBeDisabled();
+    expect(screen.getByLabelText(/Latitude/)).toBeDisabled();
+    expect(screen.getByLabelText(/Timezone/)).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Use my location" }),
+    ).toBeDisabled();
+
+    finish();
+    await waitFor(() => expect(name).toBeEnabled());
+    expect(name).toHaveValue("Corner Market 2");
+  });
 });

@@ -68,7 +68,7 @@ export const StoreProfile = ({
   const store = storeQuery.data;
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-semibold text-slate-900">
           Store settings

@@ -19,6 +19,8 @@ import {
   setActiveStoreId,
   signOutEverywhere,
 } from "@/features/auth/session";
+import { OwnerTour } from "@/features/onboarding/OwnerTour";
+import { useOwnerTour } from "@/features/onboarding/useOwnerTour";
 import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { parseApiError, STORE_KEY } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
@@ -88,6 +90,8 @@ export function StoreOwnerLayout() {
   };
 
   const ready = Boolean(storesQuery.data && activeStore);
+  // Shown once to a new owner, as soon as the page behind it has loaded.
+  const tour = useOwnerTour(ready);
 
   return (
     <div className="relative min-h-screen text-slate-900">
@@ -150,6 +154,9 @@ export function StoreOwnerLayout() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
+            <Button variant="ghost" size="sm" onClick={tour.start}>
+              Take the tour
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -276,6 +283,7 @@ export function StoreOwnerLayout() {
       </main>
 
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+      <OwnerTour open={tour.open} onClose={tour.finish} />
     </div>
   );
 }

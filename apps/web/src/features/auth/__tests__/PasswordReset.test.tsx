@@ -93,10 +93,10 @@ describe("ForgotPasswordForm", () => {
 
 describe("ResetPasswordForm", () => {
   const fillAndSubmit = (password: string, confirm: string) => {
-    fireEvent.change(screen.getByLabelText(/^new password/i), {
+    fireEvent.change(screen.getByLabelText(/^new password/i, { selector: "input" }), {
       target: { value: password },
     });
-    fireEvent.change(screen.getByLabelText(/confirm new password/i), {
+    fireEvent.change(screen.getByLabelText(/confirm new password/i, { selector: "input" }), {
       target: { value: confirm },
     });
     fireEvent.click(screen.getByRole("button", { name: /reset password/i }));

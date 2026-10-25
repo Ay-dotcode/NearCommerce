@@ -1,4 +1,4 @@
-import { Button, TextField } from "@nearcommerce/ui";
+import { BusyFieldset, Button, TextField } from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useForgotPassword } from "@/features/auth/api/usePasswordReset";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
@@ -29,7 +29,8 @@ export const ForgotPasswordForm: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Reset your password" backTo={AppRoutes.login}
+      title="Reset your password"
+      backTo={AppRoutes.login}
       subtitle="Enter the email you signed up with and we'll send you a reset link."
     >
       {forgot.isSuccess ? (
@@ -50,37 +51,42 @@ export const ForgotPasswordForm: React.FC = () => {
           </Link>
         </div>
       ) : (
-        <form onSubmit={formik.handleSubmit} noValidate className="space-y-4">
-          <TextField
-            label="Email"
-            type="email"
-            required
-            autoComplete="email"
-            {...formik.getFieldProps("email")}
-            error={fieldError}
-          />
-          {serverError && (
-            <div
-              role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-            >
-              {serverError.status === 429
-                ? "Too many requests. Please wait a few minutes and try again."
-                : "We couldn't send the reset link. Please try again."}
-            </div>
-          )}
-          <Button type="submit" className="w-full" loading={forgot.isPending}>
-            {forgot.isPending ? "Sending…" : "Send reset link"}
-          </Button>
-          <p className="text-center text-sm text-slate-600">
-            Remembered it?{" "}
-            <Link
-              to={AppRoutes.login}
-              className="font-medium text-brand-700 hover:underline"
-            >
-              Back to login
-            </Link>
-          </p>
+        <form onSubmit={formik.handleSubmit} noValidate>
+          <BusyFieldset
+            busy={forgot.isPending}
+            className="space-y-4"
+          >
+            <TextField
+              label="Email"
+              type="email"
+              required
+              autoComplete="email"
+              {...formik.getFieldProps("email")}
+              error={fieldError}
+            />
+            {serverError && (
+              <div
+                role="alert"
+                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              >
+                {serverError.status === 429
+                  ? "Too many requests. Please wait a few minutes and try again."
+                  : "We couldn't send the reset link. Please try again."}
+              </div>
+            )}
+            <Button type="submit" className="w-full" loading={forgot.isPending}>
+              {forgot.isPending ? "Sending…" : "Send reset link"}
+            </Button>
+            <p className="text-center text-sm text-slate-600">
+              Remembered it?{" "}
+              <Link
+                to={AppRoutes.login}
+                className="font-medium text-brand-700 hover:underline"
+              >
+                Back to login
+              </Link>
+            </p>
+          </BusyFieldset>
         </form>
       )}
     </AuthLayout>

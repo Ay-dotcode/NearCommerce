@@ -1,4 +1,9 @@
-import { Button, TextField } from "@nearcommerce/ui";
+import {
+  BusyFieldset,
+  Button,
+  PasswordField,
+  TextField,
+} from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useLogin } from "@/features/auth/api/useLogin";
 import { clearSession, getUserRole } from "@/features/auth/session";
@@ -103,68 +108,69 @@ export const LoginForm: React.FC = () => {
       title="Log in to your store"
       subtitle="Manage your inventory and keep shoppers up to date."
     >
-      <form onSubmit={formik.handleSubmit} noValidate className="space-y-4">
-        <TextField
-          label="Email"
-          type="email"
-          required
-          autoComplete="email"
-          {...formik.getFieldProps("email")}
-          error={error("email")}
-        />
-        <TextField
-          label="Password"
-          type="password"
-          required
-          autoComplete="current-password"
-          {...formik.getFieldProps("password")}
-          error={error("password")}
-        />
-        <div className="-mt-2 text-right">
-          <Link
-            to={AppRoutes.forgotPassword}
-            className="text-sm font-medium text-brand-700 hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </div>
-
-        {notice && (
-          <div
-            role="alert"
-            className={
-              notice.tone === "error"
-                ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-                : "rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900"
-            }
-          >
-            {notice.title && <p className="font-semibold">{notice.title}</p>}
-            <p>{notice.body}</p>
-            {notice.offerSupport && (
-              <button
-                type="button"
-                onClick={() => setSupportOpen(true)}
-                className="mt-2 font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-              >
-                Contact support
-              </button>
-            )}
+      <form onSubmit={formik.handleSubmit} noValidate>
+        <BusyFieldset busy={busy} className="space-y-4">
+          <TextField
+            label="Email"
+            type="email"
+            required
+            autoComplete="email"
+            {...formik.getFieldProps("email")}
+            error={error("email")}
+          />
+          <PasswordField
+            label="Password"
+            required
+            autoComplete="current-password"
+            {...formik.getFieldProps("password")}
+            error={error("password")}
+          />
+          <div className="-mt-2 text-right">
+            <Link
+              to={AppRoutes.forgotPassword}
+              className="text-sm font-medium text-brand-700 hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
-        )}
 
-        <Button type="submit" className="w-full" loading={busy}>
-          {busy ? "Logging in…" : "Login"}
-        </Button>
+          {notice && (
+            <div
+              role="alert"
+              className={
+                notice.tone === "error"
+                  ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                  : "rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900"
+              }
+            >
+              {notice.title && <p className="font-semibold">{notice.title}</p>}
+              <p>{notice.body}</p>
+              {notice.offerSupport && (
+                <button
+                  type="button"
+                  onClick={() => setSupportOpen(true)}
+                  className="mt-2 font-semibold underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                >
+                  Contact support
+                </button>
+              )}
+            </div>
+          )}
 
-        <p className="text-center text-sm text-slate-600">
-          Don&apos;t have a store account?{" "}
-          <Link
-            to={AppRoutes.register}
-            className="font-medium text-brand-700 hover:underline"
-          >
-            Create one
-          </Link>
-        </p>
+          <Button type="submit" className="w-full" loading={busy}>
+            {busy ? "Logging in…" : "Login"}
+          </Button>
+
+          <p className="text-center text-sm text-slate-600">
+            Don&apos;t have a store account?{" "}
+            <Link
+              to={AppRoutes.register}
+              className="font-medium text-brand-700 hover:underline"
+            >
+              Create one
+            </Link>
+          </p>
+        </BusyFieldset>
       </form>
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
     </AuthLayout>

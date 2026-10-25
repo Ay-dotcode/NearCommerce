@@ -251,4 +251,45 @@ describe("StoreOwnerLayout", () => {
       "Dashboard content",
     );
   });
+
+  describe("first-run tour", () => {
+    it("opens by itself for a new owner once the stores have loaded", async () => {
+      listMock.mockResolvedValue([store("s1", "Alpha")]);
+      renderLayout();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(
+        await screen.findByRole("dialog", { name: "Welcome to Near Commerce" }),
+      ).toBeInTheDocument();
+    });
+
+    it("does not open over an owner who still has to create a store", async () => {
+      listMock.mockResolvedValue([]);
+      renderLayout();
+      expect(await screen.findByText("Onboarding page")).toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("stays closed after it was finished, and can be reopened from the header", async () => {
+      localStorage.setItem("nc-owner-tour-seen", "1");
+      listMock.mockResolvedValue([store("s1", "Alpha")]);
+      renderLayout();
+      await screen.findByLabelText("Active store");
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "Take the tour" }));
+      expect(
+        await screen.findByRole("dialog", { name: "Welcome to Near Commerce" }),
+      ).toBeInTheDocument();
+    });
+
+    it("skipping it remembers that it was seen", async () => {
+      listMock.mockResolvedValue([store("s1", "Alpha")]);
+      renderLayout();
+      fireEvent.click(await screen.findByRole("button", { name: "Skip tour" }));
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      );
+      expect(localStorage.getItem("nc-owner-tour-seen")).toBe("1");
+    });
+  });
 });

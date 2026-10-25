@@ -1,4 +1,9 @@
-import { Button, TextField } from "@nearcommerce/ui";
+import {
+  BusyFieldset,
+  Button,
+  PasswordField,
+  TextField,
+} from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
 import { useResendVerification } from "@/features/auth/api/useEmailVerification";
 import { useRegister } from "@/features/auth/api/useRegister";
@@ -55,7 +60,8 @@ export const RegisterForm: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Create your store account" backTo={AppRoutes.login}
+      title="Create your store account"
+      backTo={AppRoutes.login}
       subtitle="Set up your account, then add your store and products."
     >
       {successMessage ? (
@@ -86,56 +92,57 @@ export const RegisterForm: React.FC = () => {
           </Link>
         </div>
       ) : (
-        <form onSubmit={formik.handleSubmit} noValidate className="space-y-4">
-          <TextField
-            label="Full name"
-            required
-            autoComplete="name"
-            placeholder="Jane Doe"
-            {...formik.getFieldProps("full_name")}
-            error={error("full_name")}
-          />
-          <TextField
-            label="Email"
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="you@example.com"
-            {...formik.getFieldProps("email")}
-            error={error("email")}
-          />
-          <TextField
-            label="Password"
-            type="password"
-            required
-            autoComplete="new-password"
-            hint="At least 8 characters."
-            {...formik.getFieldProps("password")}
-            error={error("password")}
-          />
+        <form onSubmit={formik.handleSubmit} noValidate>
+          <BusyFieldset busy={busy} className="space-y-4">
+            <TextField
+              label="Full name"
+              required
+              autoComplete="name"
+              placeholder="Jane Doe"
+              {...formik.getFieldProps("full_name")}
+              error={error("full_name")}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+              {...formik.getFieldProps("email")}
+              error={error("email")}
+            />
+            <PasswordField
+              label="Password"
+              required
+              autoComplete="new-password"
+              hint="At least 8 characters."
+              {...formik.getFieldProps("password")}
+              error={error("password")}
+            />
 
-          {serverError && (
-            <div
-              role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-            >
-              {serverError}
-            </div>
-          )}
+            {serverError && (
+              <div
+                role="alert"
+                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              >
+                {serverError}
+              </div>
+            )}
 
-          <Button type="submit" className="w-full" loading={busy}>
-            {busy ? "Registering…" : "Create account"}
-          </Button>
+            <Button type="submit" className="w-full" loading={busy}>
+              {busy ? "Registering…" : "Create account"}
+            </Button>
 
-          <p className="text-center text-sm text-slate-600">
-            Already have an account?{" "}
-            <Link
-              to={AppRoutes.login}
-              className="font-medium text-brand-700 hover:underline"
-            >
-              Log in
-            </Link>
-          </p>
+            <p className="text-center text-sm text-slate-600">
+              Already have an account?{" "}
+              <Link
+                to={AppRoutes.login}
+                className="font-medium text-brand-700 hover:underline"
+              >
+                Log in
+              </Link>
+            </p>
+          </BusyFieldset>
         </form>
       )}
     </AuthLayout>

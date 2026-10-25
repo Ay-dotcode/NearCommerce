@@ -36,7 +36,7 @@ const fill = (name: string, email: string, password: string) => {
   fireEvent.change(screen.getByLabelText(/email/i), {
     target: { value: email },
   });
-  fireEvent.change(screen.getByLabelText(/password/i), {
+  fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
     target: { value: password },
   });
   fireEvent.click(screen.getByRole("button", { name: /create account/i }));

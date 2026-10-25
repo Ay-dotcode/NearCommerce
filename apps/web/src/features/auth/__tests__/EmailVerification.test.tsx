@@ -85,7 +85,7 @@ describe("RegisterForm verification prompt", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "jane@shop.test" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "password123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));

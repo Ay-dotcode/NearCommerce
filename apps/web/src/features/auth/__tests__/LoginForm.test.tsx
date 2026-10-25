@@ -93,7 +93,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "owner@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "password123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -123,7 +123,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "customer@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "password123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -154,7 +154,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "admin@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "password123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -182,7 +182,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "o@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "password123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -203,7 +203,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "o@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "password123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -221,7 +221,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "wrong@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "wrongpassword" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -249,7 +249,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "wrong@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "wrongpassword" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -272,7 +272,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "wrong@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "wrongpassword" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -307,7 +307,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "owner@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "password123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
@@ -329,7 +329,7 @@ describe("LoginForm & Store Owner Routing (Task 4.1)", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "owner@test.com" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
       target: { value: "wrong-password" },
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
