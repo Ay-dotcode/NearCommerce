@@ -23,9 +23,50 @@ function frontendBaseUrl(): string {
 }
 
 // Fails with a clear message instead of a confusing connection error to localhost.
-function assertSmtpConfigured(): void {
-  if (!process.env.SMTP_HOST)
-    throw new Error("SMTP_HOST is not set, so no email can be sent");
+function assertEmailConfigured(): void {
+  if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST && !process.env.SMTP_PASS) {
+    throw new Error("Neither RESEND_API_KEY nor SMTP_HOST is set, so no email can be sent");
+  }
+}
+
+interface SendMailOptions {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+}
+
+// Sends an email via Resend's HTTPS API or falls back to standard SMTP (Nodemailer).
+// Using Resend's HTTPS API bypasses cloud provider firewall restrictions on SMTP ports (25, 465, 587).
+async function dispatchMail(options: SendMailOptions): Promise<void> {
+  const resendApiKey =
+    process.env.RESEND_API_KEY ||
+    (process.env.SMTP_PASS?.startsWith("re_") ? process.env.SMTP_PASS : undefined) ||
+    (process.env.SMTP_HOST?.includes("resend.com") ? process.env.SMTP_PASS : undefined);
+
+  if (resendApiKey) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: options.from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Resend API failed (${response.status}): ${errorText}`);
+    }
+    return;
+  }
+
+  await transporter.sendMail(options);
 }
 
 // Sends account verification email with the 24-hour verification token.
@@ -34,11 +75,11 @@ export async function sendVerificationEmail(
   rawToken: string,
 ): Promise<void> {
   if (process.env.NODE_ENV === "test") return;
-  assertSmtpConfigured();
+  assertEmailConfigured();
 
   const verificationUrl = `${frontendBaseUrl()}/verify-email?token=${encodeURIComponent(rawToken)}`;
 
-  await transporter.sendMail({
+  await dispatchMail({
     from: process.env.EMAIL_FROM || "noreply@nearcommerce.local",
     to: toEmail,
     subject: "Verify your Near Commerce account",
@@ -66,12 +107,12 @@ export async function sendPasswordResetEmail(
   rawToken: string,
 ): Promise<void> {
   if (process.env.NODE_ENV === "test") return;
-  assertSmtpConfigured();
+  assertEmailConfigured();
 
   // The reset form lives in the web app; the API has no page at this path.
   const resetUrl = `${frontendBaseUrl()}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
-  await transporter.sendMail({
+  await dispatchMail({
     from: process.env.EMAIL_FROM || "noreply@nearcommerce.local",
     to: toEmail,
     subject: "Reset your Near Commerce password",
