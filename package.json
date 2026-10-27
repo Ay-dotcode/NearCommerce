@@ -7,7 +7,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "clear-db": "pnpm --filter @nearcommerce/backend run db:clear"
+    "clear-db": "pnpm --filter @nearcommerce/backend run db:clear",
+    "add-admin": "pnpm --filter @nearcommerce/backend run add-admin"
   },
   "packageManager": "pnpm@12.4.2",
   "devDependencies": {

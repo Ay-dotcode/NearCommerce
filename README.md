@@ -33,23 +33,23 @@ Shared code lives in `packages/`: `@nearcommerce/api` (HTTP client, schemas, sha
 - **Dual-Mode CSV Catalog Importer:** Batch product upload via CSV (`PapaParse`). Products with valid image URLs are directly published (`is_published: true`), while rows missing images are imported safely as drafts (`is_published: false`).
 - **Edge AI Image Cropper & PostgreSQL Image Hosting:** In-browser intelligent product cropping powered by ONNX Runtime Web (`onnxruntime-web`) running YOLOv8n object detection in a dedicated Web Worker (with manual crop fallback). Store owners upload cropped photos directly via binary stream (`/api/uploads/images`), stored safely as `BYTEA` in PostgreSQL with public serving (`/api/images/:id`), avoiding third-party object storage dependencies. Unreferenced uploads are automatically cleaned up.
 - **Real-Time Collaborative Household Lists:** Shared shopping lists powered by Socket.IO with Redis pub/sub adapter. Supports unique 6-character alphanumeric invite codes, real-time item check/uncheck sync, custom grocery items (`custom_item_name`), item deletion, list renaming, ownership transfer, member removal, leaving lists, and invite code regeneration. Deleting catalog products preserves custom item visibility (orphan item prevention).
-- **Ratings & Reviews System:** 1-to-5 star ratings and written reviews for both stores and individual products. Includes shopper review management (edit/delete own reviews) and trust gating (only email-verified accounts can post). Store owners are prohibited from reviewing their own stores or products.
+- **Ratings & Reviews System:** 1-to-5 star ratings and written reviews for both stores and individual products. Includes shopper review management (edit/delete own reviews) and no email-verification requirement (any signed-in shopper can post). Store owners are prohibited from reviewing their own stores or products.
 - **System Administration & Moderation:** Comprehensive admin portal featuring global platform analytics and metrics (total users, stores, active products, reviews), user and store suspension toggles (real-time Redis lockout), account hard deletion with pre-deletion state snapshots in `admin_audit_logs`, admin self-demotion (`SYSTEM_ADMIN` to `CUSTOMER`), review moderation, and full category/subcategory taxonomy CRUD.
-- **User Authentication, RBAC & Security:** Role-based access control (`CUSTOMER`, `STORE_OWNER`, `SYSTEM_ADMIN`). Secure password hashing (`bcrypt`), JWT access tokens (15-min expiry) paired with SHA-256 hashed refresh tokens in PostgreSQL, progressive IP and account login lockout (exponential delay after failed attempts), rate limiting on sensitive routes, email verification via Nodemailer, password reset tokens (1h expiry), and customer account deletion (`DELETE /api/users/me`).
+- **User Authentication, RBAC & Security:** Role-based access control (`CUSTOMER`, `STORE_OWNER`, `SYSTEM_ADMIN`). Secure password hashing (`bcrypt`), JWT access tokens (15-min expiry) paired with SHA-256 hashed refresh tokens in PostgreSQL, progressive IP and account login lockout (exponential delay after failed attempts), rate limiting on sensitive routes, password reset tokens (1h expiry), and customer account deletion (`DELETE /api/users/me`).
 - **Turn-by-Turn Directions & Native Maps Handoff:** One-tap navigation launching device-native maps (Apple Maps on iOS, Google Maps on Android) with address/coordinate geocoding and "avoid tolls" preference support.
 - **Official Support Channel:** Standardized `/support` endpoint providing dedicated support channels for shoppers and store owners.
 - **Light & Dark Mode:** All three apps follow the device or browser appearance by default, and each has a Light / Dark / Auto toggle (settings drawer on mobile, header on the portals). The choice is saved and restored on the next visit. Colours come from one shared palette (`packages/config/palette.cjs`) used by the Tailwind preset (web, admin) and the mobile theme; each portal has its own brand colour (shopper blue, store owner teal, admin violet).
 - **Skeleton Loading & Blurred Pop-ups:** Pages show skeleton placeholders sized like the real content instead of loading text, and every modal, drawer and bottom sheet blurs the page behind it, built from one shared component per platform.
 - **Search Distance:** Shoppers choose how far shops may be (1 to 50 km) in the mobile settings drawer (a drawer from the right, opened with the gear button in the app bar). It is saved on the device and sent as `radius_meters`. Turning **Only show shops near me** off sends `nearby_only=false`: every shop is searched and results are still sorted by distance.
 - **Portal polish:** The store owner portal and admin console animate between pages, show a mouse-following glow, and have back arrows on non-main pages; the app icon always returns to the default page. The admin console adds an aurora background and a Ctrl/Cmd+K command palette. A suspended account that signs in sees a **Contact support** link on every app.
-- **One-time email links:** Password-reset and email-verification links work exactly once (they are claimed atomically, so two simultaneous uses cannot both succeed). The reset email also contains a reset code for the mobile app, which accepts either the code or the pasted link.
+- **One-time email links:** Password-reset links work exactly once (they are claimed atomically, so two simultaneous uses cannot both succeed). The reset email also contains a reset code for the mobile app, which accepts either the code or the pasted link.
 
 ### Good to know
 
 - Semantic search and visual photo search require a valid `GEMINI_API_KEY`. Without one, text search falls back seamlessly to PostgreSQL full-text and trigram matching, and the mobile photo search button gracefully disables or falls back.
 - Uploaded product images are stored directly in PostgreSQL (up to 2 MB each). For large-scale production deployments, the storage layer can be pointed to S3/Cloud Storage while retaining the same `/api/images/:id` URLs.
 - The bundled cropper model (`apps/web/public/models/yolo.onnx`) is an Ultralytics YOLOv8n export. Note that Ultralytics models are licensed under AGPL-3.0; verify licensing requirements before commercial distribution.
-- In development mode, email verification and password reset tokens are logged to the backend console if SMTP credentials are not configured, enabling full local testing without an external mail provider.
+- In development mode, password reset tokens are logged to the backend console if SMTP credentials are not configured, enabling full local testing without an external mail provider.
 - Categories are created automatically: an empty catalog is filled with the standard categories on first start, and admins can add anything missing with **Generate default catalog** (or `pnpm --filter @nearcommerce/backend seed:catalog`). Category icons are derived from the name, so admins only type a name.
 - Production: `pnpm --filter @nearcommerce/backend start` runs the API, and `db:migrate` brings any database up to date (it only runs migrations it has not run before; `db:clear` is for wiping a development database).
 - `samples/nearcommerce-sample-products.csv` is a ready-to-import product list for the store owner CSV importer.
@@ -105,11 +105,9 @@ All backend endpoints support optional `/api` prefixes for reverse-proxy compati
 |               | `POST /auth/login`                             | Public                  | Authenticate user, return access token & set refresh session               |
 |               | `POST /auth/refresh`                           | Public                  | Exchange refresh token for new access token                                |
 |               | `POST /auth/logout`                            | Public                  | Invalidate refresh token session                                           |
-|               | `POST /auth/verify-email`                      | Public                  | Validate email verification token                                          |
-|               | `POST /auth/resend-verification`               | Public                  | Resend verification link with rate limiting                                |
 |               | `POST /auth/forgot-password`                   | Public                  | Send password reset token to email                                         |
 |               | `POST /auth/reset-password`                    | Public                  | Set new password with valid token                                          |
-| **Users**     | `GET /api/users/me`                            | Authenticated           | Retrieve current authenticated user profile & verification status          |
+| **Users**     | `GET /api/users/me`                            | Authenticated           | Retrieve current authenticated user profile          |
 |               | `DELETE /api/users/me`                         | Authenticated           | Permanently delete authenticated user account                              |
 | **Discovery** | `GET /search`                                  | Public                  | Geospatial product search with filters (lat, lng, radius, category, query) |
 |               | `GET /search/stores`                           | Public                  | Proximity store search (lat, lng, query, radius)                           |
@@ -147,11 +145,12 @@ All backend endpoints support optional `/api` prefixes for reverse-proxy compati
 |               | `DELETE /api/favorites/:favoriteId`            | Authenticated           | Remove store or product from favorites                                     |
 | **Reviews**   | `GET /api/reviews`                             | Public / Optional Auth  | List reviews for target store or product                                   |
 |               | `GET /api/reviews/mine`                        | Authenticated           | List reviews written by authenticated user                                 |
-|               | `POST /api/reviews`                            | Verified Email          | Submit 1-5 star review (owner self-review prohibited)                      |
+|               | `POST /api/reviews`                            | Authenticated           | Submit 1-5 star review (owner self-review prohibited)                      |
 |               | `PATCH /api/reviews/:reviewId`                 | Author                  | Update review rating or comment                                            |
 |               | `DELETE /api/reviews/:reviewId`                | Author                  | Delete review                                                              |
 | **Admin**     | `GET /api/admin/metrics`                       | `SYSTEM_ADMIN`          | Platform aggregate counts (users, stores, products, reviews)               |
 |               | `GET /api/admin/users`                         | `SYSTEM_ADMIN`          | List and search users with role and suspension filters                     |
+|               | `PATCH /api/admin/users/:userId/promote`       | `SYSTEM_ADMIN`          | Make a user an admin (requires your own password)                          |
 |               | `PATCH /api/admin/users/:userId/suspend`       | `SYSTEM_ADMIN`          | Toggle user suspension status (syncs to Redis)                             |
 |               | `PATCH /api/admin/users/:userId/demote`        | `SYSTEM_ADMIN`          | Demote admin user to `CUSTOMER`                                            |
 |               | `DELETE /api/admin/users/:userId`              | `SYSTEM_ADMIN`          | Hard delete user with audit snapshot                                       |
@@ -177,7 +176,7 @@ All backend endpoints support optional `/api` prefixes for reverse-proxy compati
 - PostgreSQL 15 or newer with `pgvector`, `pg_trgm`, `cube`, `earthdistance`, and `uuid-ossp` extensions available. The database user must possess permissions to execute `CREATE EXTENSION`.
 - Redis 6 or newer (local Redis or cloud Upstash instance)
 - Google Gemini API key (optional; search falls back to full-text/trigram matching if omitted)
-- SMTP credentials (optional for local development; verification and reset links log directly to stdout when unset)
+- SMTP credentials (optional for local development; reset links log directly to stdout when unset)
 - Expo Go or an Android/iOS emulator to run the shopper mobile application
 
 ## Getting started
@@ -220,6 +219,21 @@ All backend endpoints support optional `/api` prefixes for reverse-proxy compati
    - Store Owner: `joseyowolabi@gmail.com` / `Password12++` (with a sample store and demo grocery products)
 
    In production (`NODE_ENV=production`), seeds require explicit `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_OWNER_EMAIL`, and `SEED_OWNER_PASSWORD` environment variables.
+
+   To add an admin (run on the server; needs `DATABASE_URL`):
+
+   ```bash
+   pnpm --filter @nearcommerce/backend db:migrate   # once, applies migration 007
+   pnpm add-admin admin@your-domain.com 'a-long-password' "Full Name"
+   ```
+
+   Leave the password out in a terminal to be prompted for it. Admins created this way are
+   *owner admins*: admins who were only promoted from the admin portal (**Users → Make admin**,
+   which asks for your own password) cannot demote, suspend or delete them.
+
+   Email verification is switched off: new accounts work straight away. The verification
+   code (`emailVerification.service.ts`, `VerifyEmailPage`, mobile `VerifyEmailPrompt`) is kept
+   but not wired in; see the comments in `auth.routes.ts`, `auth.controller.ts` and `router.tsx`.
 
    If products are created prior to configuring `GEMINI_API_KEY`, backfill vector embeddings at any time:
 
