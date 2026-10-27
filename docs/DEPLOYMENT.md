@@ -180,5 +180,5 @@ reaching an app whose native part is too old for it.
 - Use strong `JWT_*` secrets (Render generates them for you) and never commit a `.env` file.
 - The API currently accepts requests from any website (`cors({ origin: true })` in `apps/backend/src/app.ts`).
   Restrict it to your two portal addresses once they are live.
-- Set up a real email provider (`SMTP_*`): password-reset and verification emails will not send without one.
+- Set up a real email provider (`SMTP_*`): password-reset emails will not send without one (there are no verification emails).
 - Keep `main` protected so only code whose tests pass can be merged.
