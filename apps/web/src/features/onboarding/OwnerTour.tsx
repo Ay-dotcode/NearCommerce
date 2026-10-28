@@ -83,7 +83,7 @@ export function OwnerTour({ open, onClose }: Props) {
           )}
         </div>
 
-        <div className="grid min-h-0 flex-1 overflow-y-auto md:grid-cols-5">
+        <div className="no-scrollbar grid min-h-0 flex-1 overflow-y-auto md:grid-cols-5">
           <div
             key={`scene-${step.id}`}
             className="flex animate-pop-in items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-6 py-6 motion-reduce:animate-none md:col-span-2 md:min-h-[26rem] md:px-8"
