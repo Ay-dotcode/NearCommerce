@@ -1,5 +1,8 @@
 import { db } from "@/config/database";
 import { BCRYPT_SALT_ROUNDS, PASSWORD_RESET_TOKEN_TTL_MS } from "@/constants";
+// Email verification and password reset are switched off (see registerUser).
+// verifyEmail, resendVerification, forgotPassword and resetPassword handlers are kept
+// for interface stability.
 import {
   confirmEmailVerification,
   issueEmailVerification,
@@ -18,7 +21,6 @@ import {
   rotateSession,
 } from "@/features/auth/services/session.service";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
-import { sendPasswordResetEmail } from "@/utils/email";
 import {
   ForgotPasswordSchema,
   LoginSchema,
@@ -68,10 +70,13 @@ export const registerUser = async (req: Request, res: Response) => {
       BCRYPT_SALT_ROUNDS,
     );
 
-    // 4. Insert the user, unverified until they follow the emailed link
-    const inserted = await db.query(
-      `INSERT INTO users (email, password_hash, full_name, role)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
+    // 4. Insert the user. Email verification is switched off, so the account is usable
+    //    straight away: email_verified_at is set now and no verification email is sent.
+    //    To bring verification back, insert without email_verified_at and call
+    //    issueEmailVerification(userId, email) here (see emailVerification.service.ts).
+    await db.query(
+      `INSERT INTO users (email, password_hash, full_name, role, email_verified_at)
+       VALUES ($1, $2, $3, $4, NOW())`,
       [
         validatedData.email,
         passwordHash,
@@ -80,17 +85,8 @@ export const registerUser = async (req: Request, res: Response) => {
       ],
     );
 
-    // 5. Email the verification link. A failure here is logged, not fatal; the user can resend.
-    await issueEmailVerification(
-      inserted.rows[0].id,
-      validatedData.email,
-    ).catch((error) =>
-      console.error("Failed to issue verification token:", error),
-    );
-
     return res.status(201).json({
-      message:
-        "Account created. Check your email for a link to verify your address.",
+      message: "Account created. You can log in now.",
     });
   } catch (error) {
     if (
@@ -150,144 +146,15 @@ export const resendVerification = async (req: Request, res: Response) => {
 };
 
 export const forgotPassword = async (req: Request, res: Response) => {
-  try {
-    const { email } = ForgotPasswordSchema.parse(req.body);
-
-    const userResult = await db.query(`SELECT id FROM users WHERE email = $1`, [
-      email,
-    ]);
-
-    // Prevent email enumeration
-    if (userResult.rows.length === 0)
-      return res.status(200).json({
-        message: "If that email is registered, a reset link has been sent.",
-      });
-
-    const userId = userResult.rows[0].id;
-    const { rawToken, tokenHash } = generateVerificationToken();
-    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
-
-    const client = await db.connect();
-    try {
-      await client.query("BEGIN");
-
-      // Invalidate prior unexpired tokens
-      await client.query(
-        `DELETE FROM password_reset_tokens WHERE user_id = $1`,
-        [userId],
-      );
-
-      // Store new hashed token
-      await client.query(
-        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
-        [userId, tokenHash, expiresAt],
-      );
-
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-
-    await sendPasswordResetEmail(email, rawToken).catch((err) => {
-      console.error("[EMAIL DISPATCH ERROR] Password reset email failed:", err);
-    });
-
-    if (!["test", "production"].includes(process.env.NODE_ENV ?? ""))
-      console.log(
-        `[EMAIL DISPATCH] Password Reset To: ${email}, Token: ${rawToken}`,
-      );
-    return res.status(200).json({
-      message: "If that email is registered, a reset link has been sent.",
-    });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res
-        .status(400)
-        .json({ error: "Validation failed", details: error.issues });
-    }
-    if (error instanceof Error && error.name === "ZodError") {
-      return res.status(400).json({
-        error: "Validation failed",
-        details: JSON.parse(error.message),
-      });
-    }
-    console.error("Forgot password error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  return res.status(501).json({
+    error: "Password reset is disabled on this mock application. Please contact support.",
+  });
 };
 
 export const resetPassword = async (req: Request, res: Response) => {
-  try {
-    const { token, new_password } = ResetPasswordSchema.parse(req.body);
-    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-
-    const client = await db.connect();
-    try {
-      await client.query("BEGIN");
-
-      const tokenResult = await client.query(
-        `DELETE FROM password_reset_tokens
-          WHERE token_hash = $1 AND expires_at > NOW()
-          RETURNING user_id`,
-        [tokenHash],
-      );
-
-      if (tokenResult.rows.length === 0) {
-        await client.query("ROLLBACK");
-        return res
-          .status(400)
-          .json({ error: "Invalid or expired reset token" });
-      }
-
-      const userId = tokenResult.rows[0].user_id;
-      const saltRounds = BCRYPT_SALT_ROUNDS;
-      const passwordHash = await bcrypt.hash(new_password, saltRounds);
-
-      // Update password
-      await client.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [
-        passwordHash,
-        userId,
-      ]);
-
-      // Revoke all active user sessions
-      await client.query(`DELETE FROM user_sessions WHERE user_id = $1`, [
-        userId,
-      ]);
-
-      // Any other outstanding reset links for this account die with this one.
-      await client.query(
-        `DELETE FROM password_reset_tokens WHERE user_id = $1`,
-        [userId],
-      );
-
-      await client.query("COMMIT");
-      return res
-        .status(200)
-        .json({ message: "Password has been successfully reset." });
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res
-        .status(400)
-        .json({ error: "Validation failed", details: error.issues });
-    }
-    if (error instanceof Error && error.name === "ZodError") {
-      return res.status(400).json({
-        error: "Validation failed",
-        details: JSON.parse(error.message),
-      });
-    }
-    console.error("Reset password error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  return res.status(501).json({
+    error: "Password reset is disabled on this mock application. Please contact support.",
+  });
 };
 
 export const loginUser = async (req: Request, res: Response) => {

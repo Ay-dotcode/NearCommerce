@@ -1,5 +1,10 @@
 import { db } from "@/config/database";
 import redisClient from "@/config/redis";
+import {
+  clearLoginFailures,
+  getLoginLockout,
+  recordLoginFailure,
+} from "@/features/auth/services/loginLockout.service";
 import { releaseHouseholdLists } from "@/services/account.service";
 import { auditSnapshot } from "@/utils/audit";
 import { isUuid, sendValidationError } from "@/utils/http";
@@ -8,8 +13,10 @@ import {
   AdminDeleteSchema,
   AdminUserListQuerySchema,
   PaginationQuerySchema,
+  PromoteAdminSchema,
   ToggleSuspensionSchema,
 } from "@nearcommerce/api";
+import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { ZodError, ZodIssue, ZodType } from "zod";
 
@@ -37,6 +44,39 @@ const invalidateSuspensionCache = async (
     console.error("[ADMIN] Redis cache invalidation error:", error);
   }
 };
+
+// Root admins are the ones created from the server (pnpm add-admin / seed). An admin who was
+// only promoted from the portal must not be able to demote, suspend or delete them.
+const ROOT_ADMIN_PROTECTED = {
+  error:
+    "This admin was added by the platform owner and can only be changed by another owner-added admin.",
+  code: "ROOT_ADMIN_PROTECTED",
+};
+
+type Queryable = {
+  query: (text: string, values?: unknown[]) => Promise<{ rows: any[] }>;
+};
+
+async function isRootAdmin(
+  client: Queryable,
+  userId: string,
+): Promise<boolean> {
+  const { rows } = await client.query(
+    "SELECT is_root_admin FROM users WHERE id = $1",
+    [userId],
+  );
+  return rows[0]?.is_root_admin === true;
+}
+
+// True when `target` is a root admin and the acting admin is not one.
+async function blocksRootAdmin(
+  client: Queryable,
+  actorId: string,
+  target: { is_root_admin?: boolean },
+): Promise<boolean> {
+  if (target.is_root_admin !== true) return false;
+  return !(await isRootAdmin(client, actorId));
+}
 
 type PaginationResult =
   | { page: number; limit: number }
@@ -87,7 +127,7 @@ export async function listUsers(req: Request, res: Response) {
 
   const offset = (pagination.page - 1) * pagination.limit;
   const result = await db.query(
-    `SELECT id, email, full_name, role, is_suspended, email_verified_at, created_at, updated_at
+    `SELECT id, email, full_name, role, is_suspended, is_root_admin, email_verified_at, created_at, updated_at
      FROM users ${clause}
      ORDER BY created_at DESC, id
      LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
@@ -114,7 +154,7 @@ export async function getUserDetails(req: Request, res: Response) {
   if (!isUuid(userId)) return res.status(404).json({ error: "User not found" });
 
   const user = await db.query(
-    `SELECT id, email, full_name, role, is_suspended, email_verified_at, created_at, updated_at
+    `SELECT id, email, full_name, role, is_suspended, is_root_admin, email_verified_at, created_at, updated_at
        FROM users WHERE id = $1`,
     [userId],
   );
@@ -344,9 +384,20 @@ export async function toggleUserSuspension(req: Request, res: Response) {
 
   try {
     await client.query("BEGIN");
+    const existing = await client.query(
+      "SELECT id, is_root_admin FROM users WHERE id = $1 FOR UPDATE",
+      [req.params.userId],
+    );
+    if (
+      existing.rows.length &&
+      (await blocksRootAdmin(client, req.user!.id, existing.rows[0]))
+    ) {
+      await client.query("ROLLBACK");
+      return res.status(403).json(ROOT_ADMIN_PROTECTED);
+    }
     const result = await client.query(
       `UPDATE users SET is_suspended = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2 RETURNING id, email, full_name, role, is_suspended, created_at, updated_at`,
+       WHERE id = $2 RETURNING id, email, full_name, role, is_suspended, is_root_admin, created_at, updated_at`,
       [is_suspended, req.params.userId],
     );
     if (!result.rows.length) {
@@ -450,6 +501,10 @@ async function deleteTarget(
           .status(409)
           .json({ error: "You cannot delete your own account here." });
       }
+      if (await blocksRootAdmin(client, req.user!.id, target.rows[0])) {
+        await client.query("ROLLBACK");
+        return res.status(403).json(ROOT_ADMIN_PROTECTED);
+      }
       if (target.rows[0].role === "SYSTEM_ADMIN") {
         await client.query("ROLLBACK");
         return res
@@ -521,11 +576,16 @@ export async function demoteAdmin(req: Request, res: Response) {
       await client.query("ROLLBACK");
       return res.status(409).json({ error: "User is not a SYSTEM_ADMIN." });
     }
+    if (await blocksRootAdmin(client, req.user!.id, target.rows[0])) {
+      await client.query("ROLLBACK");
+      return res.status(403).json(ROOT_ADMIN_PROTECTED);
+    }
 
     const updated = await client.query(
-      `UPDATE users SET role = 'CUSTOMER', updated_at = CURRENT_TIMESTAMP
+      `UPDATE users SET role = 'CUSTOMER', is_root_admin = false,
+              updated_at = CURRENT_TIMESTAMP
         WHERE id = $1
-        RETURNING id, email, full_name, role, is_suspended, created_at, updated_at`,
+        RETURNING id, email, full_name, role, is_suspended, is_root_admin, created_at, updated_at`,
       [userId],
     );
     // Sign them out everywhere; their access token stops working on admin
@@ -548,6 +608,101 @@ export async function demoteAdmin(req: Request, res: Response) {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("[ADMIN] demoteAdmin error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
+}
+
+// PATCH /admin/users/:userId/promote
+// Makes an existing account a SYSTEM_ADMIN. The acting admin has to type their own password.
+// Admins made this way are not root admins: they cannot touch the ones added from the server.
+export async function promoteToAdmin(req: Request, res: Response) {
+  const parsed = parseBody(PromoteAdminSchema, req.body);
+  if ("error" in parsed) return sendValidationError(res, parsed.error);
+  const userId = req.params.userId;
+  if (!isUuid(userId))
+    return res.status(404).json({ error: "User not found." });
+  if (userId === req.user!.id)
+    return res.status(409).json({ error: "You are already an admin." });
+
+  const ip = req.ip ?? "unknown";
+  try {
+    const actor = await db.query(
+      "SELECT email, password_hash FROM users WHERE id = $1",
+      [req.user!.id],
+    );
+    if (!actor.rows.length)
+      return res.status(401).json({ error: "Invalid token" });
+
+    // Same progressive lockout as the login form, so a hijacked session cannot guess passwords.
+    const lockedFor = await getLoginLockout(actor.rows[0].email, ip);
+    if (lockedFor > 0) {
+      res.setHeader("Retry-After", String(lockedFor));
+      return res.status(429).json({
+        error: `Too many failed attempts. Try again in ${lockedFor} seconds.`,
+      });
+    }
+    const passwordOk = await bcrypt.compare(
+      parsed.data.password,
+      actor.rows[0].password_hash,
+    );
+    if (!passwordOk) {
+      await recordLoginFailure(actor.rows[0].email, ip);
+      return res
+        .status(403)
+        .json({ error: "Incorrect password.", code: "INVALID_PASSWORD" });
+    }
+    await clearLoginFailures(actor.rows[0].email, ip);
+  } catch (error) {
+    console.error("[ADMIN] promoteToAdmin password check error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const target = await client.query(
+      "SELECT * FROM users WHERE id = $1 FOR UPDATE",
+      [userId],
+    );
+    if (!target.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (target.rows[0].role === "SYSTEM_ADMIN") {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "User is already a SYSTEM_ADMIN." });
+    }
+    if (target.rows[0].is_suspended) {
+      await client.query("ROLLBACK");
+      return res
+        .status(409)
+        .json({ error: "Unsuspend this user before making them an admin." });
+    }
+
+    const updated = await client.query(
+      `UPDATE users SET role = 'SYSTEM_ADMIN', is_root_admin = false,
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING id, email, full_name, role, is_suspended, is_root_admin, created_at, updated_at`,
+      [userId],
+    );
+    await client.query(
+      `INSERT INTO admin_audit_logs (admin_id, action, target_id, target_type, reason, snapshot)
+       VALUES ($1, 'PROMOTE_ADMIN', $2, 'USER', $3, $4)`,
+      [
+        req.user!.id,
+        userId,
+        parsed.data.reason ?? null,
+        JSON.stringify(auditSnapshot(target.rows[0])),
+      ],
+    );
+    await client.query("COMMIT");
+    return res.json({ data: updated.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("[ADMIN] promoteToAdmin error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {
     client.release();

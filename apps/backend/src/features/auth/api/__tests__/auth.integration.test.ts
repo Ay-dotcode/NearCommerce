@@ -48,7 +48,7 @@ describe("Auth Integration Tests", () => {
       const response = await request(app).post("/auth/register").send(testUser);
 
       expect(response.status).toBe(201);
-      expect(response.body.message).toMatch(/verify your address/i);
+      expect(response.body.message).toMatch(/log in now/i);
 
       // Verify database state
       const userResult = await db.query(
@@ -58,13 +58,13 @@ describe("Auth Integration Tests", () => {
       expect(userResult.rows.length).toBe(1);
       expect(userResult.rows[0].role).toBe("CUSTOMER");
 
-      // The account stays unverified until the emailed link is followed
-      expect(userResult.rows[0].email_verified_at).toBeNull();
+      // Email verification is switched off: the account is usable at once and no token is made
+      expect(userResult.rows[0].email_verified_at).not.toBeNull();
       const tokens = await db.query(
-        "SELECT expires_at FROM email_verification_tokens WHERE user_id = $1",
+        "SELECT 1 FROM email_verification_tokens WHERE user_id = $1",
         [userResult.rows[0].id],
       );
-      expect(tokens.rows).toHaveLength(1);
+      expect(tokens.rows).toHaveLength(0);
     });
 
     it("creates a STORE_OWNER when the store portal asks for one", async () => {
@@ -111,246 +111,24 @@ describe("Auth Integration Tests", () => {
   });
 
   describe("POST /auth/forgot-password", () => {
-    it("should return 400 if email is invalid", async () => {
+    it("returns 501 explaining password reset is disabled on mock app", async () => {
       const response = await request(app)
         .post("/auth/forgot-password")
-        .send({ email: "not-an-email" });
+        .send({ email: "test@example.com" });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Validation failed");
-    });
-
-    it("should return 200 without error if user does not exist (enumeration prevention)", async () => {
-      const response = await request(app)
-        .post("/auth/forgot-password")
-        .send({ email: "nonexistent@example.com" });
-
-      expect(response.status).toBe(200);
-      expect(response.body.message).toMatch(
-        /if that email is registered, a reset link has been sent/i,
-      );
-    });
-
-    it("should issue a password reset token and invalidate prior tokens for registered user", async () => {
-      const userRes = await db.query(
-        `INSERT INTO users (email, password_hash, full_name, role)
-         VALUES ($1, 'hashed_pw', $2, 'CUSTOMER') RETURNING id`,
-        [testUser.email, testUser.full_name],
-      );
-      const userId = userRes.rows[0].id;
-      const { tokenHash: oldTokenHash } = generateVerificationToken();
-
-      await db.query(
-        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
-         VALUES ($1, $2, NOW() + INTERVAL '1 hour')`,
-        [userId, oldTokenHash],
-      );
-
-      const response = await request(app)
-        .post("/auth/forgot-password")
-        .send({ email: testUser.email });
-
-      expect(response.status).toBe(200);
-      expect(response.body.message).toMatch(
-        /if that email is registered, a reset link has been sent/i,
-      );
-
-      // Verify old token was replaced by 1 new token
-      const tokens = await db.query(
-        "SELECT * FROM password_reset_tokens WHERE user_id = $1",
-        [userId],
-      );
-      expect(tokens.rows.length).toBe(1);
-      expect(tokens.rows[0].token_hash).not.toBe(oldTokenHash);
-    });
-
-    it("finds the account however the email was typed (case and stray spaces)", async () => {
-      const userRes = await db.query(
-        `INSERT INTO users (email, password_hash, full_name, role)
-         VALUES ($1, 'hashed_pw', $2, 'CUSTOMER') RETURNING id`,
-        [testUser.email, testUser.full_name],
-      );
-      const userId = userRes.rows[0].id;
-
-      const response = await request(app)
-        .post("/auth/forgot-password")
-        .send({ email: `  ${testUser.email.toUpperCase()} ` });
-
-      expect(response.status).toBe(200);
-      const tokens = await db.query(
-        "SELECT 1 FROM password_reset_tokens WHERE user_id = $1",
-        [userId],
-      );
-      expect(tokens.rows).toHaveLength(1);
-    });
-
-    it("should return 429 after exceeding max forgot-password requests", async () => {
-      // Send 5 requests (the max limit)
-      for (let i = 0; i < 5; i++) {
-        await request(app)
-          .post("/auth/forgot-password")
-          .send({ email: testUser.email });
-      }
-
-      // 6th request must be rate limited with 429
-      const response = await request(app)
-        .post("/auth/forgot-password")
-        .send({ email: testUser.email });
-
-      expect(response.status).toBe(429);
-      expect(response.body.error).toMatch(/too many password reset requests/i);
+      expect(response.status).toBe(501);
+      expect(response.body.error).toMatch(/password reset is disabled/i);
     });
   });
 
   describe("POST /auth/reset-password", () => {
-    it("should return 400 if validation fails (e.g., missing token or password too short)", async () => {
+    it("returns 501 explaining password reset is disabled on mock app", async () => {
       const response = await request(app)
         .post("/auth/reset-password")
-        .send({ token: "", new_password: "short" });
+        .send({ token: "any-token", new_password: "newsecurepassword123" });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Validation failed");
-    });
-
-    it("should return 400 if token is invalid", async () => {
-      const response = await request(app).post("/auth/reset-password").send({
-        token: "invalid-token-12345",
-        new_password: "newsecurepassword123",
-      });
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toMatch(/invalid or expired reset token/i);
-    });
-
-    it("should return 400 if token is expired", async () => {
-      const userRes = await db.query(
-        `INSERT INTO users (email, password_hash, full_name, role)
-         VALUES ($1, 'hashed_pw', $2, 'CUSTOMER') RETURNING id`,
-        [testUser.email, testUser.full_name],
-      );
-      const userId = userRes.rows[0].id;
-      const { rawToken, tokenHash } = generateVerificationToken();
-      const expiredDate = new Date(Date.now() - 3600 * 1000); // 1 hour ago
-
-      await db.query(
-        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
-         VALUES ($1, $2, $3)`,
-        [userId, tokenHash, expiredDate],
-      );
-
-      const response = await request(app).post("/auth/reset-password").send({
-        token: rawToken,
-        new_password: "newsecurepassword123",
-      });
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toMatch(/invalid or expired reset token/i);
-    });
-
-    it("a reset link works exactly once, even when it is used twice at the same moment", async () => {
-      const userRes = await db.query(
-        `INSERT INTO users (email, password_hash, full_name, role)
-         VALUES ($1, 'hashed_pw', $2, 'CUSTOMER') RETURNING id`,
-        [testUser.email, testUser.full_name],
-      );
-      const { rawToken, tokenHash } = generateVerificationToken();
-      await db.query(
-        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
-         VALUES ($1, $2, NOW() + interval '1 hour')`,
-        [userRes.rows[0].id, tokenHash],
-      );
-
-      const attempt = (password: string) =>
-        request(app)
-          .post("/auth/reset-password")
-          .send({ token: rawToken, new_password: password });
-      const results = await Promise.all([
-        attempt("firstpassword123"),
-        attempt("secondpassword123"),
-      ]);
-      expect(results.map((r) => r.status).sort()).toEqual([200, 400]);
-
-      const later = await attempt("thirdpassword123");
-      expect(later.status).toBe(400);
-    });
-
-    it("should successfully reset password, update database, clear user_sessions, and remove used token", async () => {
-      const initialPassword = "oldpassword123";
-      const initialHash = await bcrypt.hash(initialPassword, 12);
-      const userRes = await db.query(
-        `INSERT INTO users (email, password_hash, full_name, role)
-         VALUES ($1, $2, $3, 'CUSTOMER') RETURNING id`,
-        [testUser.email, initialHash, testUser.full_name],
-      );
-      const userId = userRes.rows[0].id;
-
-      // Seed active user sessions
-      await db.query(
-        `INSERT INTO user_sessions (user_id, refresh_token_hash, expires_at)
-         VALUES ($1, 'session_token_hash_1', NOW() + INTERVAL '7 days'),
-                ($1, 'session_token_hash_2', NOW() + INTERVAL '7 days')`,
-        [userId],
-      );
-
-      const sessionsBefore = await db.query(
-        "SELECT * FROM user_sessions WHERE user_id = $1",
-        [userId],
-      );
-      expect(sessionsBefore.rows.length).toBe(2);
-
-      // Create a valid password reset token
-      const { rawToken, tokenHash } = generateVerificationToken();
-      await db.query(
-        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
-         VALUES ($1, $2, NOW() + INTERVAL '1 hour')`,
-        [userId, tokenHash],
-      );
-
-      // Reset password
-      const newPassword = "brandnewpassword456";
-      const response = await request(app)
-        .post("/auth/reset-password")
-        .send({ token: rawToken, new_password: newPassword });
-
-      expect(response.status).toBe(200);
-      expect(response.body.message).toMatch(
-        /password has been successfully reset/i,
-      );
-
-      // Verify updated password in users table matches new password
-      const updatedUser = await db.query(
-        "SELECT password_hash FROM users WHERE id = $1",
-        [userId],
-      );
-      const isPasswordUpdated = await bcrypt.compare(
-        newPassword,
-        updatedUser.rows[0].password_hash,
-      );
-      expect(isPasswordUpdated).toBe(true);
-
-      // Verify active user sessions are revoked
-      const sessionsAfter = await db.query(
-        "SELECT * FROM user_sessions WHERE user_id = $1",
-        [userId],
-      );
-      expect(sessionsAfter.rows.length).toBe(0);
-
-      // Verify the password reset token is deleted
-      const tokenAfter = await db.query(
-        "SELECT * FROM password_reset_tokens WHERE user_id = $1",
-        [userId],
-      );
-      expect(tokenAfter.rows.length).toBe(0);
-
-      // Re-using token must fail
-      const reuseResponse = await request(app)
-        .post("/auth/reset-password")
-        .send({ token: rawToken, new_password: "anotherpassword789" });
-
-      expect(reuseResponse.status).toBe(400);
-      expect(reuseResponse.body.error).toMatch(
-        /invalid or expired reset token/i,
-      );
+      expect(response.status).toBe(501);
+      expect(response.body.error).toMatch(/password reset is disabled/i);
     });
   });
 

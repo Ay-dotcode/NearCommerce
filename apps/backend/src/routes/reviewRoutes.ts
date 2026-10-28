@@ -6,7 +6,6 @@ import {
   updateReview,
 } from "@/controllers/reviewController";
 import { optionalAuth, requireAuth } from "@/middleware/auth.middleware";
-import { requireVerifiedEmail } from "@/middleware/trustGate";
 import { Router } from "express";
 
 const router = Router();
@@ -18,7 +17,9 @@ router.get("/", optionalAuth, listReviews);
 router.get("/mine", requireAuth, listOwnReviews);
 
 // Endpoint for submitting store/product ratings (1-5)
-router.post("/", requireAuth, requireVerifiedEmail, createReview);
+// Posting a review used to require a verified email (requireVerifiedEmail in
+// middleware/trustGate.ts). Verification is switched off, so only a login is needed.
+router.post("/", requireAuth, createReview);
 
 // Shopper review management (edit/delete their own)
 router.patch("/:reviewId", requireAuth, updateReview);

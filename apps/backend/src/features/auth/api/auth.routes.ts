@@ -4,15 +4,12 @@ import {
   logoutUser,
   refreshSession,
   registerUser,
-  resendVerification,
   resetPassword,
-  verifyEmail,
 } from "@/features/auth/api/auth.controller";
 import {
   forgotPasswordLimiter,
   refreshLimiter,
   registerLimiter,
-  resendVerificationLimiter,
 } from "@/middleware/rateLimiter";
 import { Router } from "express";
 
@@ -22,12 +19,8 @@ authRouter.post("/register", registerLimiter, registerUser);
 authRouter.post("/login", loginUser);
 authRouter.post("/refresh", refreshLimiter, refreshSession);
 authRouter.post("/logout", logoutUser);
-authRouter.post("/verify-email", verifyEmail);
-authRouter.post(
-  "/resend-verification",
-  resendVerificationLimiter,
-  resendVerification,
-);
+// Email verification and password reset are switched off on this mock application.
+// Handlers return 501 / are disabled.
 authRouter.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
 authRouter.post("/reset-password", resetPassword);
 

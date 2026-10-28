@@ -13,7 +13,8 @@
     "seed": "tsx src/db/seedAdmin.ts && tsx src/db/seedOwner.ts && tsx src/db/seedCatalog.ts",
     "seed:catalog": "tsx src/db/seedCatalog.ts",
     "db:clear": "tsx src/db/clearDb.ts",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate.ts",
+    "add-admin": "tsx src/db/addAdmin.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

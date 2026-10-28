@@ -34,11 +34,12 @@ export async function seedAdmin(poolInstance?: Pool) {
   for (const admin of adminUsers) {
     const passwordHash = await bcrypt.hash(admin.password, 12);
     const result = await activePool.query(
-      `INSERT INTO users (email, password_hash, full_name, role, email_verified_at, is_suspended)
-       VALUES ($1, $2, $3, 'SYSTEM_ADMIN', NOW(), false)
+      `INSERT INTO users (email, password_hash, full_name, role, email_verified_at, is_suspended, is_root_admin)
+       VALUES ($1, $2, $3, 'SYSTEM_ADMIN', NOW(), false, true)
        ON CONFLICT (email) DO UPDATE 
        SET password_hash = EXCLUDED.password_hash,
            role = 'SYSTEM_ADMIN',
+           is_root_admin = true,
            email_verified_at = NOW(),
            is_suspended = false
        RETURNING id, email, role, full_name`,

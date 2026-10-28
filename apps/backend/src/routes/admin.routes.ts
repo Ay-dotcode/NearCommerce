@@ -9,6 +9,7 @@ import {
   listStores,
   getUserDetails,
   listUsers,
+  promoteToAdmin,
   toggleStoreSuspension,
   toggleUserSuspension,
 } from "@/controllers/admin.controller";
@@ -45,6 +46,7 @@ router.get("/stores", listStores);
 router.patch("/users/:userId/suspend", toggleUserSuspension);
 router.patch("/stores/:storeId/suspension", toggleStoreSuspension);
 router.patch("/stores/:storeId/suspend", toggleStoreSuspension);
+router.patch("/users/:userId/promote", promoteToAdmin);
 router.patch("/users/:userId/demote", demoteAdmin);
 router.delete("/users/:userId", deleteUser);
 router.delete("/stores/:storeId", deleteStore);
