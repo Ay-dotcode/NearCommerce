@@ -110,15 +110,9 @@ describe("forms lock their inputs while the request is running", () => {
     await waitFor(() => expect(screen.getByLabelText(/^email/i)).toBeEnabled());
   });
 
-  it("forgot password", async () => {
-    const finish = pendingRequest();
+  it("forgot password (disabled on mock app)", () => {
     renderAt(<ForgotPasswordForm />);
-    type(/email/i, "jane@example.com");
-    fireEvent.click(screen.getByRole("button", { name: /send reset link/i }));
-
-    await waitFor(() => expect(screen.getByLabelText(/email/i)).toBeDisabled());
-    finish(false);
-    await waitFor(() => expect(screen.getByLabelText(/email/i)).toBeEnabled());
+    expect(screen.getByText("Feature Disabled")).toBeInTheDocument();
   });
 
   it("reset password", async () => {

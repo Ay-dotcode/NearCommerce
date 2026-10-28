@@ -1,9 +1,5 @@
 import { listMyStores } from "@/api/stores";
 import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
-import {
-  useMe,
-  useResendVerification,
-} from "@/features/auth/api/useEmailVerification";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -17,13 +13,7 @@ jest.mock("@nearcommerce/api", () => ({
     channels: { email: "help@example.com", phone: "+90555" },
   }),
 }));
-jest.mock("@/features/auth/api/useEmailVerification", () => ({
-  useMe: jest.fn(),
-  useResendVerification: jest.fn(),
-}));
 const listMock = listMyStores as jest.Mock;
-const meMock = useMe as jest.Mock;
-const resendMock = useResendVerification as jest.Mock;
 
 const store = (id: string, name: string, is_suspended = false) => ({
   id,
@@ -66,10 +56,6 @@ describe("StoreOwnerLayout", () => {
   beforeEach(() => {
     localStorage.clear();
     listMock.mockReset();
-    meMock.mockReturnValue({
-      data: { email: "o@shop.test", email_verified: true },
-    });
-    resendMock.mockReturnValue({ mutate: jest.fn(), isPending: false });
   });
 
   it("sends an owner with no stores to onboarding and clears a stale store id", async () => {
@@ -123,28 +109,12 @@ describe("StoreOwnerLayout", () => {
     ).toBeInTheDocument();
   });
 
-  it("prompts an unverified owner and can resend the verification email", async () => {
-    const mutate = jest.fn();
-    meMock.mockReturnValue({
-      data: { email: "o@shop.test", email_verified: false },
-    });
-    resendMock.mockReturnValue({ mutate, isPending: false });
-    listMock.mockResolvedValue([store("s1", "Alpha")]);
-    renderLayout();
-
-    expect(await screen.findByText(/please verify your email/i)).toBeTruthy();
-    expect(screen.getByText("o@shop.test")).toBeTruthy();
-    fireEvent.click(
-      screen.getByRole("button", { name: /resend verification email/i }),
-    );
-    expect(mutate).toHaveBeenCalledWith("o@shop.test");
-  });
-
-  it("shows no verification prompt once the email is verified", async () => {
+  it("never asks the owner to verify their email (verification is switched off)", async () => {
     listMock.mockResolvedValue([store("s1", "Alpha")]);
     renderLayout();
     await screen.findByText("Dashboard content");
-    expect(screen.queryByText(/please verify your email/i)).toBeNull();
+    expect(screen.queryByText(/verify your email/i)).toBeNull();
+    expect(screen.queryByText(/resend verification/i)).toBeNull();
   });
 
   it("navigates between Inventory and Store settings", async () => {
@@ -236,8 +206,6 @@ describe("StoreOwnerLayout", () => {
   });
 
   it("has a theme toggle, a home link on the app icon and a nav that hides its scrollbar", async () => {
-    meMock.mockReturnValue({ data: { email_verified: true } });
-    resendMock.mockReturnValue({ mutate: jest.fn(), isPending: false });
     listMock.mockResolvedValue([store("s1", "Alpha")]);
     renderLayout();
     expect(await screen.findByText("Dashboard content")).toBeInTheDocument();

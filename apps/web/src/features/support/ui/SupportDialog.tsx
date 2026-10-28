@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 interface Props {
   open: boolean;
   onClose: () => void;
+  title?: string;
+  description?: string;
 }
 
 function ContactRow({
@@ -48,7 +50,12 @@ function SupportSkeleton() {
 
 // Official support channels (SRS 3.1.4), loaded from GET /support so contact details
 // change on the server without a web release.
-export function SupportDialog({ open, onClose }: Props) {
+export function SupportDialog({
+  open,
+  onClose,
+  title = "Contact support",
+  description = "Our team can help with your store, products, suspensions and account.",
+}: Props) {
   const query = useQuery<SupportChannels>({
     queryKey: SUPPORT_KEY,
     queryFn: getSupportChannels,
@@ -62,8 +69,8 @@ export function SupportDialog({ open, onClose }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Contact support"
-      description="Our team can help with your store, products, suspensions and account."
+      title={title}
+      description={description}
       size="sm"
       footer={
         <Button variant="secondary" onClick={onClose}>

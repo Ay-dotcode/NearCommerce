@@ -43,13 +43,11 @@ const router = createBrowserRouter(
         "ResetPasswordForm",
       ),
     },
-    {
-      path: AppRoutes.verifyEmail,
-      ...lazyPage(
-        () => import("@/features/auth/ui/VerifyEmailPage"),
-        "VerifyEmailPage",
-      ),
-    },
+    // Email verification is switched off, so its page is not routed. The page
+    // (features/auth/ui/VerifyEmailPage) and AppRoutes.verifyEmail are kept for when it
+    // comes back: add this route again then.
+    //   { path: AppRoutes.verifyEmail,
+    //     ...lazyPage(() => import("@/features/auth/ui/VerifyEmailPage"), "VerifyEmailPage") },
     {
       path: AppRoutes.home,
       element: <Navigate to={AppRoutes.storeOwnerDashboard} replace />,

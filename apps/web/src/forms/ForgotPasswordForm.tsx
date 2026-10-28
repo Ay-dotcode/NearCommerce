@@ -1,94 +1,57 @@
-import { BusyFieldset, Button, TextField } from "@nearcommerce/ui";
 import { AppRoutes } from "@/constants/routes";
-import { useForgotPassword } from "@/features/auth/api/usePasswordReset";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
-import { parseApiError } from "@nearcommerce/api";
-import { useFormik } from "formik";
-import React from "react";
+import { SupportDialog } from "@/features/support/ui/SupportDialog";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  forgotPasswordInitialValues,
-  validateForgotPassword,
-} from "@/forms/forgotPassword.form";
 
-// Asks for an email and always shows the same confirmation, so the form never reveals which emails are registered.
+// Email and password-reset functionality is disabled on this mock application.
+// A pop-up explains that password reset is disabled and provides support contact channels.
 export const ForgotPasswordForm: React.FC = () => {
-  const forgot = useForgotPassword();
-
-  const formik = useFormik({
-    initialValues: forgotPasswordInitialValues,
-    validate: validateForgotPassword,
-    onSubmit: (values) => forgot.mutate(values.email.trim().toLowerCase()),
-  });
-
-  const fieldError =
-    formik.touched.email || formik.submitCount > 0
-      ? formik.errors.email
-      : undefined;
-  const serverError = forgot.isError ? parseApiError(forgot.error) : null;
+  const [supportOpen, setSupportOpen] = useState(false);
 
   return (
     <AuthLayout
       title="Reset your password"
       backTo={AppRoutes.login}
-      subtitle="Enter the email you signed up with and we'll send you a reset link."
+      subtitle="Password reset is disabled on this mock application."
     >
-      {forgot.isSuccess ? (
+      <div className="space-y-4">
         <div
           role="status"
-          className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"
+          className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900"
         >
-          <h2 className="font-semibold">Check your email</h2>
-          <p className="mt-1 text-sm">
-            If that email is registered, a reset link is on its way. The link
-            works for one hour.
+          <h2 className="font-semibold">Feature Disabled</h2>
+          <p className="mt-1 text-sm text-amber-800">
+            Password reset via email is disabled on this mock app. Please
+            contact support to recover access to your account.
           </p>
+          <button
+            type="button"
+            onClick={() => setSupportOpen(true)}
+            className="mt-3 inline-block text-sm font-semibold text-brand-700 underline focus:outline-none"
+          >
+            Contact support
+          </button>
+        </div>
+
+        <p className="text-center text-sm text-slate-600">
+          Remembered your password?{" "}
           <Link
             to={AppRoutes.login}
-            className="mt-3 inline-block text-sm font-medium underline"
+            className="font-medium text-brand-700 hover:underline"
           >
             Back to login
           </Link>
-        </div>
-      ) : (
-        <form onSubmit={formik.handleSubmit} noValidate>
-          <BusyFieldset
-            busy={forgot.isPending}
-            className="space-y-4"
-          >
-            <TextField
-              label="Email"
-              type="email"
-              required
-              autoComplete="email"
-              {...formik.getFieldProps("email")}
-              error={fieldError}
-            />
-            {serverError && (
-              <div
-                role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-              >
-                {serverError.status === 429
-                  ? "Too many requests. Please wait a few minutes and try again."
-                  : "We couldn't send the reset link. Please try again."}
-              </div>
-            )}
-            <Button type="submit" className="w-full" loading={forgot.isPending}>
-              {forgot.isPending ? "Sending…" : "Send reset link"}
-            </Button>
-            <p className="text-center text-sm text-slate-600">
-              Remembered it?{" "}
-              <Link
-                to={AppRoutes.login}
-                className="font-medium text-brand-700 hover:underline"
-              >
-                Back to login
-              </Link>
-            </p>
-          </BusyFieldset>
-        </form>
-      )}
+        </p>
+      </div>
+
+      <SupportDialog
+        open={supportOpen}
+        onClose={() => setSupportOpen(false)}
+        title="Password reset disabled"
+        description="Password reset is disabled on this mock application. Reach out to our support team for help."
+      />
     </AuthLayout>
   );
 };
+

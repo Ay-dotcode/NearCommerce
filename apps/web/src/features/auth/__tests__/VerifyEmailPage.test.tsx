@@ -2,7 +2,7 @@ import { RegisterForm } from "@/forms/RegisterForm";
 import { VerifyEmailPage } from "@/features/auth/ui/VerifyEmailPage";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
 import { MemoryRouter } from "react-router-dom";
 
@@ -70,12 +70,10 @@ describe("VerifyEmailPage", () => {
   });
 });
 
-describe("RegisterForm verification prompt", () => {
-  it("tells the new owner to check their email and can resend the link", async () => {
+describe("RegisterForm without email verification", () => {
+  it("confirms the account and offers the login link, with no resend-verification option", async () => {
     post.mockResolvedValueOnce({
-      data: {
-        message: "Account created. Check your email for a link to verify.",
-      },
+      data: { message: "Account created. You can log in now." },
     });
     renderAt(<RegisterForm />);
 
@@ -89,19 +87,11 @@ describe("RegisterForm verification prompt", () => {
       target: { value: "password123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
-    expect(await screen.findByText(/check your email/i)).toBeTruthy();
 
-    post.mockResolvedValueOnce({
-      data: { message: "A new link has been sent." },
-    });
-    fireEvent.click(
-      screen.getByRole("button", { name: /resend verification email/i }),
-    );
-    await waitFor(() =>
-      expect(post).toHaveBeenLastCalledWith("/auth/resend-verification", {
-        email: "jane@shop.test",
-      }),
-    );
-    expect(await screen.findByText("A new link has been sent.")).toBeTruthy();
+    expect(await screen.findByText(/you can log in now/i)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /go to login/i })).toBeTruthy();
+    expect(screen.queryByText(/resend verification/i)).toBeNull();
+    expect(screen.queryByText(/check your email/i)).toBeNull();
+    expect(post).toHaveBeenCalledTimes(1);
   });
 });

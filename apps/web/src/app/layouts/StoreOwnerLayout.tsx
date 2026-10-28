@@ -11,10 +11,6 @@ import {
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes } from "@/constants/routes";
 import {
-  useMe,
-  useResendVerification,
-} from "@/features/auth/api/useEmailVerification";
-import {
   clearSession,
   setActiveStoreId,
   signOutEverywhere,
@@ -52,8 +48,6 @@ export function StoreOwnerLayout() {
     queryFn: listMyStores,
     retry: false,
   });
-  const me = useMe();
-  const resend = useResendVerification();
   const stores = storesQuery.data ?? [];
   const activeStore = stores.find((s) => s.id === selectedStoreId) ?? stores[0];
 
@@ -169,32 +163,6 @@ export function StoreOwnerLayout() {
             </Button>
           </div>
         </div>
-
-        {me.data && !me.data.email_verified && (
-          <div
-            role="status"
-            className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 sm:px-6"
-          >
-            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1">
-              <span>
-                Please verify your email address. We sent a link to{" "}
-                <strong>{me.data.email}</strong>.
-              </span>
-              {resend.isSuccess ? (
-                <span>{resend.data.message}</span>
-              ) : (
-                <button
-                  type="button"
-                  className="font-medium underline disabled:opacity-60"
-                  disabled={resend.isPending}
-                  onClick={() => resend.mutate(me.data.email)}
-                >
-                  Resend verification email
-                </button>
-              )}
-            </div>
-          </div>
-        )}
 
         {storesQuery.isLoading && (
           <div className="mx-auto flex max-w-7xl gap-1 px-4 sm:px-6">

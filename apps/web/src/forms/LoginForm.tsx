@@ -37,6 +37,7 @@ export const LoginForm: React.FC = () => {
   const loginMutation = useLogin();
   const [notice, setNotice] = useState<Notice | null>(null);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [forgotDisabledOpen, setForgotDisabledOpen] = useState(false);
 
   const returnTo = safeReturnPath(
     (location.state as { from?: string } | null)?.from,
@@ -126,12 +127,13 @@ export const LoginForm: React.FC = () => {
             error={error("password")}
           />
           <div className="-mt-2 text-right">
-            <Link
-              to={AppRoutes.forgotPassword}
-              className="text-sm font-medium text-brand-700 hover:underline"
+            <button
+              type="button"
+              onClick={() => setForgotDisabledOpen(true)}
+              className="text-sm font-medium text-brand-700 hover:underline focus:outline-none"
             >
               Forgot password?
-            </Link>
+            </button>
           </div>
 
           {notice && (
@@ -173,6 +175,12 @@ export const LoginForm: React.FC = () => {
         </BusyFieldset>
       </form>
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+      <SupportDialog
+        open={forgotDisabledOpen}
+        onClose={() => setForgotDisabledOpen(false)}
+        title="Password reset disabled"
+        description="Password reset is disabled on this mock application. Please contact support to recover or reset your account access."
+      />
     </AuthLayout>
   );
 };
