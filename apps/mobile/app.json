@@ -2,7 +2,7 @@
   "expo": {
     "name": "Near Commerce",
     "slug": "nearcommerce",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scheme": "nearcommerce",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
