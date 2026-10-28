@@ -70,10 +70,17 @@ describe("VerifyEmailPage", () => {
   });
 });
 
-describe("RegisterForm without email verification", () => {
-  it("confirms the account and offers the login link, with no resend-verification option", async () => {
+describe("RegisterForm auto-login", () => {
+  it("registers the account and automatically logs in without asking to go to login", async () => {
     post.mockResolvedValueOnce({
       data: { message: "Account created. You can log in now." },
+    });
+    post.mockResolvedValueOnce({
+      data: {
+        access_token: "tok",
+        refresh_token: "ref",
+        user: { id: "1", role: "STORE_OWNER" },
+      },
     });
     renderAt(<RegisterForm />);
 
@@ -88,10 +95,9 @@ describe("RegisterForm without email verification", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
 
-    expect(await screen.findByText(/you can log in now/i)).toBeTruthy();
-    expect(screen.getByRole("link", { name: /go to login/i })).toBeTruthy();
     expect(screen.queryByText(/resend verification/i)).toBeNull();
     expect(screen.queryByText(/check your email/i)).toBeNull();
-    expect(post).toHaveBeenCalledTimes(1);
+    // No redirect prompt or "go to login" link since auto-login immediately transitions
+    expect(screen.queryByRole("link", { name: /go to login/i })).toBeNull();
   });
 });

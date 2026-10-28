@@ -10,13 +10,13 @@ import { AuthLayout } from "@/features/auth/ui/AuthLayout";
 import { UserRole } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { registerInitialValues, validateRegister } from "@/forms/register.form";
 
 // Accounts created in the store portal are always store owners; shoppers register in the mobile app.
 export const RegisterForm: React.FC = () => {
   const registerMutation = useRegister();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const formik = useFormik({
@@ -32,9 +32,10 @@ export const RegisterForm: React.FC = () => {
           role: UserRole.STORE_OWNER,
         },
         {
-          onSuccess: (data) => {
-            setSuccessMessage(data.message);
+          onSuccess: () => {
+            // Session is persisted by useRegister; redirect to the dashboard.
             setSubmitting(false);
+            navigate(AppRoutes.storeOwnerDashboard, { replace: true });
           },
           onError: (error: any) => {
             setServerError(
@@ -60,71 +61,58 @@ export const RegisterForm: React.FC = () => {
       backTo={AppRoutes.login}
       subtitle="Set up your account, then add your store and products."
     >
-      {successMessage ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
-          <h2 className="font-semibold">Account created</h2>
-          <p className="mt-1 text-sm">{successMessage}</p>
-          <Link
-            to={AppRoutes.login}
-            className="mt-3 inline-block text-sm font-medium underline"
-          >
-            Go to login
-          </Link>
-        </div>
-      ) : (
-        <form onSubmit={formik.handleSubmit} noValidate>
-          <BusyFieldset busy={busy} className="space-y-4">
-            <TextField
-              label="Full name"
-              required
-              autoComplete="name"
-              placeholder="Jane Doe"
-              {...formik.getFieldProps("full_name")}
-              error={error("full_name")}
-            />
-            <TextField
-              label="Email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="you@example.com"
-              {...formik.getFieldProps("email")}
-              error={error("email")}
-            />
-            <PasswordField
-              label="Password"
-              required
-              autoComplete="new-password"
-              hint="At least 8 characters."
-              {...formik.getFieldProps("password")}
-              error={error("password")}
-            />
+      <form onSubmit={formik.handleSubmit} noValidate>
+        <BusyFieldset busy={busy} className="space-y-4">
+          <TextField
+            label="Full name"
+            required
+            autoComplete="name"
+            placeholder="Jane Doe"
+            {...formik.getFieldProps("full_name")}
+            error={error("full_name")}
+          />
+          <TextField
+            label="Email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+            {...formik.getFieldProps("email")}
+            error={error("email")}
+          />
+          <PasswordField
+            label="Password"
+            required
+            autoComplete="new-password"
+            hint="At least 8 characters."
+            {...formik.getFieldProps("password")}
+            error={error("password")}
+          />
 
-            {serverError && (
-              <div
-                role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-              >
-                {serverError}
-              </div>
-            )}
+          {serverError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            >
+              {serverError}
+            </div>
+          )}
 
-            <Button type="submit" className="w-full" loading={busy}>
-              {busy ? "Registering…" : "Create account"}
-            </Button>
+          <Button type="submit" className="w-full" loading={busy}>
+            {busy ? "Registering…" : "Create account"}
+          </Button>
 
-            <p className="text-center text-sm text-slate-600">
-              Already have an account?{" "}
-              <Link
-                to={AppRoutes.login}
-                className="font-medium text-brand-700 hover:underline"
-              >
-                Log in
-              </Link>
-            </p>
-          </BusyFieldset>
-        </form>
-      )}
+          <p className="text-center text-sm text-slate-600">
+            Already have an account?{" "}
+            <Link
+              to={AppRoutes.login}
+              className="font-medium text-brand-700 hover:underline"
+            >
+              Log in
+            </Link>
+          </p>
+        </BusyFieldset>
+      </form>
     </AuthLayout>
   );
 };
