@@ -93,6 +93,16 @@ export function UserDetailsModal({
             <Button variant="secondary" onClick={onClose}>
               Close
             </Button>
+            {rules.showPromote && (
+              <Button
+                variant="secondary"
+                disabled={!rules.canPromote}
+                title={rules.promoteHint}
+                onClick={() => onAction("promote", shown)}
+              >
+                Make admin
+              </Button>
+            )}
             {rules.showDemote && (
               <Button
                 variant="secondary"
@@ -147,11 +157,7 @@ export function UserDetailsModal({
                 <Badge tone={shown.is_suspended ? "danger" : "success"}>
                   {shown.is_suspended ? "Suspended" : "Active"}
                 </Badge>
-                <Badge tone={shown.email_verified_at ? "success" : "warning"}>
-                  {shown.email_verified_at
-                    ? "Email verified"
-                    : "Email not verified"}
-                </Badge>
+                {rules?.isOwnerAdmin && <Badge tone="info">Owner admin</Badge>}
               </div>
             </div>
           </div>

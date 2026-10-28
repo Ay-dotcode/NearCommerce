@@ -2,8 +2,10 @@ import {
   deleteUser,
   demoteAdmin,
   getUsers,
+  promoteToAdmin,
   toggleUserSuspension,
 } from "@/api/admin";
+import { PasswordConfirmDialog } from "@/components/PasswordConfirmDialog";
 import { ReasonDialog } from "@/components/ReasonDialog";
 import { UserDetailsModal } from "@/components/UserDetailsModal";
 import { ADMIN_USER_KEY, ADMIN_USERS_KEY } from "@/constants";
@@ -66,7 +68,16 @@ export default function Users() {
   };
 
   const run = useMutation({
-    mutationFn: ({ act, reason }: { act: Action; reason: string }) => {
+    mutationFn: ({
+      act,
+      reason = "",
+      password = "",
+    }: {
+      act: Action;
+      reason?: string;
+      password?: string;
+    }) => {
+      if (act.kind === "promote") return promoteToAdmin(act.user.id, password);
       if (act.kind === "demote") return demoteAdmin(act.user.id, reason);
       if (act.kind === "delete") return deleteUser(act.user.id, reason);
       return toggleUserSuspension(act.user.id, !act.user.is_suspended, reason);
@@ -80,6 +91,7 @@ export default function Users() {
           suspend: act.user.is_suspended
             ? `${act.user.email} was unsuspended.`
             : `${act.user.email} was suspended.`,
+          promote: `${act.user.email} is now an admin.`,
           demote: `${act.user.email} is now a customer.`,
           delete: `${act.user.email} was deleted.`,
         }[act.kind],
@@ -247,7 +259,20 @@ export default function Users() {
         onAction={startAction}
       />
 
-      {action && dialog && (
+      {action && dialog && action.kind === "promote" && (
+        <PasswordConfirmDialog
+          open
+          title={dialog.title}
+          description={dialog.description}
+          confirmLabel={dialog.confirmLabel}
+          busyLabel={dialog.busyLabel}
+          tone={dialog.tone}
+          onClose={() => setAction(null)}
+          onConfirm={(password) => run.mutateAsync({ act: action, password })}
+        />
+      )}
+
+      {action && dialog && action.kind !== "promote" && (
         <ReasonDialog
           open
           title={dialog.title}
@@ -295,7 +320,14 @@ function UserRow({
         {isSelf && <span className="ml-2 text-xs text-slate-500">(you)</span>}
       </TableCell>
       <TableCell>{user.email}</TableCell>
-      <TableCell>{ROLE_LABELS[user.role] ?? user.role}</TableCell>
+      <TableCell>
+        {ROLE_LABELS[user.role] ?? user.role}
+        {rules.isOwnerAdmin && (
+          <span className="ml-2">
+            <Badge tone="info">Owner</Badge>
+          </span>
+        )}
+      </TableCell>
       <TableCell>
         <Badge tone={user.is_suspended ? "danger" : "success"}>
           {user.is_suspended ? "Suspended" : "Active"}
@@ -313,6 +345,18 @@ function UserRow({
           >
             {user.is_suspended ? "Unsuspend" : "Suspend"}
           </Button>
+          {rules.showPromote && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={!rules.canPromote}
+              title={rules.promoteHint}
+              onClick={() => onAction("promote")}
+            >
+              Make admin
+            </Button>
+          )}
           {rules.showDemote && (
             <Button
               type="button"

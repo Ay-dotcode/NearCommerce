@@ -51,6 +51,13 @@ export async function demoteAdmin(id: string, reason: string) {
   return response.data;
 }
 
+export async function promoteToAdmin(id: string, password: string) {
+  const response = await apiClient.patch(`/admin/users/${id}/promote`, {
+    password,
+  });
+  return response.data;
+}
+
 export async function deleteUser(id: string, reason: string) {
   const response = await apiClient.delete(`/admin/users/${id}`, {
     data: { reason },

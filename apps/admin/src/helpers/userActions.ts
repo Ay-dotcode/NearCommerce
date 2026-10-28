@@ -1,6 +1,6 @@
 import type { AdminUser, UserRole } from "@/types/admin";
 
-export type UserActionKind = "suspend" | "demote" | "delete";
+export type UserActionKind = "suspend" | "demote" | "delete" | "promote";
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   CUSTOMER: "Customer",
@@ -16,7 +16,15 @@ export function userActionRules(user: AdminUser, isSelf: boolean) {
     suspendHint: isAdmin ? "Demote an admin before suspending" : undefined,
     showDemote: isAdmin,
     canDemote: !isSelf,
-    demoteHint: isSelf ? "Another admin must demote you" : undefined,
+    demoteHint: isSelf
+      ? "Another admin must demote you"
+      : user.is_root_admin
+        ? "Added by the platform owner: only another owner-added admin can demote them"
+        : undefined,
+    showPromote: !isAdmin,
+    canPromote: !user.is_suspended,
+    promoteHint: user.is_suspended ? "Unsuspend this user first" : undefined,
+    isOwnerAdmin: isAdmin && user.is_root_admin === true,
     canDelete: !isAdmin && !isSelf,
     deleteHint: isAdmin
       ? "Demote this admin before deleting the account"
@@ -25,6 +33,15 @@ export function userActionRules(user: AdminUser, isSelf: boolean) {
 }
 
 export function actionDialogCopy(kind: UserActionKind, user: AdminUser) {
+  if (kind === "promote")
+    return {
+      title: `Make ${user.email} an admin?`,
+      description:
+        "They get full access to the admin console: users, stores, reviews and categories. Enter your own password to confirm.",
+      confirmLabel: "Make admin",
+      busyLabel: "Promoting…",
+      tone: "primary" as const,
+    };
   if (kind === "demote")
     return {
       title: `Demote ${user.email}?`,

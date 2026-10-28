@@ -91,7 +91,8 @@ describe("Admin Users: details modal", () => {
     expect(within(dialog).getByText("amy@shop.test")).toBeInTheDocument();
     expect(within(dialog).getByText("Store owner")).toBeInTheDocument();
     expect(within(dialog).getByText("Active")).toBeInTheDocument();
-    expect(within(dialog).getByText("Email verified")).toBeInTheDocument();
+    // Email verification is switched off, so the dialog says nothing about it.
+    expect(within(dialog).queryByText(/email (not )?verified/i)).toBeNull();
     expect(within(dialog).getByText("u1")).toBeInTheDocument();
     // Activity loaded from GET /admin/users/:id
     expect(
@@ -232,5 +233,95 @@ describe("Admin Users: details modal", () => {
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(
       /couldn't load/i,
     );
+  });
+
+  describe("making someone an admin", () => {
+    const openPromote = async () => {
+      renderPage();
+      fireEvent.click(await screen.findByRole("button", { name: "Make admin" }));
+      return screen.findByRole("dialog", { name: /make amy@shop.test an admin/i });
+    };
+
+    it("asks for the admin's own password and sends it to the API", async () => {
+      patch.mockResolvedValue({ data: {} });
+      const dialog = await openPromote();
+      const confirm = within(dialog).getByRole("button", { name: "Make admin" });
+      expect(confirm).toBeDisabled();
+
+      fireEvent.change(within(dialog).getByLabelText("Your password"), {
+        target: { value: "my-admin-pass" },
+      });
+      fireEvent.click(confirm);
+
+      await waitFor(() =>
+        expect(patch).toHaveBeenCalledWith("/admin/users/u1/promote", {
+          password: "my-admin-pass",
+        }),
+      );
+      expect(await screen.findByRole("status")).toHaveTextContent(
+        "amy@shop.test is now an admin.",
+      );
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("keeps the dialog open and shows the server's message when the password is wrong", async () => {
+      patch.mockRejectedValue({
+        isAxiosError: true,
+        response: { status: 403, data: { error: "Incorrect password." } },
+      });
+      const dialog = await openPromote();
+      fireEvent.change(within(dialog).getByLabelText("Your password"), {
+        target: { value: "nope" },
+      });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Make admin" }));
+
+      expect(await within(dialog).findByText("Incorrect password.")).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: /make amy@shop.test an admin/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("is offered from the details modal too", async () => {
+      renderPage();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "View details: Amy Owner" }),
+      );
+      const details = await screen.findByRole("dialog", { name: "User details" });
+      fireEvent.click(within(details).getByRole("button", { name: "Make admin" }));
+      expect(
+        await screen.findByRole("dialog", { name: /make amy@shop.test an admin/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("is not offered for admins, and is disabled for suspended users", async () => {
+      mockApi([user({ id: "a2", role: "SYSTEM_ADMIN", full_name: "Other Admin" })]);
+      renderPage();
+      await screen.findByText("Other Admin");
+      expect(screen.queryByRole("button", { name: "Make admin" })).toBeNull();
+    });
+
+    it("disables it for a suspended user", async () => {
+      mockApi([user({ is_suspended: true })]);
+      renderPage();
+      expect(await screen.findByRole("button", { name: "Make admin" })).toBeDisabled();
+    });
+
+    it("marks admins added by the owner and explains why they cannot be demoted by others", async () => {
+      mockApi([
+        user({
+          id: "root-2",
+          role: "SYSTEM_ADMIN",
+          full_name: "Owner Admin",
+          is_root_admin: true,
+        }),
+      ]);
+      renderPage();
+      await screen.findByText("Owner Admin");
+      expect(screen.getByText("Owner")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Demote" })).toHaveAttribute(
+        "title",
+        expect.stringMatching(/platform owner/i),
+      );
+    });
   });
 });

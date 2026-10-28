@@ -7,6 +7,8 @@ export interface AdminUser {
   full_name: string;
   role: UserRole;
   is_suspended: boolean;
+  // True for admins added from the server (pnpm add-admin); other admins cannot change them.
+  is_root_admin?: boolean;
   email_verified_at?: string | null;
   created_at: string;
   updated_at: string;
