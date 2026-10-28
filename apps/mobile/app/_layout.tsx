@@ -75,7 +75,7 @@ function AppShell() {
     <View style={styles.root}>
       {!isLoading && (
         <>
-          {onboarding.loaded && !onboarding.firstRun && (
+          {onboarding.loaded && !onboarding.firstRun && Boolean(token) && (
             <LocationLayer signedIn={Boolean(token)} />
           )}
 

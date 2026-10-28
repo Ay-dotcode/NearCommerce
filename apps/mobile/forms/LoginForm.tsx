@@ -6,17 +6,22 @@ import {
   FormPasswordField,
   FormTextField,
 } from "@/components/ui";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { loginInitialValues, loginSchema } from "@/forms/login.form";
 import { useAuth } from "@/src/context/AuthContext";
 import { useOptionalSettings } from "@/src/context/SettingsContext";
 import { apiClient, type AuthResponse } from "@nearcommerce/api";
 import { router } from "expo-router";
 import { FormikProvider, useFormik } from "formik";
-import { Alert } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 
 export function LoginForm() {
   const { login } = useAuth();
   const settings = useOptionalSettings();
+  const styles = useThemedStyles(makeStyles);
+  const [forgotSheetVisible, setForgotSheetVisible] = useState(false);
 
   const formik = useFormik({
     initialValues: loginInitialValues,
@@ -42,18 +47,7 @@ export function LoginForm() {
   });
 
   const handleForgotPassword = () => {
-    if (settings?.openSupport) {
-      Alert.alert(
-        "Password Reset Disabled",
-        "Password reset is disabled on this mock app. Please contact support to recover your account.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Contact Support", onPress: settings.openSupport },
-        ],
-      );
-    } else {
-      router.push("/(auth)/forgot-password");
-    }
+    setForgotSheetVisible(true);
   };
 
   const failed = Boolean(formik.status?.form);
@@ -113,6 +107,50 @@ export function LoginForm() {
           onPress={() => router.push("/(auth)/register")}
         />
       </FormikProvider>
+
+      {/* Themed bottom sheet — matches every other pop-up in the app */}
+      <BottomSheet
+        testID="forgot-password-sheet"
+        visible={forgotSheetVisible}
+        onClose={() => setForgotSheetVisible(false)}
+        title="Password Reset Disabled"
+        description="Password reset via email is not available on this version of the app."
+      >
+        <View style={styles.sheetBody}>
+          <Text style={styles.sheetText}>
+            To recover access to your account please contact our support team.
+            They will verify your identity and reset your password manually.
+          </Text>
+
+          {settings?.openSupport && (
+            <Button
+              testID="forgot-contact-support-button"
+              title="Contact support"
+              onPress={() => {
+                setForgotSheetVisible(false);
+                settings.openSupport();
+              }}
+            />
+          )}
+
+          <Button
+            testID="forgot-sheet-close-button"
+            title="Close"
+            variant="secondary"
+            onPress={() => setForgotSheetVisible(false)}
+          />
+        </View>
+      </BottomSheet>
     </>
   );
 }
+
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    sheetBody: { gap: 12, paddingBottom: 8 },
+    sheetText: {
+      color: c.textSecondary,
+      fontSize: 14,
+      lineHeight: 22,
+    },
+  });

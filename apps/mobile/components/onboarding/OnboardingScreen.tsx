@@ -224,22 +224,34 @@ export default function OnboardingScreen({ onFinish }: Props) {
         >
           {SLIDES.map((slide, i) => {
             const range = [(i - 1) * width, i * width, (i + 1) * width];
+            // `width` is not supported by the native animated module, so we
+            // animate scaleX on a fixed-width view instead. The dot's visual
+            // width expands from 8 px (inactive) to 24 px (active) by scaling
+            // around the left edge (via a translateX offset) — no layout pass.
+            const scaleX = scrollX.interpolate({
+              inputRange: range,
+              outputRange: [1, 3, 1], // 8 px × 3 = 24 px at active position
+              extrapolate: "clamp",
+            });
+            const opacity = scrollX.interpolate({
+              inputRange: range,
+              outputRange: [0.35, 1, 0.35],
+              extrapolate: "clamp",
+            });
+            // Shift right so the dot appears to grow from its left edge
+            const translateX = scrollX.interpolate({
+              inputRange: range,
+              outputRange: [0, 8, 0], // (24-8)/2 = 8 px offset
+              extrapolate: "clamp",
+            });
             return (
               <Animated.View
                 key={slide.id}
                 style={[
                   styles.dot,
                   {
-                    width: scrollX.interpolate({
-                      inputRange: range,
-                      outputRange: [8, 24, 8],
-                      extrapolate: "clamp",
-                    }),
-                    opacity: scrollX.interpolate({
-                      inputRange: range,
-                      outputRange: [0.35, 1, 0.35],
-                      extrapolate: "clamp",
-                    }),
+                    opacity,
+                    transform: [{ translateX }, { scaleX }],
                   },
                 ]}
               />

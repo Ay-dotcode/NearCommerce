@@ -205,22 +205,14 @@ describe("LoginScreen", () => {
     );
   });
 
-  it("alerts that password reset is disabled when forgot-password is clicked", () => {
-    const alert = jest.spyOn(require("react-native").Alert, "alert");
-    const { getByTestId } = render(
+  it("opens the themed forgot-password sheet when forgot-password is clicked", async () => {
+    const { getByTestId, findByTestId } = render(
       <AuthProvider>
         <LoginScreen />
       </AuthProvider>,
     );
     fireEvent.press(getByTestId("forgot-password-link"));
-    expect(alert).toHaveBeenCalledWith(
-      "Password Reset Disabled",
-      expect.stringMatching(/disabled on this mock app/i),
-      expect.arrayContaining([
-        expect.objectContaining({ text: "Contact Support" }),
-      ]),
-    );
-    alert.mockRestore();
+    expect(await findByTestId("forgot-password-sheet")).toBeTruthy();
   });
 
   it("offers Contact support to a suspended account, and it opens support", async () => {
