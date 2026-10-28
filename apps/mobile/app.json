@@ -6,11 +6,6 @@
     "scheme": "nearcommerce",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#2563EB"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.nearcommerce.app"
@@ -26,7 +21,16 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#2563EB"
+        }
+      ]
     ],
     "runtimeVersion": {
       "policy": "appVersion"
