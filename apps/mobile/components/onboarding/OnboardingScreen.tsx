@@ -202,11 +202,6 @@ export default function OnboardingScreen({ onFinish }: Props) {
               <View style={styles.tips}>
                 {slide.tips.map((tip) => (
                   <View key={tip} style={styles.tipRow}>
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={c.primary}
-                    />
                     <Text style={styles.tip}>{tip}</Text>
                   </View>
                 ))}
@@ -350,7 +345,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     tips: { marginTop: 18, gap: 10, alignSelf: "center", maxWidth: 340 },
     tipRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
-    tip: { flex: 1, color: c.text, fontSize: 14, lineHeight: 20 },
+    tip: { color: c.textSecondary, fontSize: 14, lineHeight: 20, textAlign: "center" },
     footer: {
       paddingHorizontal: 24,
       paddingBottom: 16,
