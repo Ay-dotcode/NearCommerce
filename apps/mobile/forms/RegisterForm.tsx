@@ -10,7 +10,6 @@ import { useAuth } from "@/src/context/AuthContext";
 import { apiClient, type AuthResponse } from "@nearcommerce/api";
 import { router } from "expo-router";
 import { FormikProvider, useFormik } from "formik";
-import Toast from "react-native-toast-message";
 
 export function RegisterForm() {
   const { login } = useAuth();
@@ -23,7 +22,7 @@ export function RegisterForm() {
       helpers.setStatus(undefined);
       const email = values.email.trim().toLowerCase();
       try {
-        // Register; the backend emails a verification link
+        // Register. There is no email verification step: the account works straight away.
         await apiClient.post("/auth/register", {
           full_name: values.fullName.trim(),
           email,
@@ -35,11 +34,6 @@ export function RegisterForm() {
           password: values.password,
         });
         await login(res.data.access_token, res.data.refresh_token);
-        Toast.show({
-          type: "info",
-          text1: "Check your email",
-          text2: "Tap the link we sent to verify your account.",
-        });
         router.replace("/(tabs)");
       } catch (err: any) {
         const message =

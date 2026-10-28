@@ -1,16 +1,9 @@
-import { apiErrorMessage } from "@/api/errors";
 import AuthLink from "@/components/auth/AuthLink";
-import { Button, FormError, FormTextField } from "@/components/ui";
-import {
-  forgotPasswordInitialValues,
-  forgotPasswordSchema,
-} from "@/forms/forgotPassword.form";
+import { Button } from "@/components/ui";
+import { useOptionalSettings } from "@/src/context/SettingsContext";
 import { useThemedStyles, type ThemeColors } from "@/theme";
-import { apiClient } from "@nearcommerce/api";
 import { router } from "expo-router";
-import { FormikProvider, useFormik } from "formik";
-import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 
 export function ForgotPasswordForm({
   onSentChange,
@@ -19,74 +12,34 @@ export function ForgotPasswordForm({
   onSentChange?: (sent: boolean) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
-  const [sent, setSent] = useState(false);
+  const settings = useOptionalSettings();
 
-  const formik = useFormik({
-    initialValues: forgotPasswordInitialValues,
-    validationSchema: forgotPasswordSchema,
-    validateOnChange: false,
-    onSubmit: async ({ email }, helpers) => {
-      helpers.setStatus(undefined);
-      try {
-        await apiClient.post("/auth/forgot-password", {
-          email: email.trim().toLowerCase(),
-        });
-        setSent(true);
-        onSentChange?.(true);
-      } catch (err) {
-        const status = (err as { response?: { status?: number } })?.response
-          ?.status;
-        helpers.setStatus({
-          form:
-            status === 429
-              ? "Too many requests. Please wait a few minutes and try again."
-              : apiErrorMessage(
-                  err,
-                  "We couldn't send the reset link. Please try again.",
-                ),
-        });
-      }
-    },
-  });
+  const handleContactSupport = () => {
+    if (settings?.openSupport) {
+      settings.openSupport();
+    } else {
+      Alert.alert(
+        "Contact Support",
+        "Please contact support via the web portal or your administrator.",
+      );
+    }
+  };
 
   return (
     <>
-      {sent ? (
-        <View style={styles.success} accessibilityRole="alert">
-          <Text style={styles.successTitle}>Check your email</Text>
-          <Text style={styles.successBody}>
-            If that email is registered, a reset link is on its way. It works
-            for one hour.
-          </Text>
-          <AuthLink
-            testID="have-token-link"
-            label="I have a reset code"
-            align="flex-end"
-            onPress={() => router.replace("/(auth)/reset-password")}
-          />
-        </View>
-      ) : (
-        <FormikProvider value={formik}>
-          <FormTextField
-            name="email"
-            testID="email-input"
-            label="Email"
-            placeholder="you@example.com"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-            returnKeyType="send"
-            onSubmitEditing={() => formik.handleSubmit()}
-          />
-          <FormError message={formik.status?.form} />
-          <Button
-            testID="send-reset-button"
-            title="Send reset link"
-            loading={formik.isSubmitting}
-            onPress={() => formik.handleSubmit()}
-          />
-        </FormikProvider>
-      )}
+      <View style={styles.disabledBox} accessibilityRole="alert">
+        <Text style={styles.disabledTitle}>Password Reset Disabled</Text>
+        <Text style={styles.disabledBody}>
+          Password reset via email is disabled on this mock app. Please contact
+          support to recover access to your account.
+        </Text>
+        <Button
+          testID="contact-support-button"
+          title="Contact support"
+          variant="secondary"
+          onPress={handleContactSupport}
+        />
+      </View>
 
       <AuthLink
         label="Back to sign in"
@@ -98,6 +51,24 @@ export function ForgotPasswordForm({
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    disabledBox: {
+      backgroundColor: c.primarySoft,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+    },
+    disabledTitle: {
+      color: c.text,
+      fontSize: 16,
+      fontWeight: "800",
+      marginBottom: 6,
+    },
+    disabledBody: {
+      color: c.textMuted,
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 14,
+    },
     success: {
       backgroundColor: c.successSoft,
       borderRadius: 12,
@@ -112,3 +83,4 @@ const makeStyles = (c: ThemeColors) =>
     },
     successBody: { color: c.successText, marginBottom: 8 },
   });
+

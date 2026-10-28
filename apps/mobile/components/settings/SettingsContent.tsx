@@ -1,5 +1,4 @@
 import { apiErrorMessage } from "@/api/errors";
-import VerifyEmailPrompt from "@/components/VerifyEmailPrompt";
 import { Button, SegmentedControl, Slider, useDialogs } from "@/components/ui";
 import {
   AVOID_TOLLS_KEY,
@@ -130,8 +129,6 @@ export default function SettingsContent({
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <VerifyEmailPrompt />
-
       <Text style={styles.section}>Search distance</Text>
       <View style={styles.card}>
         <View style={styles.rowBetween}>

@@ -2,6 +2,7 @@ import RegisterScreen from "@/app/(auth)/register";
 import { apiClient } from "@nearcommerce/api";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
 
 const mockLogin = jest.fn();
 jest.mock("@/src/context/AuthContext", () => ({
@@ -80,6 +81,9 @@ describe("RegisterScreen", () => {
       email: "jane@example.com",
       password: "password123",
     });
+    // No email-verification step: nothing tells the shopper to check their inbox.
+    expect(Toast.show).not.toHaveBeenCalled();
+    expect(post).toHaveBeenCalledTimes(2);
   });
 
   it("puts a taken email on the email field, not in a pop-up", async () => {

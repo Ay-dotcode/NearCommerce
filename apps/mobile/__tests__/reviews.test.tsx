@@ -258,7 +258,6 @@ describe("ReviewScreen", () => {
   });
 
   it.each([
-    [403, "EMAIL_NOT_VERIFIED", /verify your email/i],
     [403, undefined, /own store/i],
     [409, undefined, /already reviewed/i],
   ])("explains a %s response (%s)", async (status, code, message) => {

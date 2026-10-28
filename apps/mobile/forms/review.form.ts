@@ -25,11 +25,7 @@ export function reviewErrorMessage(
   err: unknown,
   fallback: (err: unknown) => string,
 ): string {
-  const response = (
-    err as { response?: { status?: number; data?: { code?: string } } }
-  )?.response;
-  if (response?.data?.code === "EMAIL_NOT_VERIFIED")
-    return "Verify your email to submit reviews. You can resend the link from Settings.";
+  const response = (err as { response?: { status?: number } })?.response;
   if (response?.status === 409)
     return "You've already reviewed this. Open your review and choose Edit.";
   return fallback(err);

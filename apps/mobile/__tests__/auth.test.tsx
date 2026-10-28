@@ -129,37 +129,15 @@ describe("AuthProvider token refresh", () => {
 });
 
 describe("ForgotPasswordScreen", () => {
-  it("rejects an invalid email without calling the API", async () => {
+  it("renders feature disabled message and contact support button", async () => {
     const { getByTestId, findByText } = render(<ForgotPasswordScreen />);
-    fireEvent.changeText(getByTestId("email-input"), "nope");
-    fireEvent.press(getByTestId("send-reset-button"));
-    expect(await findByText("Enter a valid email address.")).toBeTruthy();
-    expect(post).not.toHaveBeenCalled();
-  });
-
-  it("sends a normalised email and shows the neutral confirmation", async () => {
-    post.mockResolvedValue({ data: {} });
-    const { getByTestId, findByText } = render(<ForgotPasswordScreen />);
-    fireEvent.changeText(getByTestId("email-input"), "  Jane@Example.com ");
-    fireEvent.press(getByTestId("send-reset-button"));
-    await waitFor(() =>
-      expect(post).toHaveBeenCalledWith("/auth/forgot-password", {
-        email: "jane@example.com",
-      }),
-    );
-    expect(await findByText("Check your email")).toBeTruthy();
-    fireEvent.press(getByTestId("have-token-link"));
-    expect(router.replace).toHaveBeenCalledWith("/(auth)/reset-password");
-  });
-
-  it("explains rate limiting", async () => {
-    post.mockRejectedValue({
-      response: { status: 429, data: { error: "Too many" } },
-    });
-    const { getByTestId, findByText } = render(<ForgotPasswordScreen />);
-    fireEvent.changeText(getByTestId("email-input"), "a@b.co");
-    fireEvent.press(getByTestId("send-reset-button"));
-    expect(await findByText(/too many requests/i)).toBeTruthy();
+    expect(await findByText("Password Reset Disabled")).toBeTruthy();
+    expect(
+      await findByText(
+        /password reset via email is disabled on this mock app/i,
+      ),
+    ).toBeTruthy();
+    expect(getByTestId("contact-support-button")).toBeTruthy();
   });
 });
 

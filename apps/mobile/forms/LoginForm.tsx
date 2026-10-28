@@ -12,6 +12,7 @@ import { useOptionalSettings } from "@/src/context/SettingsContext";
 import { apiClient, type AuthResponse } from "@nearcommerce/api";
 import { router } from "expo-router";
 import { FormikProvider, useFormik } from "formik";
+import { Alert } from "react-native";
 
 export function LoginForm() {
   const { login } = useAuth();
@@ -39,6 +40,21 @@ export function LoginForm() {
       }
     },
   });
+
+  const handleForgotPassword = () => {
+    if (settings?.openSupport) {
+      Alert.alert(
+        "Password Reset Disabled",
+        "Password reset is disabled on this mock app. Please contact support to recover your account.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Contact Support", onPress: settings.openSupport },
+        ],
+      );
+    } else {
+      router.push("/(auth)/forgot-password");
+    }
+  };
 
   const failed = Boolean(formik.status?.form);
 
@@ -71,7 +87,7 @@ export function LoginForm() {
           testID="forgot-password-link"
           label="Forgot password?"
           align="flex-end"
-          onPress={() => router.push("/(auth)/forgot-password")}
+          onPress={handleForgotPassword}
         />
 
         <FormError message={formik.status?.form} />

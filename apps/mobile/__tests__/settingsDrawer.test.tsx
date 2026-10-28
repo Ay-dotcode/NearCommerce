@@ -12,7 +12,6 @@ import { Linking, Pressable, Text } from "react-native";
 jest.mock("@/src/context/AuthContext", () => ({
   useAuth: () => ({ logout: jest.fn(), token: "t" }),
 }));
-jest.mock("@/components/VerifyEmailPrompt", () => () => null);
 jest.mock("@nearcommerce/api", () => ({
   ...jest.requireActual("@nearcommerce/api"),
   getSupportChannels: jest.fn(),
