@@ -225,7 +225,10 @@ describe("POST /auth/logout", () => {
   });
 });
 
-describe("password reset interaction", () => {
+// Kept as describe.skip since password reset is disabled on this mock app (POST
+// /auth/reset-password answers 501). Do NOT delete it. To re-enable: change
+// `describe.skip` → `describe`.
+describe.skip("password reset interaction", () => {
   it("a password reset signs out every refresh token", async () => {
     const first = await login();
     const raw = "reset-token-for-refresh-test";
