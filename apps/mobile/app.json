@@ -2,7 +2,7 @@
   "expo": {
     "name": "Near Commerce",
     "slug": "nearcommerce",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "scheme": "nearcommerce",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -30,7 +30,21 @@
           "resizeMode": "contain",
           "backgroundColor": "#2563EB"
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Near Commerce uses your location to show shops near you."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2563EB"
+        }
+      ],
+      "expo-live-activity"
     ],
     "runtimeVersion": {
       "policy": "appVersion"

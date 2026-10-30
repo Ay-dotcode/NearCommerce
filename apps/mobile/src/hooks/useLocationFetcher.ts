@@ -4,6 +4,7 @@ import {
   loadManualLocation,
   subscribeManualLocation,
 } from "@/helpers/location";
+import { withLocationIndicator } from "@/helpers/locationIndicator";
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
 
@@ -52,7 +53,9 @@ export function useLocationFetcher() {
       }
 
       try {
-        const fetched = await Location.getCurrentPositionAsync({});
+        const fetched = await withLocationIndicator(() =>
+          Location.getCurrentPositionAsync({}),
+        );
         if (active) setGps(fetched);
       } catch {
         if (active) setErrorMsg("Couldn't read your location");

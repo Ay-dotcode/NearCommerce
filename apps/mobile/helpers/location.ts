@@ -2,6 +2,7 @@ import { POSTAL_CODE_PATTERN } from "@/constants";
 import type { Coords, ManualLocation } from "@/types/location";
 import { PostalCodeError } from "@/types/location";
 import { formatPlaceName } from "@/helpers/placeName";
+import { withLocationIndicator } from "@/helpers/locationIndicator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import Toast from "react-native-toast-message";
@@ -92,19 +93,9 @@ export function pollSessionLocation() {
 }
 
 async function fetchSessionLocation() {
-  let keepErrorToastVisible = false;
-  Toast.show({
-    type: "info",
-    text1: "Locating Stores",
-    text2: "Fetching your precise location for accurate distances...",
-    autoHide: false,
-  });
-
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== Location.PermissionStatus.GRANTED) {
-      keepErrorToastVisible = true;
-      Toast.hide();
       Toast.show({
         type: "error",
         text1: "Permission Denied",
@@ -113,15 +104,15 @@ async function fetchSessionLocation() {
       return null;
     }
 
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
+    const location = await withLocationIndicator(() =>
+      Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      }),
+    );
     sessionLocation = location.coords;
     return sessionLocation;
   } catch {
     return null;
-  } finally {
-    if (!keepErrorToastVisible) Toast.hide();
   }
 }
 
@@ -161,9 +152,11 @@ export async function switchToDeviceLocation(): Promise<DeviceLocationResult> {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== Location.PermissionStatus.GRANTED)
       return { ok: false, reason: "denied" };
-    const position = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
+    const position = await withLocationIndicator(() =>
+      Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      }),
+    );
     sessionLocation = position.coords;
     // Later readers of the session location get this fresh position, not an old failed lookup.
     locationRequest = Promise.resolve(sessionLocation);

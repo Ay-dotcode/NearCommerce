@@ -20,15 +20,40 @@ export function buildMapsUrl(
   });
 }
 
-// Hands off to the phone's maps app. Returns false when no app could open the link.
+// The https directions link. Every phone can open it: the Maps app takes it if there is one,
+// the browser otherwise.
+export function buildWebMapsUrl(
+  latitude: number,
+  longitude: number,
+  avoidTolls = false,
+) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}${avoidTolls ? "&avoid=tolls" : ""}`;
+}
+
+// Hands off to the phone's maps app. Returns false only when nothing at all could open it.
+//
+// Do not gate this on Linking.canOpenURL: since Android 11 (package visibility) and on iOS
+// without LSApplicationQueriesSchemes it answers false for geo: / google.navigation: / maps:
+// links even when a maps app is installed, which made release builds report "no maps app
+// available". Just try to open, and fall back to the https link if that fails.
 export async function openNativeMaps(
   latitude: number,
   longitude: number,
   label: string,
 ): Promise<boolean> {
   const avoidTolls = (await AsyncStorage.getItem(AVOID_TOLLS_KEY)) === "true";
-  const url = buildMapsUrl(latitude, longitude, label, avoidTolls);
-  if (!url || !(await Linking.canOpenURL(url))) return false;
-  await Linking.openURL(url);
-  return true;
+  const candidates = [
+    buildMapsUrl(latitude, longitude, label, avoidTolls),
+    buildWebMapsUrl(latitude, longitude, avoidTolls),
+  ].filter((url, index, all): url is string => !!url && all.indexOf(url) === index);
+
+  for (const url of candidates) {
+    try {
+      await Linking.openURL(url);
+      return true;
+    } catch {
+      // No app handles this link: try the next one.
+    }
+  }
+  return false;
 }

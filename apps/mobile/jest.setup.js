@@ -14,3 +14,10 @@ jest.mock(
 jest.mock("expo-clipboard", () => ({
   setStringAsync: jest.fn(() => Promise.resolve(true)),
 }));
+
+// The "using your location" indicator talks to native notification / Live Activity modules that
+// don't exist in Jest. Screens only need to know it was started; its own test uses the real one.
+jest.mock("@/helpers/locationIndicator", () => ({
+  startLocationIndicator: jest.fn(() => jest.fn(() => Promise.resolve())),
+  withLocationIndicator: jest.fn((task) => task()),
+}));

@@ -9,7 +9,9 @@ import {
   loadManualLocation,
   resolvePostalCode,
   setManualLocation,
+  switchToDeviceLocation,
 } from "@/helpers/location";
+import { withLocationIndicator } from "@/helpers/locationIndicator";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -362,5 +364,74 @@ describe("Using the device location from settings", () => {
     expect(
       await findByText("Using your device location · Nicosia, Cyprus"),
     ).toBeTruthy();
+  });
+});
+
+describe("Telling the shopper the location is being read", () => {
+  const granted = () => {
+    loc.requestForegroundPermissionsAsync.mockResolvedValue({ status: "granted" });
+    loc.getCurrentPositionAsync.mockResolvedValue({
+      coords: { latitude: 35.17, longitude: 33.36 },
+    });
+  };
+  const noLocatingPopup = () =>
+    expect(Toast.show).not.toHaveBeenCalledWith(
+      expect.objectContaining({ text1: "Locating Stores" }),
+    );
+
+  it("uses the system indicator, not a pop-up, when the session location is read", async () => {
+    granted();
+    // Fresh module: the session location is cached after the first read.
+    await jest.isolateModulesAsync(async () => {
+      const fresh = require("@/helpers/location");
+      const freshIndicator = require("@/helpers/locationIndicator");
+      const freshToast = require("react-native-toast-message").default;
+      const freshLoc = require("expo-location");
+      freshLoc.requestForegroundPermissionsAsync.mockResolvedValue({
+        status: "granted",
+      });
+      freshLoc.getCurrentPositionAsync.mockResolvedValue({
+        coords: { latitude: 35.17, longitude: 33.36 },
+      });
+
+      await expect(fresh.pollSessionLocation()).resolves.toMatchObject({
+        latitude: 35.17,
+      });
+      expect(freshIndicator.withLocationIndicator).toHaveBeenCalledTimes(1);
+      expect(freshToast.show).not.toHaveBeenCalled();
+    });
+  });
+
+  it("does not show the indicator when permission is denied (nothing is read)", async () => {
+    await jest.isolateModulesAsync(async () => {
+      const fresh = require("@/helpers/location");
+      const freshIndicator = require("@/helpers/locationIndicator");
+      const freshToast = require("react-native-toast-message").default;
+      const freshLoc = require("expo-location");
+      freshLoc.requestForegroundPermissionsAsync.mockResolvedValue({
+        status: "denied",
+      });
+
+      await expect(fresh.pollSessionLocation()).resolves.toBeNull();
+      expect(freshIndicator.withLocationIndicator).not.toHaveBeenCalled();
+      expect(freshToast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "error", text1: "Permission Denied" }),
+      );
+    });
+  });
+
+  it("uses the indicator when the hook reads the GPS position", async () => {
+    granted();
+    const { result } = renderHook(() => useLocationFetcher());
+    await waitFor(() => expect(result.current.location).not.toBeNull());
+    expect(withLocationIndicator).toHaveBeenCalled();
+    noLocatingPopup();
+  });
+
+  it("uses the indicator when switching back to the device location", async () => {
+    granted();
+    await expect(switchToDeviceLocation()).resolves.toMatchObject({ ok: true });
+    expect(withLocationIndicator).toHaveBeenCalledTimes(1);
+    noLocatingPopup();
   });
 });
