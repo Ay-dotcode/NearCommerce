@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "test": "jest --runInBand --detectOpenHandles --forceExit --silent"
   },
   "main": "expo-router/entry",
@@ -20,6 +20,7 @@
     "expo-blur": "~57.0.3",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.22",
+    "expo-dev-client": "~57.0.20",
     "expo-font": "~57.0.4",
     "expo-image-manipulator": "~57.0.21",
     "expo-image-picker": "~57.0.20",
