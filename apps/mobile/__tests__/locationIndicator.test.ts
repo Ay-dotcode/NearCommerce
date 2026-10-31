@@ -19,7 +19,12 @@ const mockLiveActivity = {
   ),
   stopActivity: jest.fn(),
 };
+const mockVoltra = {
+  upsertAndroidOngoingNotification: jest.fn(),
+  stopAndroidOngoingNotification: jest.fn(async () => ({ ok: true })),
+};
 jest.mock("expo-notifications", () => mockNotifications);
+jest.mock("@use-voltra/android-client", () => mockVoltra);
 jest.mock("expo-live-activity", () => mockLiveActivity);
 
 import {
@@ -46,6 +51,10 @@ beforeEach(() => {
     canAskAgain: true,
   });
   mockLiveActivity.startActivity.mockReturnValue("activity-1");
+  // Default: Live Updates unavailable, so Android tests below exercise the plain notification.
+  mockVoltra.upsertAndroidOngoingNotification.mockRejectedValue(
+    new Error("no native module"),
+  );
 });
 
 afterEach(() => {
@@ -170,6 +179,78 @@ describe("on Android", () => {
       "coords",
     );
     await flush();
+  });
+});
+
+describe("on Android, as an Android 16 Live Update", () => {
+  beforeEach(() => {
+    setOS("android");
+    mockVoltra.upsertAndroidOngoingNotification.mockResolvedValue({
+      ok: true,
+      notificationId: "nearcommerce-location-status",
+      action: "started",
+    });
+  });
+
+  it("posts a promoted ongoing progress notification instead of a plain one", async () => {
+    const stop = startLocationIndicator();
+    await flush();
+
+    // The channel has to exist before Voltra can post to it.
+    expect(mockNotifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+      LOCATION_CHANNEL_ID,
+      expect.anything(),
+    );
+    const [payload, options] =
+      mockVoltra.upsertAndroidOngoingNotification.mock.calls[0];
+    expect(payload).toMatchObject({
+      kind: "progress",
+      title: LOCATION_INDICATOR_TITLE,
+      indeterminate: true,
+    });
+    expect(payload.shortCriticalText.length).toBeLessThanOrEqual(7);
+    expect(options).toMatchObject({
+      channelId: LOCATION_CHANNEL_ID,
+      requestPromotedOngoing: true,
+      fallbackBehavior: "standard",
+    });
+    expect(mockNotifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+    const stopped = stop();
+    await flush();
+    jest.advanceTimersByTime(MIN_VISIBLE_MS);
+    await stopped;
+    expect(mockVoltra.stopAndroidOngoingNotification).toHaveBeenCalledWith(
+      "nearcommerce-location-status",
+    );
+  });
+
+  it("falls back to a plain notification when Live Updates refuse", async () => {
+    mockVoltra.upsertAndroidOngoingNotification.mockResolvedValue({
+      ok: false,
+      reason: "already_exists",
+    });
+    const stop = startLocationIndicator();
+    await flush();
+    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+    const stopped = stop();
+    await flush();
+    jest.advanceTimersByTime(MIN_VISIBLE_MS);
+    await stopped;
+    expect(mockVoltra.stopAndroidOngoingNotification).not.toHaveBeenCalled();
+    expect(mockNotifications.dismissNotificationAsync).toHaveBeenCalled();
+  });
+
+  it("does not post anything when notifications are blocked (Live Updates need the permission too)", async () => {
+    mockNotifications.getPermissionsAsync.mockResolvedValue({
+      granted: false,
+      canAskAgain: false,
+    });
+    const stop = startLocationIndicator();
+    await flush();
+    await stop();
+    expect(mockVoltra.upsertAndroidOngoingNotification).not.toHaveBeenCalled();
+    expect(mockNotifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 });
 

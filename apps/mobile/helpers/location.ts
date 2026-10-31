@@ -104,6 +104,8 @@ async function fetchSessionLocation() {
       return null;
     }
 
+    // The shopper is told through a system notification / Live Activity (not an in-app
+    // pop-up) while the phone's location is being read.
     const location = await withLocationIndicator(() =>
       Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,

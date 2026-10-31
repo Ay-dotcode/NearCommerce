@@ -1,3 +1,4 @@
+import { Linking } from "react-native";
 import SearchScreen from "@/app/(tabs)/search";
 import { pickPhoto } from "@/helpers/photo";
 import { renderWithClient } from "@/testing/render";
@@ -123,6 +124,15 @@ describe("SearchScreen photo search", () => {
     fireEvent.press(getByLabelText("Search by photo"));
     expect(await findByText(/camera access is off/i)).toBeTruthy();
     expect(post).not.toHaveBeenCalled();
+  });
+
+  it("lets the shopper open the phone's settings after refusing the camera", async () => {
+    const openSettings = jest.spyOn(Linking, "openSettings").mockResolvedValue();
+    pick.mockResolvedValue("denied");
+    const { getByLabelText, findByTestId } = renderWithClient(<SearchScreen />);
+    fireEvent.press(getByLabelText("Search by photo"));
+    fireEvent.press(await findByTestId("open-app-settings"));
+    expect(openSettings).toHaveBeenCalledTimes(1);
   });
 
   it("says when no product was spotted, and keeps photo search available", async () => {

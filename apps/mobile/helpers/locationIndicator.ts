@@ -1,5 +1,17 @@
 import { Platform } from "react-native";
 
+// Tells the shopper, outside the app's own UI, that the app is reading their location.
+//   iOS:     a Live Activity (lock screen, and the Dynamic Island on iPhones that have one).
+//   Android: an ongoing notification posted as an Android 16 "Live Update" (promoted ongoing
+//            notification). Android itself has no Dynamic Island; what shows up is the status-bar
+//            chip on Android 16 (Pixel) and Xiaomi's Hyper Island on HyperOS 3.1+, which both
+//            render Live Updates. Where Live Updates aren't available (older Android, the
+//            shopper switched them off, the module is missing) it is a plain ongoing
+//            notification instead.
+// It replaces the in-app "Locating Stores" pop-up. Nothing here may ever break a location read,
+// so every native call is guarded, and the native modules are loaded lazily: Expo Go, old
+// development builds and the Jest environment don't all have them.
+
 export const LOCATION_CHANNEL_ID = "location-status";
 export const LOCATION_NOTIFICATION_ID = "nearcommerce-location-status";
 export const LOCATION_INDICATOR_TITLE = "Getting your location";
@@ -10,6 +22,10 @@ export const LOCATION_INDICATOR_DONE_BODY = "Showing shops near you.";
 export const MIN_VISIBLE_MS = 2000;
 
 const BRAND_BLUE = "#2563EB";
+// Drawable generated from assets/notification-icon.png by the expo-notifications config plugin.
+const ANDROID_SMALL_ICON = "notification_icon";
+// Shown in the status-bar chip of a Live Update. Android advises 7 characters or fewer.
+const CHIP_TEXT = "Finding";
 
 type ActiveIndicator = { shownAt: number; end: () => Promise<void> };
 
@@ -21,6 +37,14 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 function loadNotifications(): typeof import("expo-notifications") | null {
   try {
     return require("expo-notifications");
+  } catch {
+    return null;
+  }
+}
+
+function loadVoltra(): typeof import("@use-voltra/android-client") | null {
+  try {
+    return require("@use-voltra/android-client");
   } catch {
     return null;
   }
@@ -59,17 +83,49 @@ async function showLiveActivity(): Promise<ActiveIndicator | null> {
   };
 }
 
-async function showAndroidNotification(): Promise<ActiveIndicator | null> {
-  const Notifications = loadNotifications();
-  if (!Notifications) return null;
+// Android 16 Live Update. Returns null when it can't be posted, so the caller falls back to a
+// plain notification.
+async function showAndroidLiveUpdate(): Promise<ActiveIndicator | null> {
+  const Voltra = loadVoltra();
+  if (!Voltra) return null;
+  try {
+    const result = await Voltra.upsertAndroidOngoingNotification(
+      {
+        v: 1,
+        kind: "progress",
+        title: LOCATION_INDICATOR_TITLE,
+        text: LOCATION_INDICATOR_BODY,
+        value: 0,
+        max: 100,
+        indeterminate: true,
+        shortCriticalText: CHIP_TEXT,
+      },
+      {
+        notificationId: LOCATION_NOTIFICATION_ID,
+        channelId: LOCATION_CHANNEL_ID,
+        smallIcon: ANDROID_SMALL_ICON,
+        deepLinkUrl: "nearcommerce://",
+        color: BRAND_BLUE,
+        requestPromotedOngoing: true,
+        // Below Android 16 (or with Live Updates off) post it as a normal ongoing notification.
+        fallbackBehavior: "standard",
+      },
+    );
+    if (!result.ok) return null;
+    return {
+      shownAt: Date.now(),
+      end: async () => {
+        await Voltra.stopAndroidOngoingNotification(LOCATION_NOTIFICATION_ID);
+      },
+    };
+  } catch {
+    return null;
+  }
+}
 
-  // Android 13+ needs the notification permission. Without it the indicator is skipped quietly
-  // (the location read itself must carry on).
-  let permission = await Notifications.getPermissionsAsync();
-  if (!permission.granted && permission.canAskAgain)
-    permission = await Notifications.requestPermissionsAsync();
-  if (!permission.granted) return null;
-
+async function showPlainNotification(
+  Notifications: typeof import("expo-notifications"),
+): Promise<ActiveIndicator | null> {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: false,
@@ -77,14 +133,6 @@ async function showAndroidNotification(): Promise<ActiveIndicator | null> {
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),
-  });
-  await Notifications.setNotificationChannelAsync(LOCATION_CHANNEL_ID, {
-    name: "Location status",
-    description: "Shown while Near Commerce is getting your location.",
-    // LOW: no sound, no heads-up pop-up, still shown in the status bar and the shade.
-    importance: Notifications.AndroidImportance.LOW,
-    enableVibrate: false,
-    showBadge: false,
   });
   const id = await Notifications.scheduleNotificationAsync({
     identifier: LOCATION_NOTIFICATION_ID,
@@ -102,6 +150,31 @@ async function showAndroidNotification(): Promise<ActiveIndicator | null> {
     shownAt: Date.now(),
     end: () => Notifications.dismissNotificationAsync(id),
   };
+}
+
+async function showAndroidNotification(): Promise<ActiveIndicator | null> {
+  const Notifications = loadNotifications();
+  if (!Notifications) return null;
+
+  // Android 13+ needs the notification permission. If the shopper refuses it, the indicator is
+  // skipped quietly: only this extra goes away, the location read itself carries on.
+  let permission = await Notifications.getPermissionsAsync();
+  if (!permission.granted && permission.canAskAgain)
+    permission = await Notifications.requestPermissionsAsync();
+  if (!permission.granted) return null;
+
+  await Notifications.setNotificationChannelAsync(LOCATION_CHANNEL_ID, {
+    name: "Location status",
+    description: "Shown while Near Commerce is getting your location.",
+    // LOW: no sound, no heads-up pop-up, still shown in the status bar and the shade.
+    importance: Notifications.AndroidImportance.LOW,
+    enableVibrate: false,
+    showBadge: false,
+  });
+
+  return (
+    (await showAndroidLiveUpdate()) ?? (await showPlainNotification(Notifications))
+  );
 }
 
 async function show(): Promise<ActiveIndicator | null> {

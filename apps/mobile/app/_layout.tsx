@@ -23,32 +23,21 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Redirect, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 configureApiClient({ baseURL: API_URL });
 
 const queryClient = new QueryClient();
 
-// Asks for the phone's location and shows the "fetching location" pill. It is kept apart from
-// the rest of the shell so a first-time shopper can read why location is needed (in the
-// introduction) before the phone's permission prompt appears.
+// Asks for the phone's location. While it is being read, the shopper is told through a system
+// notification / Live Activity (see helpers/locationIndicator), not an in-app banner. It is kept
+// apart from the rest of the shell so a first-time shopper can read why location is needed (in
+// the introduction) before the phone's permission prompt appears.
 function LocationLayer({ signedIn }: { signedIn: boolean }) {
-  const styles = useThemedStyles(makeStyles);
-  const {
-    isFetching: isFetchingLocation,
-    permissionDenied,
-    manualLocation,
-  } = useLocationFetcher();
+  const { permissionDenied, manualLocation } = useLocationFetcher();
   const [fallbackDismissed, setFallbackDismissed] = useState(false);
   return (
     <>
-      {isFetchingLocation && (
-        <View style={styles.dynamicIslandFallback}>
-          <Text style={styles.notificationText}>
-            📍 Fetching precise location...
-          </Text>
-        </View>
-      )}
       {/* Without GPS permission the shopper can still pick a location by ZIP */}
       <LocationFallbackModal
         visible={
@@ -101,6 +90,9 @@ function AppShell() {
                 options={{ headerShown: false }}
               />
               <Stack.Screen name="list/[id]" options={{ headerShown: false }} />
+              {/* Without a title the header falls back to the raw route name ("store/[id]") */}
+              <Stack.Screen name="store/[id]" options={{ title: "Store" }} />
+              <Stack.Screen name="product/[id]" options={{ title: "Product" }} />
               <Stack.Screen
                 name="review/index"
                 options={{ title: "Review", animation: "slide_from_bottom" }}
@@ -148,19 +140,4 @@ export default function RootLayout() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.background },
-    dynamicIslandFallback: {
-      position: "absolute",
-      top: 50,
-      alignSelf: "center",
-      backgroundColor: "#000",
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 25,
-      zIndex: 999,
-      elevation: 5,
-    },
-    notificationText: {
-      color: "#fff",
-      fontWeight: "bold",
-    },
   });

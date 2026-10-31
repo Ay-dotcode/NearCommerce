@@ -8,5 +8,6 @@ allowBuilds:
   protobufjs: true
   sharp: true
   unrs-resolver: true
+  vd-tool: false
 
 minimumReleaseAge: 0

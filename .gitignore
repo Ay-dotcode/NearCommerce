@@ -46,3 +46,4 @@ pnpm-debug.log*
 web-build/
 android/
 ios/
+.voltra/

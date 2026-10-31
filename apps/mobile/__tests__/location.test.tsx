@@ -22,6 +22,7 @@ import {
   waitFor,
 } from "@testing-library/react-native";
 import * as Location from "expo-location";
+import { Linking } from "react-native";
 import Toast from "react-native-toast-message";
 const SettingsScreen = ({
   onOpenZip = () => {},
@@ -433,5 +434,24 @@ describe("Telling the shopper the location is being read", () => {
     await expect(switchToDeviceLocation()).resolves.toMatchObject({ ok: true });
     expect(withLocationIndicator).toHaveBeenCalledTimes(1);
     noLocatingPopup();
+  });
+});
+
+describe("Getting back to the phone's settings after refusing location", () => {
+  it("offers to open the settings when location was refused, and the ZIP form still works", () => {
+    const openSettings = jest.spyOn(Linking, "openSettings").mockResolvedValue();
+    const { getByTestId } = render(
+      <LocationFallbackModal visible reason="denied" onClose={jest.fn()} />,
+    );
+    fireEvent.press(getByTestId("open-app-settings"));
+    expect(openSettings).toHaveBeenCalledTimes(1);
+    expect(getByTestId("zip-input")).toBeTruthy();
+  });
+
+  it("does not show it when the shopper just chose to set a ZIP code", () => {
+    const { queryByTestId } = render(
+      <LocationFallbackModal visible reason="manual" onClose={jest.fn()} />,
+    );
+    expect(queryByTestId("open-app-settings")).toBeNull();
   });
 });

@@ -5,6 +5,7 @@ import {
   pickPhoto,
   type PhotoSource,
 } from "@/helpers/photo";
+import { openAppSettings } from "@/helpers/appSettings";
 import { photoErrorMessage } from "@/helpers/photoErrors";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useSessionCoords } from "@/src/hooks/useSessionCoords";
@@ -39,6 +40,8 @@ export default function SearchScreen() {
   // and text search carries on (SRS 3.2.1).
   const [visionUnavailable, setVisionUnavailable] = useState(false);
   const [photoNotice, setPhotoNotice] = useState<string | null>(null);
+  // The camera permission was refused: only photo search stops working; offer a way back in.
+  const [cameraDenied, setCameraDenied] = useState(false);
 
   const query = useQuery({
     queryKey: ["search", searchQuery, location, radius.meters, radius.nearbyOnly],
@@ -68,15 +71,20 @@ export default function SearchScreen() {
         radius.nearbyOnly,
       );
     },
-    onMutate: () => setPhotoNotice(null),
+    onMutate: () => {
+      setPhotoNotice(null);
+      setCameraDenied(false);
+    },
     onError: (error) => {
       const code = (error as { response?: { data?: { code?: string } } })
         ?.response?.data?.code;
       if (code === "VISION_UNAVAILABLE") setVisionUnavailable(true);
-      else if ((error as { denied?: boolean }).denied)
+      else if ((error as { denied?: boolean }).denied) {
+        setCameraDenied(true);
         setPhotoNotice(
           "Camera access is off. Allow it in Settings to search by photo.",
         );
+      }
       else setPhotoNotice(photoErrorMessage(error));
     },
   });
@@ -114,6 +122,7 @@ export default function SearchScreen() {
             onChangeText={(text) => {
               setSearchQuery(text);
               setPhotoNotice(null);
+              setCameraDenied(false);
             }}
             returnKeyType="search"
           />
@@ -145,6 +154,15 @@ export default function SearchScreen() {
           <Text accessibilityRole="alert" style={styles.notice}>
             {photoNotice}
           </Text>
+        )}
+        {cameraDenied && (
+          <Pressable
+            accessibilityRole="button"
+            testID="open-app-settings"
+            onPress={openAppSettings}
+          >
+            <Text style={styles.settingsLink}>Open phone settings</Text>
+          </Pressable>
         )}
         {showingPhoto && (
           <Text style={styles.detected}>
@@ -212,6 +230,12 @@ const makeStyles = (c: ThemeColors) =>
     },
     input: { flex: 1, color: c.text, fontSize: 16 },
     notice: { color: c.textMuted, fontSize: 12, marginTop: 10 },
+    settingsLink: {
+      color: c.primary,
+      fontSize: 13,
+      fontWeight: "700",
+      marginTop: 6,
+    },
     detected: {
       color: c.text,
       fontSize: 14,

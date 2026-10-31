@@ -44,7 +44,13 @@
           "color": "#2563EB"
         }
       ],
-      "expo-live-activity"
+      "expo-live-activity",
+      [
+        "@use-voltra/android-client",
+        {
+          "enableNotifications": true
+        }
+      ]
     ],
     "runtimeVersion": {
       "policy": "appVersion"
