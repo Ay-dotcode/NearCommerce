@@ -107,7 +107,7 @@
 **Task 5.1: Navigation & Home Experience**
 
 - _Sub-task 5.1.1:_ Expo Router layout featuring Category Browse, Search Bar, Household Lists and Favorites as bottom tabs. Settings is a left-hand drawer opened from the app bar. Page changes and tab switches are animated.
-- _Sub-task 5.1.3:_ Settings drawer: search distance slider (1 to 25 miles, saved on the device and sent as `radius_meters`), avoid tolls, location by ZIP code, contact support (bottom sheet with the official email and phone), sign out and account deletion.
+- _Sub-task 5.1.3:_ Settings drawer: search distance slider (1 to 25 miles, saved on the device and sent as `radius_meters`), location by ZIP code, contact support (bottom sheet with the official email and phone), sign out and account deletion.
 - _Sub-task 5.1.4:_ Forms (sign in, register, password reset, review, lists) use Formik and show problems inline, in error mode, instead of in pop-ups.
 - _Sub-task 5.1.2:_ Store Cards displaying "Open Now / Closed" status badge computed in the store's timezone, and average community review score.
 

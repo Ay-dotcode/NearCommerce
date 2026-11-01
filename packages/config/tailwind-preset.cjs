@@ -209,6 +209,12 @@ function createPreset(themeName = "default") {
           // Reserve the scrollbar's space always, so opening a dialog (which locks scrolling and
           // hides the bar) does not make the page behind it jump sideways.
           html: { scrollbarGutter: "stable" },
+          // While a loading skeleton is on screen, draw no scrollbar on the page (or on any
+          // panel holding it). Skeletons are often taller than the content that replaces them,
+          // so a scrollbar would flash up and vanish a moment later. Making it transparent, not
+          // removing it, keeps the gutter above, so nothing shifts sideways when the content
+          // arrives and the real scrollbar (if it is needed) shows.
+          "*:has([data-skeleton-group])": { scrollbarColor: "transparent transparent" },
           "*, ::before, ::after": {
             "--tw-ring-offset-color": "rgb(var(--c-white))",
           },

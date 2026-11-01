@@ -91,6 +91,19 @@ test("the page keeps its scrollbar space so dialogs do not shift it", () => {
   assert.equal(base.html.scrollbarGutter, "stable");
 });
 
+test("no scrollbar is drawn while a loading skeleton is on screen, but its space stays reserved", () => {
+  let base;
+  const handler = preset.plugins[0].handler ?? preset.plugins[0];
+  handler({ addBase: (rules) => (base = rules), addUtilities: () => {} });
+  assert.equal(
+    base["*:has([data-skeleton-group])"].scrollbarColor,
+    "transparent transparent",
+  );
+  // Hidden by colour, not by width: the stable gutter must not collapse and shift the page.
+  assert.equal(base.html.scrollbarGutter, "stable");
+  assert.equal(base["*:has([data-skeleton-group])"].scrollbarWidth, undefined);
+});
+
 test("createPreset gives each portal its own brand colour but shares everything else", () => {
   const { createPreset } = preset;
   const shopper = createPreset("default");

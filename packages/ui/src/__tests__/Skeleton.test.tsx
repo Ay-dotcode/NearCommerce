@@ -9,6 +9,13 @@ describe("Skeleton", () => {
     expect(block).toHaveClass("h-10", "w-10");
   });
 
+  it("does not mark single blocks, so a loading image can't make the page scrollbar come and go", () => {
+    const { container } = render(<Skeleton className="h-10 w-10" />);
+    expect(container.firstElementChild).not.toHaveAttribute(
+      "data-skeleton-group",
+    );
+  });
+
   it("groups blocks into one busy status region without any visible loading text", () => {
     render(
       <SkeletonGroup label="Inventory">
@@ -18,5 +25,7 @@ describe("Skeleton", () => {
     const region = screen.getByRole("status", { name: "Inventory" });
     expect(region).toHaveAttribute("aria-busy", "true");
     expect(region.textContent).toBe("");
+    // The page can hide its scrollbar while a loading region is showing.
+    expect(region).toHaveAttribute("data-skeleton-group");
   });
 });

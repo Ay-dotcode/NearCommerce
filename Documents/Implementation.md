@@ -85,7 +85,7 @@ Every new feature or service built must include:
 - **Task 5.3 Real-Time Household Lists:**
   - Household list UI supporting item deletion, custom items, list rename/delete, leave list, and member management.
 - **Task 5.4 Shopper Reviews & Settings:**
-  - Settings is a left-hand drawer (reusable `Drawer`) opened from the app bar, not a tab. It holds the search distance slider (1 to 25 miles, sent as `radius_meters`), avoid tolls, ZIP code location, a Contact support bottom sheet, sign out and account deletion.
+  - Settings is a left-hand drawer (reusable `Drawer`) opened from the app bar, not a tab. It holds the search distance slider (1 to 25 miles, sent as `radius_meters`), ZIP code location, a Contact support bottom sheet, sign out and account deletion.
   - Light and dark mode follow the device (`userInterfaceStyle: automatic`, theme from the shared palette); skeleton placeholders replace spinners; sheets and drawers blur the page behind them; page and tab changes are animated.
   - All forms use Formik and show errors inline in error mode, never in pop-ups.
   - Product review submission and review listing UI on product/store detail screens.
