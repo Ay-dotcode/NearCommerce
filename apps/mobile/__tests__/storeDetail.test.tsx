@@ -128,12 +128,60 @@ describe("StoreDetailScreen", () => {
 
     fireEvent.press(getByLabelText("Get directions to Local Tech Shop"));
     await waitFor(() =>
-      expect(openNativeMaps).toHaveBeenCalledWith(
-        35.1,
-        32.8,
-        "Local Tech Shop",
-      ),
+      expect(openNativeMaps).toHaveBeenCalledWith(35.1, 32.8),
     );
+  });
+
+  it("shows each product's picture, and a placeholder where there is none", async () => {
+    serveGet(apiClient.get as jest.Mock, {
+      "/stores/store-123": {
+        data: {
+          id: "store-123",
+          name: "Local Tech Shop",
+          address: "123 Main St",
+          latitude: 35.1,
+          longitude: 32.8,
+          isOpen: true,
+          rating: 4.5,
+          review_count: 12,
+          products: [
+            {
+              id: "prod-1",
+              name: "USB-C Cable",
+              price: 15.99,
+              quantity: 10,
+              in_stock: true,
+              image_url: "https://cdn.shop.com/cable.jpg",
+            },
+            {
+              id: "prod-2",
+              name: "Charger",
+              price: 20,
+              quantity: 3,
+              in_stock: true,
+              image_url: null,
+            },
+          ],
+        },
+      },
+      "/favorites": { data: [] },
+      "/reviews": {
+        data: [],
+        summary: { rating: 0, review_count: 0, distribution: {} },
+        pagination: { page: 1, limit: 10, total: 0 },
+      },
+    });
+
+    const { findByText, getAllByTestId } = renderWithClient(
+      <StoreDetailScreen />,
+    );
+    await findByText("USB-C Cable");
+    const pictures = getAllByTestId("product-image");
+    expect(pictures).toHaveLength(1);
+    expect(pictures[0].props.source).toEqual({
+      uri: "https://cdn.shop.com/cable.jpg",
+    });
+    expect(getAllByTestId("product-image-placeholder")).toHaveLength(1);
   });
 
   it("shows a not-found message when the store request fails", async () => {

@@ -2,20 +2,21 @@ import DirectionsButton from "@/components/DirectionsButton";
 import FavoriteButton from "@/components/FavoriteButton";
 import ProductCard from "@/components/ProductCard";
 import ReviewsSection from "@/components/ReviewsSection";
+import { StoreDetailSkeleton } from "@/components/skeletons";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { STACK_SCREEN_EDGES } from "@/theme/layout";
 import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StoreDetailSkeleton } from "@/components/skeletons";
-import { STACK_SCREEN_EDGES } from "@/theme/layout";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 interface Product {
   id: string;
   name: string;
   price: number;
   quantity: number;
+  image_url?: string | null;
   in_stock: boolean;
   isStale: boolean;
 }
@@ -100,6 +101,7 @@ export default function StoreDetailScreen() {
             inStock={item.in_stock}
             isStale={item.isStale}
             quantity={item.quantity}
+            imageUrl={item.image_url}
             onPress={() => router.push(`/product/${item.id}`)}
           />
         )}

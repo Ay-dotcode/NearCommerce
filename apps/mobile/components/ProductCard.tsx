@@ -1,6 +1,10 @@
+import ProductImage from "@/components/ProductImage";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 import { formatDistance } from "@nearcommerce/helpers";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useThemedStyles, type ThemeColors } from "@/theme";
+
+export const PRODUCT_CARD_IMAGE_SIZE = 64;
+const IMAGE_SIZE = PRODUCT_CARD_IMAGE_SIZE;
 
 type Props = {
   name: string;
@@ -10,6 +14,7 @@ type Props = {
   storeName?: string;
   distanceMeters?: number;
   quantity?: number;
+  imageUrl?: string | null;
   onPress: () => void;
 };
 
@@ -21,6 +26,7 @@ export default function ProductCard({
   storeName,
   distanceMeters,
   quantity,
+  imageUrl,
   onPress,
 }: Props) {
   const styles = useThemedStyles(makeStyles);
@@ -34,6 +40,7 @@ export default function ProductCard({
 
   return (
     <Pressable style={styles.card} onPress={onPress} accessibilityRole="button">
+      <ProductImage uri={imageUrl} label={name} size={IMAGE_SIZE} />
       <View style={styles.copy}>
         <Text style={styles.name}>{name}</Text>
         {where !== "" && <Text style={styles.where}>{where}</Text>}

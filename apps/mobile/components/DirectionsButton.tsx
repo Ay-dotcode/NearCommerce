@@ -13,9 +13,7 @@ export default function DirectionsButton({
   const styles = useThemedStyles(makeStyles);
 
   const onPress = async () => {
-    const opened = await openNativeMaps(latitude, longitude, label).catch(
-      () => false,
-    );
+    const opened = await openNativeMaps(latitude, longitude).catch(() => false);
     if (!opened)
       Toast.show({
         type: "error",

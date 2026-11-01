@@ -2,7 +2,12 @@ import { apiErrorMessage } from "@/api/errors";
 import { addListItem, fetchLists } from "@/api/lists";
 import DirectionsButton from "@/components/DirectionsButton";
 import FavoriteButton from "@/components/FavoriteButton";
+import ProductImage from "@/components/ProductImage";
 import ReviewsSection from "@/components/ReviewsSection";
+import { ProductDetailSkeleton } from "@/components/skeletons";
+import { useDialogs } from "@/components/ui";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { STACK_SCREEN_EDGES } from "@/theme/layout";
 import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";
 import { useQuery } from "@tanstack/react-query";
@@ -10,16 +15,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { ProductDetailSkeleton } from "@/components/skeletons";
-import { useDialogs } from "@/components/ui";
-import { STACK_SCREEN_EDGES } from "@/theme/layout";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 interface ProductDetail {
   id: string;
   name: string;
   price: number;
   description?: string;
+  image_url?: string | null;
   last_verified_at: string;
   isStale: boolean;
   in_stock: boolean;
@@ -108,6 +110,12 @@ export default function ProductDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        <ProductImage
+          uri={product.image_url}
+          label={product.name}
+          aspectRatio={4 / 3}
+          style={styles.hero}
+        />
         <View style={styles.header}>
           <Text style={styles.title}>{product.name}</Text>
           <FavoriteButton productId={product.id} />
@@ -166,6 +174,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, padding: 20, backgroundColor: c.surface },
     scroll: { flexGrow: 1, paddingBottom: 24 },
+    hero: { marginBottom: 16 },
     header: {
       flexDirection: "row",
       justifyContent: "space-between",

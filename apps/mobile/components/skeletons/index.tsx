@@ -5,11 +5,12 @@ import { StyleSheet, View } from "react-native";
 // Loading placeholders. Every one mirrors the real component's padding, radius and text-line
 // heights, so the screen does not shift when the data arrives. They show no text.
 
-// Mirrors ProductCard: name, "store · distance", two status lines, and the price.
+// Mirrors ProductCard: thumbnail, name, "store · distance", two status lines, and the price.
 export function ProductCardSkeleton() {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.productCard}>
+      <Skeleton height={64} width={64} />
       <View style={styles.flex}>
         <Skeleton height={18} width="70%" />
         <Skeleton height={14} width="45%" style={{ marginTop: 4 }} />

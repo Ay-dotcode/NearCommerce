@@ -1,4 +1,5 @@
 import { FAVORITES_KEY, fetchFavorites } from "@/api/favorites";
+import ProductImage from "@/components/ProductImage";
 import { FavoriteListSkeleton } from "@/components/skeletons";
 import { useRemoveFavorite } from "@/src/hooks/useFavorites";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
@@ -134,18 +135,29 @@ function FavoriteRow({
         }
         accessibilityRole="button"
       >
-        <View style={styles.cardHeader}>
-          <Ionicons
-            name={isStore ? "storefront" : "pricetag"}
-            size={18}
-            color={c.textMuted}
+        {!isStore && (
+          <ProductImage
+            uri={item.product?.image_url}
+            label={name ?? "Product"}
+            size={56}
           />
-          <Text style={styles.typeLabel}>{isStore ? "Store" : "Product"}</Text>
+        )}
+        <View style={styles.cardText}>
+          <View style={styles.cardHeader}>
+            <Ionicons
+              name={isStore ? "storefront" : "pricetag"}
+              size={18}
+              color={c.textMuted}
+            />
+            <Text style={styles.typeLabel}>
+              {isStore ? "Store" : "Product"}
+            </Text>
+          </View>
+          <Text style={styles.itemName}>
+            {name ?? (isStore ? "Store" : "Product")}
+          </Text>
+          {detail !== "" && <Text style={styles.detail}>{detail}</Text>}
         </View>
-        <Text style={styles.itemName}>
-          {name ?? (isStore ? "Store" : "Product")}
-        </Text>
-        {detail !== "" && <Text style={styles.detail}>{detail}</Text>}
       </Pressable>
       <Pressable
         onPress={onRemove}
@@ -190,7 +202,14 @@ const makeStyles = (c: ThemeColors) =>
       marginBottom: 10,
       elevation: 1,
     },
-    cardBody: { flex: 1, padding: 15 },
+    cardBody: {
+      flex: 1,
+      padding: 15,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    cardText: { flex: 1 },
     cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
     typeLabel: {
       marginLeft: 8,

@@ -203,6 +203,7 @@ export default function SearchScreen() {
             inStock={item.in_stock}
             isStale={item.isStale}
             quantity={item.quantity}
+            imageUrl={item.image_url}
             onPress={() => router.push(`/product/${item.id}`)}
           />
         )}
