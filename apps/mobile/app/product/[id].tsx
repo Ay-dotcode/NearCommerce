@@ -109,7 +109,7 @@ export default function ProductDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <ProductImage
           uri={product.image_url}
           label={product.name}

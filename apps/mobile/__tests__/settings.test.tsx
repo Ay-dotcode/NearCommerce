@@ -38,27 +38,11 @@ describe("SettingsScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("loads and displays initial routing preferences from AsyncStorage", async () => {
-    const { getByText } = render(<SettingsScreen />);
-
-    await waitFor(() => {
-      expect(AsyncStorage.getItem).toHaveBeenCalledWith("@routing_avoid_tolls");
-      expect(getByText("Avoid Tolls on Route")).toBeTruthy();
-    });
-  });
-
-  it("saves routing preferences to AsyncStorage when toggled", async () => {
-    const { getByTestId } = render(<SettingsScreen />);
-
-    const switchElement = getByTestId("tolls-switch");
-    fireEvent(switchElement, "valueChange", true);
-
-    await waitFor(() => {
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        "@routing_avoid_tolls",
-        "true",
-      );
-    });
+  it("no longer offers an avoid-tolls option", () => {
+    const { queryByText, queryByTestId } = render(<SettingsScreen />);
+    expect(queryByText("Avoid Tolls on Route")).toBeNull();
+    expect(queryByText("Routing preferences")).toBeNull();
+    expect(queryByTestId("tolls-switch")).toBeNull();
   });
 
   it("closes the drawer first, then signs out", async () => {

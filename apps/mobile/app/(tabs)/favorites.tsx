@@ -74,6 +74,7 @@ export default function FavoritesScreen() {
         </View>
       ) : (
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={visible}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (

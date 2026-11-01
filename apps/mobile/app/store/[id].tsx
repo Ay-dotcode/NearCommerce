@@ -92,6 +92,7 @@ export default function StoreDetailScreen() {
 
       <Text style={styles.subtitle}>Inventory</Text>
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={store.products ?? []}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (

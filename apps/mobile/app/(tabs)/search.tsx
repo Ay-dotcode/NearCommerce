@@ -75,6 +75,10 @@ export default function SearchScreen() {
       setPhotoNotice(null);
       setCameraDenied(false);
     },
+    // Show what the photo was understood as in the search bar, so the shopper can correct it.
+    onSuccess: (result) => {
+      if (result) setSearchQuery(result.detected_query);
+    },
     onError: (error) => {
       const code = (error as { response?: { data?: { code?: string } } })
         ?.response?.data?.code;
@@ -94,13 +98,21 @@ export default function SearchScreen() {
       setPhotoNotice("We need your location to search nearby.");
       return;
     }
-    setSearchQuery("");
     photoSearch.mutate(source);
   };
 
   const photoResult = photoSearch.data ?? null;
-  const showingPhoto = photoResult !== null && searchQuery.trim() === "";
-  const results = showingPhoto ? photoResult.data : (query.data?.data ?? []);
+  // The photo's own results are shown while the search bar still holds what the photo was read
+  // as. Once the shopper edits it, a normal text search takes over.
+  const showingPhoto =
+    photoResult !== null &&
+    !photoSearch.isPending &&
+    searchQuery.trim() === photoResult.detected_query.trim();
+  const results = photoSearch.isPending
+    ? []
+    : showingPhoto
+      ? photoResult.data
+      : (query.data?.data ?? []);
   const typed = searchQuery.trim().length > 2;
   const busy = query.isLoading || photoSearch.isPending;
 
@@ -166,7 +178,7 @@ export default function SearchScreen() {
         )}
         {showingPhoto && (
           <Text style={styles.detected}>
-            Results for “{photoResult.detected_query}”
+            Found from your photo. Edit the search above to refine it.
           </Text>
         )}
       </View>
@@ -191,6 +203,7 @@ export default function SearchScreen() {
           </Text>
         )}
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={results}
         contentContainerStyle={styles.results}
         keyExtractor={(item) => item.id}

@@ -85,12 +85,17 @@ describe("SearchScreen photo search", () => {
         used_fallback: false,
       },
     });
-    const { getByLabelText, findByText } = renderWithClient(<SearchScreen />);
+    const { getByLabelText, findByText, getByPlaceholderText } =
+      renderWithClient(<SearchScreen />);
 
     fireEvent.press(getByLabelText("Search by photo"));
 
-    expect(await findByText("Results for “whole milk”")).toBeTruthy();
     expect(await findByText("Whole Milk")).toBeTruthy();
+    // What the photo was read as is now in the search bar, ready to be corrected.
+    expect(getByPlaceholderText("Search nearby products").props.value).toBe(
+      "whole milk",
+    );
+    expect(await findByText(/Found from your photo/)).toBeTruthy();
     expect(pick).toHaveBeenCalledWith("camera");
     expect(post).toHaveBeenCalledWith("/search/image", {
       image: "QUJD",
@@ -199,6 +204,63 @@ describe("SearchScreen photo search", () => {
     );
     expect(await findByText("Whole Milk")).toBeTruthy();
     expect(queryByText("Photo Result")).toBeNull();
-    expect(queryByText(/Results for/)).toBeNull();
+    expect(queryByText(/Found from your photo/)).toBeNull();
+  });
+
+  it("lets the shopper correct what the photo was read as, and searches for the corrected text", async () => {
+    pick.mockResolvedValue(photo);
+    post.mockResolvedValue({
+      data: {
+        detected_query: "whole mlik",
+        data: [product("p9", "Photo Result")],
+        used_fallback: false,
+      },
+    });
+    const { getByLabelText, findByText, getByPlaceholderText } =
+      renderWithClient(<SearchScreen />);
+    fireEvent.press(getByLabelText("Search by photo"));
+    await findByText("Photo Result");
+    expect(getByPlaceholderText("Search nearby products").props.value).toBe(
+      "whole mlik",
+    );
+
+    fireEvent.changeText(
+      getByPlaceholderText("Search nearby products"),
+      "whole milk",
+    );
+    expect(await findByText("Whole Milk")).toBeTruthy();
+    expect(get).toHaveBeenCalledWith("/search", {
+      params: expect.objectContaining({ q: "whole milk" }),
+    });
+  });
+
+  it("keeps showing the photo's results for a detected name shorter than a typed search allows", async () => {
+    pick.mockResolvedValue(photo);
+    post.mockResolvedValue({
+      data: {
+        detected_query: "tv",
+        data: [product("p3", "Smart TV")],
+        used_fallback: false,
+      },
+    });
+    const { getByLabelText, findByText } = renderWithClient(<SearchScreen />);
+    fireEvent.press(getByLabelText("Search by photo"));
+    expect(await findByText("Smart TV")).toBeTruthy();
+  });
+
+  it("leaves what the shopper had typed alone when they back out of the camera", async () => {
+    pick.mockResolvedValue(null);
+    const { getByLabelText, getByPlaceholderText } = renderWithClient(
+      <SearchScreen />,
+    );
+    fireEvent.changeText(
+      getByPlaceholderText("Search nearby products"),
+      "bread",
+    );
+    fireEvent.press(getByLabelText("Search by photo"));
+    await waitFor(() => expect(pick).toHaveBeenCalled());
+    expect(getByPlaceholderText("Search nearby products").props.value).toBe(
+      "bread",
+    );
   });
 });

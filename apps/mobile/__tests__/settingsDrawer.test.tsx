@@ -75,8 +75,6 @@ describe("settings drawer", () => {
     for (const text of [
       "Settings",
       "Search distance",
-      "Routing preferences",
-      "Avoid Tolls on Route",
       "Location",
       "Set location by ZIP code",
       "Contact support",

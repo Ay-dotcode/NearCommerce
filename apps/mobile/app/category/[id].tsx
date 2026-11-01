@@ -109,6 +109,7 @@ export default function CategoryScreen() {
         </Text>
       )}
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={results}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.results}

@@ -70,6 +70,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={SCREEN_EDGES}>
       <FlatList
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
         data={storeCards}
         keyExtractor={(store) => store.id}

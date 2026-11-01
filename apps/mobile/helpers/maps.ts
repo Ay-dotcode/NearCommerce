@@ -1,5 +1,3 @@
-import { AVOID_TOLLS_KEY } from "@/constants";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Linking, Platform } from "react-native";
 
 // Directions always go to the store's saved coordinates (the latitude / longitude stored in our
@@ -9,21 +7,13 @@ import { Linking, Platform } from "react-native";
 
 // The https directions link. Every phone can open it: the Maps app takes it if there is one, the
 // browser otherwise. A plain coordinate pair is a point on the map, not a search.
-export function buildWebMapsUrl(
-  latitude: number,
-  longitude: number,
-  avoidTolls = false,
-) {
-  return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&travelmode=driving${avoidTolls ? "&avoid=tolls" : ""}`;
+export function buildWebMapsUrl(latitude: number, longitude: number) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&travelmode=driving`;
 }
 
-// Android's Google Maps navigation intent: routes to the coordinates and honours "avoid tolls".
-export function buildNavigationUrl(
-  latitude: number,
-  longitude: number,
-  avoidTolls = false,
-) {
-  return `google.navigation:q=${latitude},${longitude}${avoidTolls ? "&avoid=t" : ""}`;
+// Android's Google Maps navigation intent: routes to the coordinates.
+export function buildNavigationUrl(latitude: number, longitude: number) {
+  return `google.navigation:q=${latitude},${longitude}`;
 }
 
 // A pin at the coordinates, handled by whichever maps app the phone has (Google Maps, Waze, ...).
@@ -31,21 +21,17 @@ export function buildGeoUrl(latitude: number, longitude: number) {
   return `geo:${latitude},${longitude}?q=${latitude},${longitude}`;
 }
 
-// Apple Maps directions to the coordinates. Apple Maps has no "avoid tolls" link option.
+// Apple Maps directions to the coordinates.
 export function buildAppleMapsUrl(latitude: number, longitude: number) {
   return `maps://?daddr=${latitude},${longitude}&dirflg=d`;
 }
 
 // The first link to try on this platform: the one that opens a maps app straight into directions.
-export function buildMapsUrl(
-  latitude: number,
-  longitude: number,
-  avoidTolls = false,
-) {
+export function buildMapsUrl(latitude: number, longitude: number) {
   return Platform.select({
     ios: buildAppleMapsUrl(latitude, longitude),
-    android: buildNavigationUrl(latitude, longitude, avoidTolls),
-    default: buildWebMapsUrl(latitude, longitude, avoidTolls),
+    android: buildNavigationUrl(latitude, longitude),
+    default: buildWebMapsUrl(latitude, longitude),
   });
 }
 
@@ -54,13 +40,12 @@ export function buildMapsUrl(
 export function buildMapsCandidates(
   latitude: number,
   longitude: number,
-  avoidTolls = false,
 ): string[] {
-  const web = buildWebMapsUrl(latitude, longitude, avoidTolls);
+  const web = buildWebMapsUrl(latitude, longitude);
   const candidates = Platform.select<string[]>({
     ios: [buildAppleMapsUrl(latitude, longitude), web],
     android: [
-      buildNavigationUrl(latitude, longitude, avoidTolls),
+      buildNavigationUrl(latitude, longitude),
       buildGeoUrl(latitude, longitude),
       web,
     ],
@@ -79,9 +64,7 @@ export async function openNativeMaps(
   latitude: number,
   longitude: number,
 ): Promise<boolean> {
-  const avoidTolls = (await AsyncStorage.getItem(AVOID_TOLLS_KEY)) === "true";
-
-  for (const url of buildMapsCandidates(latitude, longitude, avoidTolls)) {
+  for (const url of buildMapsCandidates(latitude, longitude)) {
     try {
       await Linking.openURL(url);
       return true;

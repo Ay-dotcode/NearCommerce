@@ -242,6 +242,7 @@ export default function ListDetailScreen() {
       />
 
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={data.items}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={

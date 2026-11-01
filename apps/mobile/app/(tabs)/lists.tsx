@@ -62,6 +62,7 @@ export default function ListsScreen() {
         </View>
       ) : (
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={lists}
           keyExtractor={(l) => l.id}
           ListEmptyComponent={

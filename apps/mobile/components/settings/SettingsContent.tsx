@@ -1,10 +1,6 @@
 import { apiErrorMessage } from "@/api/errors";
 import { Button, SegmentedControl, Slider, useDialogs } from "@/components/ui";
-import {
-  AVOID_TOLLS_KEY,
-  SEARCH_RADIUS_MAX_KM,
-  SEARCH_RADIUS_MIN_KM,
-} from "@/constants";
+import { SEARCH_RADIUS_MAX_KM, SEARCH_RADIUS_MIN_KM } from "@/constants";
 import { switchToDeviceLocation } from "@/helpers/location";
 import { notify } from "@/helpers/notify";
 import { useAuth } from "@/src/context/AuthContext";
@@ -21,8 +17,7 @@ import {
   THEME_PREFERENCES,
   type ThemePreference,
 } from "@nearcommerce/helpers";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 
 interface Props {
@@ -53,20 +48,8 @@ export default function SettingsContent({
   const radius = useSearchRadius();
   const theme = useThemePreference();
   const [draftKm, setDraftKm] = useState<number | null>(null);
-  const [avoidTolls, setAvoidTolls] = useState(false);
   const [locating, setLocating] = useState(false);
   const deviceName = useDeviceLocationName(!manualLocation);
-
-  useEffect(() => {
-    AsyncStorage.getItem(AVOID_TOLLS_KEY).then((stored) => {
-      if (stored !== null) setAvoidTolls(stored === "true");
-    });
-  }, []);
-
-  const toggleTolls = async (value: boolean) => {
-    setAvoidTolls(value);
-    await AsyncStorage.setItem(AVOID_TOLLS_KEY, String(value));
-  };
 
   const switchToDevice = async () => {
     setLocating(true);
@@ -175,17 +158,6 @@ export default function SettingsContent({
             </View>
           </>
         )}
-      </View>
-
-      <Text style={styles.section}>Routing preferences</Text>
-      <View style={[styles.card, styles.rowBetween]}>
-        <Text style={styles.label}>Avoid Tolls on Route</Text>
-        <Switch
-          testID="tolls-switch"
-          value={avoidTolls}
-          onValueChange={toggleTolls}
-          trackColor={{ true: c.primary, false: c.borderStrong }}
-        />
       </View>
 
       <Text style={styles.section}>Location</Text>

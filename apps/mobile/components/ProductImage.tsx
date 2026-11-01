@@ -1,7 +1,7 @@
 import { resolveImageUrl } from "@/helpers/imageUrl";
 import { useThemedStyles, type ThemeColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Image,
   StyleSheet,
@@ -24,6 +24,10 @@ type Props = {
 
 // A product picture. When there is no picture, or it fails to load (offline, deleted), a plain
 // placeholder is drawn in the same space so lists and screens don't jump around.
+// A failed load is retried this many times, after these delays, before the placeholder is kept.
+// A server that is just waking up (or a weak signal) often fails the first request.
+export const IMAGE_RETRY_DELAYS_MS = [1500, 3000];
+
 export default function ProductImage({
   uri,
   label,
@@ -34,9 +38,27 @@ export default function ProductImage({
   const styles = useThemedStyles(makeStyles);
   const source = resolveImageUrl(uri);
   const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // A different product (or a new picture) gets a fresh chance to load.
-  useEffect(() => setFailed(false), [source]);
+  useEffect(() => {
+    setFailed(false);
+    setAttempt(0);
+  }, [source]);
+
+  useEffect(
+    () => () => {
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+    },
+    [],
+  );
+
+  const onError = () => {
+    const delay = IMAGE_RETRY_DELAYS_MS[attempt];
+    if (delay === undefined) return setFailed(true);
+    retryTimer.current = setTimeout(() => setAttempt((n) => n + 1), delay);
+  };
 
   const box: { width: DimensionValue; height?: number; aspectRatio?: number } =
     aspectRatio
@@ -47,12 +69,13 @@ export default function ProductImage({
     <View style={[styles.box, box, style]}>
       {source && !failed ? (
         <Image
+          key={`${source}#${attempt}`}
           testID="product-image"
           source={{ uri: source }}
           accessibilityLabel={label}
           resizeMode="cover"
           style={styles.image}
-          onError={() => setFailed(true)}
+          onError={onError}
         />
       ) : (
         <View testID="product-image-placeholder" style={styles.placeholder}>

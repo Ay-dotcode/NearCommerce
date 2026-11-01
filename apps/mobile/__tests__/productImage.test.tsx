@@ -1,7 +1,7 @@
 import ProductCard from "@/components/ProductCard";
-import ProductImage from "@/components/ProductImage";
+import ProductImage, { IMAGE_RETRY_DELAYS_MS } from "@/components/ProductImage";
 import { resolveImageUrl } from "@/helpers/imageUrl";
-import { fireEvent, render } from "@testing-library/react-native";
+import { act, fireEvent, render } from "@testing-library/react-native";
 
 jest.mock("@/constants", () => ({ API_URL: "https://api.example.com/" }));
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
@@ -60,23 +60,59 @@ describe("ProductImage", () => {
     expect(queryByTestId("product-image")).toBeNull();
   });
 
-  it("falls back to the placeholder when the picture fails to load", () => {
-    const { getByTestId, queryByTestId } = render(
-      <ProductImage uri="https://cdn.shop.com/missing.jpg" label="Cable" />,
-    );
-    fireEvent(getByTestId("product-image"), "error");
-    expect(getByTestId("product-image-placeholder")).toBeTruthy();
-    expect(queryByTestId("product-image")).toBeNull();
-  });
+  describe("when the picture fails to load", () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
 
-  it("tries again when the product (and so the picture) changes", () => {
-    const { getByTestId, rerender } = render(
-      <ProductImage uri="https://cdn.shop.com/a.jpg" label="A" />,
-    );
-    fireEvent(getByTestId("product-image"), "error");
-    rerender(<ProductImage uri="https://cdn.shop.com/b.jpg" label="B" />);
-    expect(getByTestId("product-image").props.source).toEqual({
-      uri: "https://cdn.shop.com/b.jpg",
+    const fail = (api: ReturnType<typeof render>) =>
+      fireEvent(api.getByTestId("product-image"), "error");
+
+    it("tries again, and shows the picture if a retry works", () => {
+      const api = render(
+        <ProductImage uri="https://cdn.shop.com/slow.jpg" label="Cable" />,
+      );
+      fail(api);
+      // Still the picture while a retry is pending: no flicker to the placeholder.
+      expect(api.getByTestId("product-image")).toBeTruthy();
+      act(() => {
+        jest.advanceTimersByTime(IMAGE_RETRY_DELAYS_MS[0]);
+      });
+      expect(api.getByTestId("product-image")).toBeTruthy();
+      expect(api.queryByTestId("product-image-placeholder")).toBeNull();
+    });
+
+    it("falls back to the placeholder once every retry has failed", () => {
+      const api = render(
+        <ProductImage uri="https://cdn.shop.com/missing.jpg" label="Cable" />,
+      );
+      for (const delay of IMAGE_RETRY_DELAYS_MS) {
+        fail(api);
+        act(() => {
+          jest.advanceTimersByTime(delay);
+        });
+      }
+      fail(api);
+      expect(api.getByTestId("product-image-placeholder")).toBeTruthy();
+      expect(api.queryByTestId("product-image")).toBeNull();
+    });
+
+    it("starts over when the product (and so the picture) changes", () => {
+      const api = render(
+        <ProductImage uri="https://cdn.shop.com/a.jpg" label="A" />,
+      );
+      for (const delay of IMAGE_RETRY_DELAYS_MS) {
+        fail(api);
+        act(() => {
+          jest.advanceTimersByTime(delay);
+        });
+      }
+      fail(api);
+      expect(api.getByTestId("product-image-placeholder")).toBeTruthy();
+
+      api.rerender(<ProductImage uri="https://cdn.shop.com/b.jpg" label="B" />);
+      expect(api.getByTestId("product-image").props.source).toEqual({
+        uri: "https://cdn.shop.com/b.jpg",
+      });
     });
   });
 });
