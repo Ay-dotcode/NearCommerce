@@ -39,6 +39,10 @@ export function SkeletonGroup({
       aria-busy="true"
       aria-label={label}
       data-testid="skeleton"
+      // Marks "a page or panel is loading" for the scrollbar rule in the shared Tailwind preset.
+      // Only groups carry it, not single blocks: a lone block (an image still loading) must not
+      // make the page's scrollbar come and go.
+      data-skeleton-group=""
       className={className}
     >
       {children}
