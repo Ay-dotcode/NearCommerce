@@ -1,4 +1,4 @@
-import { db } from "@/config/database";
+import { db, withTransaction } from "@/config/database";
 import { BCRYPT_SALT_ROUNDS, PASSWORD_RESET_TOKEN_TTL_MS } from "@/constants";
 // Email verification and password reset are switched off (see registerUser).
 // verifyEmail, resendVerification, forgotPassword and resetPassword handlers are kept
@@ -21,6 +21,7 @@ import {
   rotateSession,
 } from "@/features/auth/services/session.service";
 import { generateVerificationToken } from "@/features/auth/utils/crypto";
+import { createDefaultList } from "@/features/lists/services/list.service";
 import {
   ForgotPasswordSchema,
   LoginSchema,
@@ -74,16 +75,26 @@ export const registerUser = async (req: Request, res: Response) => {
     //    straight away: email_verified_at is set now and no verification email is sent.
     //    To bring verification back, insert without email_verified_at and call
     //    issueEmailVerification(userId, email) here (see emailVerification.service.ts).
-    await db.query(
-      `INSERT INTO users (email, password_hash, full_name, role, email_verified_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [
-        validatedData.email,
-        passwordHash,
-        validatedData.full_name,
-        validatedData.role,
-      ],
-    );
+    //    A shopper also gets their starting list ("<first name>'s list") in the same
+    //    transaction, so no account is ever left without one.
+    await withTransaction(async (client) => {
+      const created = await client.query(
+        `INSERT INTO users (email, password_hash, full_name, role, email_verified_at)
+         VALUES ($1, $2, $3, $4, NOW()) RETURNING id`,
+        [
+          validatedData.email,
+          passwordHash,
+          validatedData.full_name,
+          validatedData.role,
+        ],
+      );
+      if (validatedData.role === "CUSTOMER")
+        await createDefaultList(
+          client,
+          created.rows[0].id,
+          validatedData.full_name,
+        );
+    });
 
     return res.status(201).json({
       message: "Account created. You can log in now.",

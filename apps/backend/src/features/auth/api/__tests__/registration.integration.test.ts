@@ -31,6 +31,16 @@ describe("Registration without email verification", () => {
     await db.query("DELETE FROM users WHERE email = $1", [user.email]);
   });
 
+  const listsOfUser = async () =>
+    (
+      await db.query(
+        `SELECT l.name, m.role
+           FROM household_list_members m JOIN household_lists l ON l.id = m.list_id
+          WHERE m.user_id = $1`,
+        [(await userRow()).id],
+      )
+    ).rows;
+
   afterAll(async () => {
     await db.query("DELETE FROM users WHERE email = $1", [user.email]);
     await db.end();
@@ -96,6 +106,36 @@ describe("Registration without email verification", () => {
           .send({ email: user.email })
       ).status,
     ).toBe(404);
+  });
+
+  it("gives a new shopper a starting list named after their first name", async () => {
+    expect((await register()).status).toBe(201);
+    expect(await listsOfUser()).toEqual([{ name: "No's list", role: "OWNER" }]);
+  });
+
+  it("shows that list to the shopper in the app", async () => {
+    await register();
+    const { id } = await userRow();
+    const res = await request(app)
+      .get("/lists")
+      .set("Authorization", `Bearer ${generateMockToken(id)}`);
+    expect(res.status).toBe(200);
+    expect(
+      (res.body.data ?? res.body).map((l: { name: string }) => l.name),
+    ).toEqual(["No's list"]);
+  });
+
+  it("does not give a store owner a shopping list", async () => {
+    expect((await register("STORE_OWNER")).status).toBe(201);
+    expect(await listsOfUser()).toEqual([]);
+  });
+
+  it("creates no list when registration is rejected", async () => {
+    await register();
+    const before = (await db.query("SELECT COUNT(*)::int AS n FROM household_lists")).rows[0].n;
+    expect((await register()).status).toBe(409);
+    const after = (await db.query("SELECT COUNT(*)::int AS n FROM household_lists")).rows[0].n;
+    expect(after).toBe(before);
   });
 
   it("still rejects a duplicate email", async () => {

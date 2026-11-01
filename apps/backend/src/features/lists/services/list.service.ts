@@ -1,4 +1,4 @@
-import { db } from "@/config/database";
+import { db, withTransaction as inTransaction } from "@/config/database";
 import {
   INVITE_CODE_GENERATION_ATTEMPTS,
   LIST_EVENT_ACCESS_REVOKED,
@@ -80,23 +80,6 @@ export async function requireOwner(
     throw new ListError(403, forbiddenMessage, "OWNER_ONLY");
 }
 
-async function inTransaction<T>(
-  fn: (client: PoolClient) => Promise<T>,
-): Promise<T> {
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await fn(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Lists
 // ---------------------------------------------------------------------------
@@ -163,6 +146,47 @@ export async function getListDetail(listId: string, userId: string) {
   };
 }
 
+// Creates a list with a fresh invite code and makes `userId` its owner. Runs on the caller's
+// transaction so it can be part of a bigger operation (such as registration).
+async function insertListWithOwner(
+  client: PoolClient,
+  userId: string,
+  name: string,
+): Promise<string> {
+  for (let attempt = 0; attempt < INVITE_CODE_GENERATION_ATTEMPTS; attempt++) {
+    const created = await client.query(
+      `INSERT INTO household_lists (name, invite_code) VALUES ($1, $2)
+       ON CONFLICT (invite_code) DO NOTHING RETURNING id`,
+      [name, generateShortCode()],
+    );
+    if (!created.rows.length) continue; // code collision, try another
+    await client.query(
+      `INSERT INTO household_list_members (list_id, user_id, role) VALUES ($1, $2, 'OWNER')`,
+      [created.rows[0].id, userId],
+    );
+    return created.rows[0].id as string;
+  }
+  throw new Error("Could not allocate a unique invite code");
+}
+
+// "Joseph's list": the list every shopper starts with. Uses the first word of their name.
+const DEFAULT_LIST_NAME_MAX_FIRST_NAME = 80;
+export function defaultListName(fullName: string | null | undefined): string {
+  const first = (fullName ?? "").trim().split(/\s+/)[0] ?? "";
+  if (!first) return "My list";
+  // Cut by characters, not UTF-16 units, so an emoji or accented letter is never split.
+  return `${Array.from(first).slice(0, DEFAULT_LIST_NAME_MAX_FIRST_NAME).join("")}'s list`;
+}
+
+// Gives a new shopper their starting list, on the registration transaction.
+export function createDefaultList(
+  client: PoolClient,
+  userId: string,
+  fullName: string,
+): Promise<string> {
+  return insertListWithOwner(client, userId, defaultListName(fullName));
+}
+
 export async function createList(userId: string, name: string) {
   const listId = await inTransaction(async (client) => {
     const count = await client.query(
@@ -175,25 +199,7 @@ export async function createList(userId: string, name: string) {
         `You can be in at most ${MAX_LISTS_PER_USER} lists. Leave one first.`,
         "LIST_LIMIT",
       );
-
-    for (
-      let attempt = 0;
-      attempt < INVITE_CODE_GENERATION_ATTEMPTS;
-      attempt++
-    ) {
-      const created = await client.query(
-        `INSERT INTO household_lists (name, invite_code) VALUES ($1, $2)
-         ON CONFLICT (invite_code) DO NOTHING RETURNING id`,
-        [name, generateShortCode()],
-      );
-      if (!created.rows.length) continue; // code collision, try another
-      await client.query(
-        `INSERT INTO household_list_members (list_id, user_id, role) VALUES ($1, $2, 'OWNER')`,
-        [created.rows[0].id, userId],
-      );
-      return created.rows[0].id as string;
-    }
-    throw new Error("Could not allocate a unique invite code");
+    return insertListWithOwner(client, userId, name);
   });
   return getListSummary(listId, userId);
 }
