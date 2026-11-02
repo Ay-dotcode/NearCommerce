@@ -1,4 +1,5 @@
 import {
+  CURRENCY_SYMBOL,
   formatPrice,
   timeAgo,
   formatDate,
@@ -44,13 +45,17 @@ describe("timeAgo", () => {
 });
 
 describe("formatPrice", () => {
-  it("always shows two decimals with thousands separators", () => {
-    expect(formatPrice(2.4)).toBe("2.40");
-    expect(formatPrice(1234.5)).toBe("1,234.50");
-    expect(formatPrice(0)).toBe("0.00");
+  it("always shows two decimals with thousands separators, in Turkish lira", () => {
+    expect(formatPrice(2.4)).toBe("₺2.40");
+    expect(formatPrice(1234.5)).toBe("₺1,234.50");
+    expect(formatPrice(0)).toBe("₺0.00");
+  });
+  it("never shows a dollar or euro sign", () => {
+    expect(formatPrice(85)).not.toMatch(/[$€£]/);
+    expect(CURRENCY_SYMBOL).toBe("₺");
   });
   it("accepts numeric strings from DECIMAL columns", () => {
-    expect(formatPrice("19.9")).toBe("19.90");
+    expect(formatPrice("19.9")).toBe("₺19.90");
   });
   it("returns non-numeric input unchanged", () => {
     expect(formatPrice("n/a")).toBe("n/a");

@@ -21,14 +21,17 @@ export function timeAgo(
   return `${years} year${years === 1 ? "" : "s"} ago`;
 }
 
-// 1234.5 -> "1,234.50". Accepts the numeric strings Postgres DECIMAL columns can produce.
+// Every price in Near Commerce is in Turkish lira.
+export const CURRENCY_SYMBOL = "₺";
+
+// 1234.5 -> "₺1,234.50". Accepts the numeric strings Postgres DECIMAL columns can produce.
 export function formatPrice(value: number | string): string {
   const n = Number(value);
   if (!Number.isFinite(n)) return String(value);
-  return n.toLocaleString("en-US", {
+  return `${CURRENCY_SYMBOL}${n.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  })}`;
 }
 
 // 3 -> "3 days", 1 -> "1 day". Pass the plural when it is not just "+s" ("category", "categories").
