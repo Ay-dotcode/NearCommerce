@@ -22,6 +22,7 @@ import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import type { HouseholdListDetail, HouseholdListItem } from "@/types/lists";
 import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { Ionicons } from "@expo/vector-icons";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
@@ -57,6 +58,7 @@ export default function ListDetailScreen() {
     queryFn: () => fetchList(id!),
     enabled: Boolean(id),
   });
+  const refreshControl = usePullToRefresh([listKey(id ?? ""), LISTS_KEY]);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: listKey(id!) });
@@ -243,6 +245,7 @@ export default function ListDetailScreen() {
 
       <FlatList
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
         data={data.items}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={

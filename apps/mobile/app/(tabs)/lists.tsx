@@ -4,6 +4,7 @@ import { InlineForm } from "@/forms/InlineForm";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { SCREEN_EDGES } from "@/theme/layout";
 import { Ionicons } from "@expo/vector-icons";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
@@ -23,6 +24,7 @@ export default function ListsScreen() {
     queryKey: LISTS_KEY,
     queryFn: fetchLists,
   });
+  const refreshControl = usePullToRefresh([LISTS_KEY]);
 
   return (
     <SafeAreaView style={styles.container} edges={SCREEN_EDGES}>
@@ -63,6 +65,7 @@ export default function ListsScreen() {
       ) : (
         <FlatList
           showsVerticalScrollIndicator={false}
+          refreshControl={refreshControl}
           data={lists}
           keyExtractor={(l) => l.id}
           ListEmptyComponent={

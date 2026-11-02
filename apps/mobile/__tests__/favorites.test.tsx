@@ -107,7 +107,7 @@ describe("FavoritesScreen", () => {
     expect(await findByText("Corner Shop")).toBeTruthy();
     expect(getByText("Open now · ★ 4.2")).toBeTruthy();
     expect(getByText("Milk")).toBeTruthy();
-    expect(getByText("$2.50 · Corner Shop · Out of stock")).toBeTruthy();
+    expect(getByText("₺2.50 · Corner Shop · Out of stock")).toBeTruthy();
   });
 
   it("filters by type", async () => {

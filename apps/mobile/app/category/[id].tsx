@@ -3,6 +3,7 @@ import { searchProducts } from "@/api/client";
 import ProductCard from "@/components/ProductCard";
 import { useSessionCoords } from "@/src/hooks/useSessionCoords";
 import { Ionicons } from "@expo/vector-icons";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -34,6 +35,7 @@ export default function CategoryScreen() {
     staleTime: 5 * 60 * 1000,
   });
   const category = categories.data?.find((c) => c.id === id);
+  const refreshControl = usePullToRefresh([["category-products", id], CATEGORIES_KEY]);
 
   const products = useQuery({
     queryKey: [
@@ -110,6 +112,7 @@ export default function CategoryScreen() {
       )}
       <FlatList
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
         data={results}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.results}

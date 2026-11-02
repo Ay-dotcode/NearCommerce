@@ -6,6 +6,7 @@ import { StoreDetailSkeleton } from "@/components/skeletons";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { STACK_SCREEN_EDGES } from "@/theme/layout";
 import { apiClient } from "@nearcommerce/api";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { FlatList, StyleSheet, Text, View } from "react-native";
@@ -47,6 +48,7 @@ export default function StoreDetailScreen() {
     },
     enabled: Boolean(id),
   });
+  const refreshControl = usePullToRefresh([["store", id], ["reviews", "store", id]]);
 
   if (isLoading)
     return (
@@ -93,6 +95,7 @@ export default function StoreDetailScreen() {
       <Text style={styles.subtitle}>Inventory</Text>
       <FlatList
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
         data={store.products ?? []}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (

@@ -10,6 +10,8 @@ import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { STACK_SCREEN_EDGES } from "@/theme/layout";
 import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
+import { formatPrice } from "@nearcommerce/helpers";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -49,6 +51,7 @@ export default function ProductDetailScreen() {
     },
     enabled: Boolean(id),
   });
+  const refreshControl = usePullToRefresh([["product", id], ["reviews", "product", id]]);
 
   const addToList = async (listId: string, listName: string) => {
     try {
@@ -109,7 +112,11 @@ export default function ProductDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={STACK_SCREEN_EDGES}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
+        contentContainerStyle={styles.scroll}
+      >
         <ProductImage
           uri={product.image_url}
           label={product.name}
@@ -129,7 +136,7 @@ export default function ProductDetailScreen() {
         </Text>
 
         <View style={styles.metaContainer}>
-          <Text style={styles.price}>${Number(product.price).toFixed(2)}</Text>
+          <Text style={styles.price}>{formatPrice(product.price)}</Text>
           <View
             style={[
               styles.badge,

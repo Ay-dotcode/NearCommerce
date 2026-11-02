@@ -19,7 +19,7 @@ describe("ProductCard", () => {
         quantity={4}
       />,
     );
-    expect(getByText("$15.50")).toBeTruthy();
+    expect(getByText("₺15.50")).toBeTruthy();
     expect(getByText("Tech Shop · 1.6 km")).toBeTruthy();
     expect(getByText("In Stock (4)")).toBeTruthy();
     expect(getByText("Recently verified")).toBeTruthy();

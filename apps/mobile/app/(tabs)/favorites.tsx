@@ -6,6 +6,8 @@ import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { SCREEN_EDGES } from "@/theme/layout";
 import type { FavoriteItem } from "@/types/favorites";
 import { Ionicons } from "@expo/vector-icons";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
+import { formatPrice } from "@nearcommerce/helpers";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -34,6 +36,7 @@ export default function FavoritesScreen() {
     queryFn: fetchFavorites,
   });
   const remove = useRemoveFavorite();
+  const refreshControl = usePullToRefresh([FAVORITES_KEY]);
 
   const visible = favorites.filter(
     (f) => filter === "all" || f.type === filter,
@@ -75,6 +78,7 @@ export default function FavoritesScreen() {
       ) : (
         <FlatList
           showsVerticalScrollIndicator={false}
+          refreshControl={refreshControl}
           data={visible}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
@@ -118,7 +122,7 @@ function FavoriteRow({
         }`
       : ""
     : item.product
-      ? `$${Number(item.product.price).toFixed(2)} · ${item.product.store_name}${
+      ? `${formatPrice(item.product.price)} · ${item.product.store_name}${
           item.product.in_stock ? "" : " · Out of stock"
         }`
       : "";

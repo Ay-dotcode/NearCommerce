@@ -1,6 +1,7 @@
 import StoreCard from "@/components/StoreCard";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import { Ionicons } from "@expo/vector-icons";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { useState } from "react";
@@ -53,6 +54,7 @@ export default function HomeScreen() {
     queryFn: fetchCategories,
     staleTime: 5 * 60 * 1000,
   });
+  const refreshControl = usePullToRefresh([["nearby-stores"], CATEGORIES_KEY]);
   const categories: Category[] = categoriesQuery.data ?? [];
   // Only two rows of categories show at first; the rest wait behind "Show more".
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -71,6 +73,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={SCREEN_EDGES}>
       <FlatList
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
         contentContainerStyle={styles.content}
         data={storeCards}
         keyExtractor={(store) => store.id}

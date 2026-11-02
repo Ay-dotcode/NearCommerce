@@ -134,7 +134,7 @@ describe("ProductCard picture", () => {
       uri: "https://cdn.shop.com/cable.jpg",
     });
     expect(getByText("USB-C Cable")).toBeTruthy();
-    expect(getByText("$15.50")).toBeTruthy();
+    expect(getByText("₺15.50")).toBeTruthy();
   });
 
   it("keeps the card layout with a placeholder when there is no picture", () => {

@@ -12,6 +12,7 @@ import { useSessionCoords } from "@/src/hooks/useSessionCoords";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { SCREEN_EDGES } from "@/theme/layout";
 import { Ionicons } from "@expo/vector-icons";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -56,6 +57,8 @@ export default function SearchScreen() {
       ),
     enabled: searchQuery.trim().length > 2 && location !== null,
   });
+
+  const refreshControl = usePullToRefresh([["search"]]);
 
   const photoSearch = useMutation({
     mutationFn: async (source: PhotoSource) => {
@@ -204,6 +207,7 @@ export default function SearchScreen() {
         )}
       <FlatList
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
         data={results}
         contentContainerStyle={styles.results}
         keyExtractor={(item) => item.id}

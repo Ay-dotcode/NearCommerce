@@ -1,6 +1,6 @@
 import ProductImage from "@/components/ProductImage";
 import { useThemedStyles, type ThemeColors } from "@/theme";
-import { formatDistance } from "@nearcommerce/helpers";
+import { formatDistance, formatPrice } from "@nearcommerce/helpers";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export const PRODUCT_CARD_IMAGE_SIZE = 64;
@@ -57,7 +57,7 @@ export default function ProductCard({
           </Text>
         </View>
       </View>
-      <Text style={styles.price}>${Number(price).toFixed(2)}</Text>
+      <Text style={styles.price}>{formatPrice(price)}</Text>
     </Pressable>
   );
 }
