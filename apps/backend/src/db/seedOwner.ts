@@ -74,7 +74,7 @@ export async function seedOwner(poolInstance?: Pool) {
     const productsToInsert = [
       {
         name: "Organic Whole Milk (1 Gallon)",
-        price: 4.99,
+        price: 42.5,
         quantity: 24,
         is_published: true,
         image_url: "https://images.unsplash.com/photo-1550583724-b2692b85b150",
@@ -82,7 +82,7 @@ export async function seedOwner(poolInstance?: Pool) {
       },
       {
         name: "Artisan Sourdough Bread",
-        price: 6.5,
+        price: 55,
         quantity: 12,
         is_published: true,
         image_url:
@@ -91,7 +91,7 @@ export async function seedOwner(poolInstance?: Pool) {
       },
       {
         name: "Fresh Hass Avocados (Pack of 4)",
-        price: 5.99,
+        price: 120,
         quantity: 8,
         is_published: true,
         image_url:
@@ -100,7 +100,7 @@ export async function seedOwner(poolInstance?: Pool) {
       },
       {
         name: "Seasonal Honey Honeycomb (Draft)",
-        price: 14.0,
+        price: 250,
         quantity: 3,
         is_published: false,
         image_url: null,
