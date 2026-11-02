@@ -5,6 +5,7 @@ import { ProductImagePicker } from "@/features/products/ui/ProductImagePicker";
 import type { Category } from "@/types/categories";
 import type { StoreProduct } from "@/types/products";
 import { parseApiError } from "@nearcommerce/api";
+import { CURRENCY_SYMBOL } from "@nearcommerce/helpers";
 import {
   BusyFieldset,
   Button,
@@ -108,7 +109,7 @@ export const ProductForm = ({
           <div className="grid gap-4 sm:grid-cols-2">
             <FormTextField
               name="price"
-              label="Price"
+              label={`Price (${CURRENCY_SYMBOL})`}
               required
               type="number"
               inputMode="decimal"

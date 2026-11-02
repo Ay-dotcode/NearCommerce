@@ -144,7 +144,7 @@ describe("StoreOwnerDashboard", () => {
       await screen.findByRole("rowheader", { name: /Whole Milk/ })
     ).closest("tr")!;
     expect(within(milk).getByText("Published")).toBeInTheDocument();
-    expect(within(milk).getByText("2.49")).toBeInTheDocument();
+    expect(within(milk).getByText("₺2.49")).toBeInTheDocument();
 
     const bread = screen
       .getByRole("rowheader", { name: /Sourdough/ })
@@ -417,7 +417,7 @@ describe("StoreOwnerDashboard: details and stale banner", () => {
       "https://example.com/milk.jpg",
     );
     expect(within(dialog).getByText("Fresh and cold")).toBeInTheDocument();
-    expect(within(dialog).getByText("2.49")).toBeInTheDocument();
+    expect(within(dialog).getByText("₺2.49")).toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     await waitFor(() =>

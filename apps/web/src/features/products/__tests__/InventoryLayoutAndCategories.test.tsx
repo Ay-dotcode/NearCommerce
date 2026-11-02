@@ -206,7 +206,7 @@ describe("Inventory layout switch and category chips", () => {
       ).closest("li")!;
       expect(within(card).getByText("Whole Milk")).toBeInTheDocument();
       expect(within(card).getByText("Dairy › Milk")).toBeInTheDocument();
-      expect(within(card).getByText("2.49")).toBeInTheDocument();
+      expect(within(card).getByText("₺2.49")).toBeInTheDocument();
       expect(within(card).getByText("Published")).toBeInTheDocument();
       expect(
         within(card).getByRole("button", {

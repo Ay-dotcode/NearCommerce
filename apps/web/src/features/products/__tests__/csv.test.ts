@@ -172,3 +172,14 @@ describe("parseProductCsv", () => {
     expect(issues[0].message).toMatch(/larger than 1.5 MB/);
   });
 });
+
+describe("sample data is in Turkish lira", () => {
+  it("has a template with plausible lira prices (no dollar-sized prices) and no currency signs", async () => {
+    const { rows, issues } = await parseProductCsv(
+      new File([CSV_TEMPLATE], "template.csv", { type: "text/csv" }),
+    );
+    expect(issues).toEqual([]);
+    expect(rows.map((r) => r.price)).toEqual([42.5, 55]);
+    expect(CSV_TEMPLATE).not.toMatch(/[$€£]/);
+  });
+});

@@ -9,10 +9,11 @@ export const CSV_MAX_BYTES = 1_500_000;
 const MAX_PRICE = 99_999_999.99;
 const MAX_QUANTITY = 1_000_000;
 
+// Prices are in Turkish lira (₺), written as plain numbers with no currency sign.
 export const CSV_TEMPLATE = [
   "name,description,price,quantity,image_url",
-  "Whole Milk 1L,Fresh pasteurised whole milk,2.49,40,https://example.com/images/milk.jpg",
-  "Sourdough Loaf,Baked this morning,3.20,12,",
+  "Whole Milk 1L,Fresh pasteurised whole milk,42.50,40,https://example.com/images/milk.jpg",
+  "Sourdough Loaf,Baked this morning,55.00,12,",
   "",
 ].join("\n");
 
