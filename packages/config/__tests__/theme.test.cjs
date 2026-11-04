@@ -104,6 +104,17 @@ test("no scrollbar is drawn while a loading skeleton is on screen, but its space
   assert.equal(base["*:has([data-skeleton-group])"].scrollbarWidth, undefined);
 });
 
+test("the preset switches off the browser's default theme cross-fade so the wave can run", () => {
+  let base;
+  const handler = preset.plugins[0].handler ?? preset.plugins[0];
+  handler({ addBase: (rules) => (base = rules), addUtilities: () => {} });
+  const both = base["::view-transition-old(root), ::view-transition-new(root)"];
+  assert.equal(both.animation, "none");
+  assert.equal(both.mixBlendMode, "normal");
+  // The new page stays on top of the old snapshot while it is revealed.
+  assert.ok(Number(base["::view-transition-new(root)"].zIndex) > Number(base["::view-transition-old(root)"].zIndex));
+});
+
 test("createPreset gives each portal its own brand colour but shares everything else", () => {
   const { createPreset } = preset;
   const shopper = createPreset("default");

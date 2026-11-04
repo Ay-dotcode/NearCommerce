@@ -209,6 +209,15 @@ function createPreset(themeName = "default") {
           // Reserve the scrollbar's space always, so opening a dialog (which locks scrolling and
           // hides the bar) does not make the page behind it jump sideways.
           html: { scrollbarGutter: "stable" },
+          // The theme wave (see the ThemeToggle in packages/ui) animates the new page itself, as
+          // a circle growing from the button. These switch off the browser's default cross-fade
+          // so the two don't fight, and keep the new page on top.
+          "::view-transition-old(root), ::view-transition-new(root)": {
+            animation: "none",
+            mixBlendMode: "normal",
+          },
+          "::view-transition-old(root)": { zIndex: "1" },
+          "::view-transition-new(root)": { zIndex: "2147483646" },
           // While a loading skeleton is on screen, draw no scrollbar on the page (or on any
           // panel holding it). Skeletons are often taller than the content that replaces them,
           // so a scrollbar would flash up and vanish a moment later. Making it transparent, not
