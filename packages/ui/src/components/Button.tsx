@@ -21,9 +21,11 @@ const variants: Record<ButtonVariant, string> = {
   ghost: "press hover-outline text-slate-600 hover:bg-slate-100 focus-visible:ring-brand-500",
 };
 
+// `min-h`, not `h`: a label that has to wrap (a long one in a narrow card or on a small phone)
+// makes the button taller instead of spilling out of it. One-line labels keep the same height.
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-sm",
-  md: "h-10 px-4 text-sm",
+  sm: "min-h-8 px-3 py-1.5 text-center text-sm leading-tight",
+  md: "min-h-10 px-4 py-2 text-center text-sm leading-tight",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

@@ -4,6 +4,8 @@ import {
   cn,
   type ThemePreference,
 } from "@nearcommerce/helpers";
+import { applyTheme, resolveTheme } from "@nearcommerce/ui/src/helpers/theme";
+import { startThemeWave } from "@nearcommerce/ui/src/helpers/themeTransition";
 import { useThemePreference } from "@nearcommerce/ui/src/hooks/useThemePreference";
 import type { ReactNode } from "react";
 
@@ -29,8 +31,23 @@ const icons: Record<ThemePreference, ReactNode> = {
 
 // Three-way theme switch: Auto (follow the device), Light, Dark. The choice is saved, so it is
 // still there after a refresh. `compact` shows icons only (the labels stay for screen readers).
+// When the look really changes, the new theme spreads across the page from the pressed button.
 export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { preference, setPreference } = useThemePreference();
+
+  const choose = (option: ThemePreference, button: HTMLElement) => {
+    if (option === preference) return;
+    // The page's theme is switched right away (not on the next render), so the wave's snapshot
+    // of the new page is taken with the new colours.
+    const change = () => {
+      applyTheme(option);
+      setPreference(option);
+    };
+    // Auto can resolve to the look already showing: nothing to animate then.
+    if (resolveTheme(option) === resolveTheme(preference)) return change();
+    const box = button.getBoundingClientRect();
+    startThemeWave({ x: box.left + box.width / 2, y: box.top + box.height / 2 }, change);
+  };
 
   return (
     <div
@@ -47,7 +64,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
             role="radio"
             aria-checked={active}
             title={`${THEME_LABELS[option]} theme`}
-            onClick={() => setPreference(option)}
+            onClick={(event) => choose(option, event.currentTarget)}
             className={cn(
               "press hover-outline inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
               active

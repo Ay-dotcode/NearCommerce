@@ -57,6 +57,15 @@ export const ReviewListQuerySchema = z
 
 export const MyReviewsQuerySchema = z.object(pagination);
 
+// A store owner's view of the reviews on their products, optionally for a single product.
+export const OwnerProductReviewsQuerySchema = z.object({
+  product_id: z.string().uuid("product_id must be a valid id").optional(),
+  ...pagination,
+});
+
 export type CreateReviewInput = z.infer<typeof CreateReviewSchema>;
 export type UpdateReviewInput = z.infer<typeof UpdateReviewSchema>;
 export type ReviewListQuery = z.infer<typeof ReviewListQuerySchema>;
+export type OwnerProductReviewsQuery = z.infer<
+  typeof OwnerProductReviewsQuerySchema
+>;

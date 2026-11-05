@@ -20,14 +20,17 @@ export const AdminDeleteSchema = z.object({
   reason: z.string().min(5),
 });
 
-// Making someone an admin needs the acting admin's own password, so a stolen session or an
-// unattended browser cannot hand out admin rights.
+// Making someone an admin, or taking admin rights away, needs the acting admin's own password,
+// so a stolen session or an unattended browser cannot hand out or remove admin rights. A reason
+// can be given for the audit log but is optional.
 export const PromoteAdminSchema = z.object({
   password: z.string().min(1, "Your password is required"),
   reason: z.string().trim().min(5).max(500).optional(),
 });
+export const DemoteAdminSchema = PromoteAdminSchema;
 
 export type PromoteAdminInput = z.infer<typeof PromoteAdminSchema>;
+export type DemoteAdminInput = z.infer<typeof DemoteAdminSchema>;
 
 export const CreateCategorySchema = z.object({
   name: z
