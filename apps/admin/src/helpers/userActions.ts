@@ -46,7 +46,7 @@ export function actionDialogCopy(kind: UserActionKind, user: AdminUser) {
     return {
       title: `Demote ${user.email}?`,
       description:
-        "They become a customer, lose access to the admin console immediately and are signed out everywhere.",
+        "They become a customer, lose access to the admin console immediately and are signed out everywhere. Enter your own password to confirm.",
       confirmLabel: "Demote to customer",
       busyLabel: "Demoting…",
       tone: "danger" as const,

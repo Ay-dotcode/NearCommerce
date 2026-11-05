@@ -1,5 +1,12 @@
 import { usePasswordConfirmForm } from "@/forms/usePasswordConfirmForm";
-import { BusyFieldset, Button, Modal, PasswordField } from "@nearcommerce/ui";
+import {
+  BusyFieldset,
+  Button,
+  FormTextAreaField,
+  Modal,
+  PasswordField,
+} from "@nearcommerce/ui";
+import { FormikProvider } from "formik";
 import { useId } from "react";
 
 interface PasswordConfirmDialogProps {
@@ -10,12 +17,12 @@ interface PasswordConfirmDialogProps {
   busyLabel?: string;
   tone?: "danger" | "primary";
   hint?: string;
+  askReason?: boolean;
+  reasonHint?: string;
   onClose: () => void;
-  onConfirm: (password: string) => Promise<unknown>;
+  onConfirm: (password: string, reason?: string) => Promise<unknown>;
 }
 
-// Asks the signed-in admin for their own password before a sensitive action, such as making
-// another user an admin, and runs the action once it is given.
 export function PasswordConfirmDialog({
   open,
   title,
@@ -24,6 +31,8 @@ export function PasswordConfirmDialog({
   busyLabel = "Working…",
   tone = "primary",
   hint = "This confirms it is really you. It is not stored or shown to anyone.",
+  askReason = false,
+  reasonHint = "Recorded in the audit log.",
   onClose,
   onConfirm,
 }: PasswordConfirmDialogProps) {
@@ -60,18 +69,29 @@ export function PasswordConfirmDialog({
         </>
       }
     >
-      <form id={formId} onSubmit={formik.handleSubmit} noValidate>
-        <BusyFieldset busy={busy} className="space-y-4">
-          <PasswordField
-            label="Your password"
-            autoComplete="current-password"
-            data-autofocus
-            hint={hint}
-            {...formik.getFieldProps("password")}
-            error={formik.errors.password}
-          />
-        </BusyFieldset>
-      </form>
+      <FormikProvider value={formik}>
+        <form id={formId} onSubmit={formik.handleSubmit} noValidate>
+          <BusyFieldset busy={busy} className="space-y-4">
+            <PasswordField
+              label="Your password"
+              autoComplete="current-password"
+              data-autofocus
+              hint={hint}
+              {...formik.getFieldProps("password")}
+              error={formik.errors.password}
+            />
+            {askReason && (
+              <FormTextAreaField
+                name="reason"
+                label="Reason (optional)"
+                rows={3}
+                hint={reasonHint}
+                error={formik.errors.reason}
+              />
+            )}
+          </BusyFieldset>
+        </form>
+      </FormikProvider>
     </Modal>
   );
 }

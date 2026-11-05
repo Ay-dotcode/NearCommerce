@@ -3,20 +3,17 @@ import { parseApiError } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import { useEffect } from "react";
 
-// Formik state for "type your own password, then run the action". The form starts empty every
-// time the dialog opens; a thrown error from `onConfirm` (for example a wrong password) is
-// shown under the field.
 export function usePasswordConfirmForm(
   open: boolean,
-  onConfirm: (password: string) => Promise<unknown>,
+  onConfirm: (password: string, reason?: string) => Promise<unknown>,
 ) {
   const formik = useFormik({
     initialValues: passwordInitialValues,
     validate: validatePassword,
     validateOnChange: false,
-    onSubmit: async ({ password }, helpers) => {
+    onSubmit: async ({ password, reason }, helpers) => {
       try {
-        await onConfirm(password);
+        await onConfirm(password, reason.trim() || undefined);
       } catch (err) {
         helpers.setFieldError(
           "password",

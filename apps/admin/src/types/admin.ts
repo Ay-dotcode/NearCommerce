@@ -85,6 +85,7 @@ export interface AdminReview {
   reviewer_email: string;
   target_type: "STORE" | "PRODUCT";
   target_name: string | null;
+  store_name?: string | null;
 }
 
 export interface AdminSubcategory {

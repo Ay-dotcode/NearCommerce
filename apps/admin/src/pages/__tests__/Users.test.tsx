@@ -264,6 +264,29 @@ describe("Admin Users: details modal", () => {
       expect(screen.queryByRole("dialog")).toBeNull();
     });
 
+    it("also takes an optional reason, and sends it along with the password", async () => {
+      patch.mockResolvedValue({ data: {} });
+      const dialog = await openPromote();
+      const confirm = within(dialog).getByRole("button", { name: "Make admin" });
+
+      fireEvent.change(within(dialog).getByLabelText("Your password"), {
+        target: { value: "my-admin-pass" },
+      });
+      // The reason is optional: the password alone is enough to enable the button.
+      expect(confirm).toBeEnabled();
+      fireEvent.change(within(dialog).getByLabelText("Reason (optional)"), {
+        target: { value: "Joined the moderation team" },
+      });
+      fireEvent.click(confirm);
+
+      await waitFor(() =>
+        expect(patch).toHaveBeenCalledWith("/admin/users/u1/promote", {
+          password: "my-admin-pass",
+          reason: "Joined the moderation team",
+        }),
+      );
+    });
+
     it("keeps the dialog open and shows the server's message when the password is wrong", async () => {
       patch.mockRejectedValue({
         isAxiosError: true,
@@ -323,5 +346,106 @@ describe("Admin Users: details modal", () => {
         expect.stringMatching(/platform owner/i),
       );
     });
+  });
+});
+
+describe("Admin Users: taking admin rights away", () => {
+  const admin = (over = {}) =>
+    user({ id: "a2", role: "SYSTEM_ADMIN", full_name: "Other Admin", email: "other@admin.test", ...over });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockApi([admin()]);
+  });
+
+  const openDemote = async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Demote" }));
+    return screen.findByRole("dialog", { name: /demote other@admin.test/i });
+  };
+
+  it("asks for the admin's own password, like making someone an admin does", async () => {
+    patch.mockResolvedValue({ data: {} });
+    const dialog = await openDemote();
+    const confirm = within(dialog).getByRole("button", { name: "Demote to customer" });
+    expect(confirm).toBeDisabled();
+
+    fireEvent.change(within(dialog).getByLabelText("Your password"), {
+      target: { value: "my-admin-pass" },
+    });
+    fireEvent.click(confirm);
+
+    await waitFor(() =>
+      expect(patch).toHaveBeenCalledWith("/admin/users/a2/demote", {
+        password: "my-admin-pass",
+      }),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "other@admin.test is now a customer.",
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("still asks for a reason, but it is optional, and is sent when given", async () => {
+    patch.mockResolvedValue({ data: {} });
+    const dialog = await openDemote();
+    const confirm = within(dialog).getByRole("button", { name: "Demote to customer" });
+
+    fireEvent.change(within(dialog).getByLabelText("Your password"), {
+      target: { value: "my-admin-pass" },
+    });
+    // Not required: the button is already enabled with only the password.
+    expect(confirm).toBeEnabled();
+    fireEvent.change(within(dialog).getByLabelText("Reason (optional)"), {
+      target: { value: "Left the team" },
+    });
+    fireEvent.click(confirm);
+
+    await waitFor(() =>
+      expect(patch).toHaveBeenCalledWith("/admin/users/a2/demote", {
+        password: "my-admin-pass",
+        reason: "Left the team",
+      }),
+    );
+  });
+
+  it("does not send a reason that is too short, and says why", async () => {
+    const dialog = await openDemote();
+    fireEvent.change(within(dialog).getByLabelText("Your password"), {
+      target: { value: "my-admin-pass" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Reason (optional)"), {
+      target: { value: "no" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Demote to customer" }));
+
+    expect(await within(dialog).findByText(/at least 5 characters/i)).toBeInTheDocument();
+    expect(patch).not.toHaveBeenCalled();
+  });
+
+  it("keeps the dialog open and shows the server's message when the password is wrong", async () => {
+    patch.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 403, data: { error: "Incorrect password." } },
+    });
+    const dialog = await openDemote();
+    fireEvent.change(within(dialog).getByLabelText("Your password"), {
+      target: { value: "nope" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Demote to customer" }));
+
+    expect(await within(dialog).findByText("Incorrect password.")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /demote other@admin.test/i })).toBeInTheDocument();
+  });
+
+  it("starts empty each time the dialog is opened", async () => {
+    const dialog = await openDemote();
+    fireEvent.change(within(dialog).getByLabelText("Your password"), { target: { value: "secret" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    fireEvent.click(screen.getByRole("button", { name: "Demote" }));
+    const again = await screen.findByRole("dialog", { name: /demote other@admin.test/i });
+    expect(within(again).getByLabelText("Your password")).toHaveValue("");
   });
 });

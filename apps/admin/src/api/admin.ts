@@ -44,16 +44,26 @@ export async function getUserDetails(id: string) {
   return response.data.data;
 }
 
-export async function demoteAdmin(id: string, reason: string) {
+export async function demoteAdmin(
+  id: string,
+  password: string,
+  reason?: string,
+) {
   const response = await apiClient.patch(`/admin/users/${id}/demote`, {
-    reason,
+    password,
+    ...(reason ? { reason } : {}),
   });
   return response.data;
 }
 
-export async function promoteToAdmin(id: string, password: string) {
+export async function promoteToAdmin(
+  id: string,
+  password: string,
+  reason?: string,
+) {
   const response = await apiClient.patch(`/admin/users/${id}/promote`, {
     password,
+    ...(reason ? { reason } : {}),
   });
   return response.data;
 }

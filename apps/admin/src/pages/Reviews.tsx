@@ -93,8 +93,11 @@ export default function Reviews() {
                 </p>
                 <p className="mt-2 text-xs text-slate-500">
                   {review.target_type === "STORE" ? "Store" : "Product"}:{" "}
-                  {review.target_name ?? "(deleted)"} ·{" "}
-                  {new Date(review.created_at).toLocaleString()}
+                  {review.target_name ?? "(deleted)"}
+                  {review.target_type === "PRODUCT" && review.store_name && (
+                    <> · Sold by {review.store_name}</>
+                  )}{" "}
+                  · {new Date(review.created_at).toLocaleString()}
                   {review.updated_at && " · edited"}
                 </p>
               </div>

@@ -70,17 +70,23 @@ export default function Users() {
   const run = useMutation({
     mutationFn: ({
       act,
-      reason = "",
+      reason,
       password = "",
     }: {
       act: Action;
       reason?: string;
       password?: string;
     }) => {
-      if (act.kind === "promote") return promoteToAdmin(act.user.id, password);
-      if (act.kind === "demote") return demoteAdmin(act.user.id, reason);
-      if (act.kind === "delete") return deleteUser(act.user.id, reason);
-      return toggleUserSuspension(act.user.id, !act.user.is_suspended, reason);
+      if (act.kind === "promote")
+        return promoteToAdmin(act.user.id, password, reason);
+      if (act.kind === "demote")
+        return demoteAdmin(act.user.id, password, reason);
+      if (act.kind === "delete") return deleteUser(act.user.id, reason ?? "");
+      return toggleUserSuspension(
+        act.user.id,
+        !act.user.is_suspended,
+        reason ?? "",
+      );
     },
     onSuccess: (_data, { act }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_USERS_KEY });
@@ -259,31 +265,41 @@ export default function Users() {
         onAction={startAction}
       />
 
-      {action && dialog && action.kind === "promote" && (
-        <PasswordConfirmDialog
-          open
-          title={dialog.title}
-          description={dialog.description}
-          confirmLabel={dialog.confirmLabel}
-          busyLabel={dialog.busyLabel}
-          tone={dialog.tone}
-          onClose={() => setAction(null)}
-          onConfirm={(password) => run.mutateAsync({ act: action, password })}
-        />
-      )}
+      {/* Making someone an admin, or taking admin rights away, needs the admin's own password,
+          and takes an optional reason. */}
+      {action &&
+        dialog &&
+        (action.kind === "promote" || action.kind === "demote") && (
+          <PasswordConfirmDialog
+            open
+            askReason
+            title={dialog.title}
+            description={dialog.description}
+            confirmLabel={dialog.confirmLabel}
+            busyLabel={dialog.busyLabel}
+            tone={dialog.tone}
+            onClose={() => setAction(null)}
+            onConfirm={(password, reason) =>
+              run.mutateAsync({ act: action, password, reason })
+            }
+          />
+        )}
 
-      {action && dialog && action.kind !== "promote" && (
-        <ReasonDialog
-          open
-          title={dialog.title}
-          description={dialog.description}
-          confirmLabel={dialog.confirmLabel}
-          busyLabel={dialog.busyLabel}
-          tone={dialog.tone}
-          onClose={() => setAction(null)}
-          onConfirm={(reason) => run.mutateAsync({ act: action, reason })}
-        />
-      )}
+      {action &&
+        dialog &&
+        action.kind !== "promote" &&
+        action.kind !== "demote" && (
+          <ReasonDialog
+            open
+            title={dialog.title}
+            description={dialog.description}
+            confirmLabel={dialog.confirmLabel}
+            busyLabel={dialog.busyLabel}
+            tone={dialog.tone}
+            onClose={() => setAction(null)}
+            onConfirm={(reason) => run.mutateAsync({ act: action, reason })}
+          />
+        )}
     </section>
   );
 }
