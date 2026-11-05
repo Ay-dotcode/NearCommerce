@@ -24,10 +24,7 @@ const router = createBrowserRouter(
     },
     {
       path: AppRoutes.register,
-      ...lazyPage(
-        () => import("@/forms/RegisterForm"),
-        "RegisterForm",
-      ),
+      ...lazyPage(() => import("@/forms/RegisterForm"), "RegisterForm"),
     },
     {
       path: AppRoutes.forgotPassword,
@@ -69,6 +66,13 @@ const router = createBrowserRouter(
               path: AppRoutes.storeOwnerDashboard,
               lazy: async () => ({
                 Component: (await import("@/pages/store-owner/Dashboard"))
+                  .default,
+              }),
+            },
+            {
+              path: AppRoutes.storeReviews,
+              lazy: async () => ({
+                Component: (await import("@/pages/store-owner/Reviews"))
                   .default,
               }),
             },

@@ -1,4 +1,12 @@
 import { createStore } from "@/api/stores";
+import { MY_STORES_KEY } from "@/constants";
+import { AppRoutes } from "@/constants/routes";
+import { setActiveStoreId } from "@/features/auth/session";
+import { OwnerTour } from "@/features/onboarding/OwnerTour";
+import { useOwnerTour } from "@/features/onboarding/useOwnerTour";
+import { StoreForm } from "@/forms/StoreForm";
+import type { Store } from "@/types/stores";
+import { STORE_KEY } from "@nearcommerce/api";
 import {
   BackButton,
   BrandIcon,
@@ -6,13 +14,6 @@ import {
   ThemeToggle,
   useToast,
 } from "@nearcommerce/ui";
-import { MY_STORES_KEY } from "@/constants";
-import { AppRoutes } from "@/constants/routes";
-import { setActiveStoreId } from "@/features/auth/session";
-import { OwnerTour } from "@/features/onboarding/OwnerTour";
-import { useOwnerTour } from "@/features/onboarding/useOwnerTour";
-import { StoreForm } from "@/forms/StoreForm";
-import { STORE_KEY } from "@nearcommerce/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -78,6 +79,13 @@ export function StoreOnboardingPage() {
             onSubmit={async (payload) => {
               const store = await createStore(payload);
               setActiveStoreId(store.id);
+              queryClient.setQueryData<Store[]>(
+                MY_STORES_KEY,
+                (stores = []) => [
+                  ...stores.filter((s) => s.id !== store.id),
+                  store,
+                ],
+              );
               await queryClient.invalidateQueries({ queryKey: MY_STORES_KEY });
               toast.success(
                 `${store.name} is ready. Add your first products next.`,

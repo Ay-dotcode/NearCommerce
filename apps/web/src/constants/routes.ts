@@ -7,6 +7,7 @@ export const AppRoutes = {
   verifyEmail: "/verify-email",
   onboarding: "/owner/onboarding",
   storeOwnerDashboard: "/owner/dashboard",
+  storeReviews: "/owner/reviews",
   storeProfile: "/owner/profile",
 } as const;
 

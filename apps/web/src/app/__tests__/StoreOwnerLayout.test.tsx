@@ -1,7 +1,15 @@
 import { listMyStores } from "@/api/stores";
 import { StoreOwnerLayout } from "@/app/layouts/StoreOwnerLayout";
+import { MY_STORES_KEY } from "@/constants";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 jest.mock("@/api/stores", () => ({
@@ -26,10 +34,9 @@ const store = (id: string, name: string, is_suspended = false) => ({
   opening_hours: {},
 });
 
-function renderLayout() {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+function renderLayout(
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={["/owner/dashboard"]}>
@@ -98,6 +105,33 @@ describe("StoreOwnerLayout", () => {
     expect(localStorage.getItem("x-store-id")).toBe("s2");
   });
 
+  it("keeps a store that was just created as the open one, even while the cached store list is out of date", async () => {
+    // What the onboarding page leaves behind: the new store is the remembered one, but the
+    // portal's cached list (from before) does not know it yet.
+    localStorage.setItem("x-store-id", "new-store");
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    client.setQueryData(MY_STORES_KEY, [store("s1", "Alpha")]);
+    let finishLoading!: (stores: unknown[]) => void;
+    listMock.mockReturnValue(
+      new Promise((resolve) => (finishLoading = resolve)),
+    );
+
+    renderLayout(client);
+    await screen.findByLabelText("Active store");
+    // While the list reloads, the selection must not be put back to the previous store.
+    expect(localStorage.getItem("x-store-id")).toBe("new-store");
+
+    await act(async () => {
+      finishLoading([store("s1", "Alpha"), store("new-store", "Fresh Shop")]);
+    });
+    await waitFor(() =>
+      expect(screen.getByLabelText("Active store")).toHaveValue("new-store"),
+    );
+    expect(localStorage.getItem("x-store-id")).toBe("new-store");
+  });
+
   it("warns when the active store is suspended", async () => {
     listMock.mockResolvedValue([store("s1", "Alpha", true)]);
     renderLayout();
@@ -115,6 +149,18 @@ describe("StoreOwnerLayout", () => {
     await screen.findByText("Dashboard content");
     expect(screen.queryByText(/verify your email/i)).toBeNull();
     expect(screen.queryByText(/resend verification/i)).toBeNull();
+  });
+
+  it("has a Reviews page in the portal navigation", async () => {
+    listMock.mockResolvedValue([store("s1", "Alpha")]);
+    renderLayout();
+    await screen.findByText("Dashboard content");
+    const nav = screen.getByRole("navigation", { name: "Primary" });
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Inventory", "Reviews", "Store settings"]);
   });
 
   it("navigates between Inventory and Store settings", async () => {
@@ -209,11 +255,12 @@ describe("StoreOwnerLayout", () => {
     listMock.mockResolvedValue([store("s1", "Alpha")]);
     renderLayout();
     expect(await screen.findByText("Dashboard content")).toBeInTheDocument();
-    expect(screen.getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Near Commerce home" })).toHaveAttribute(
-      "href",
-      "/owner/dashboard",
-    );
+    expect(
+      screen.getByRole("radiogroup", { name: "Theme" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Near Commerce home" }),
+    ).toHaveAttribute("href", "/owner/dashboard");
     expect(screen.getByRole("navigation").className).toMatch(/no-scrollbar/);
     expect(screen.getByTestId("page-transition")).toHaveTextContent(
       "Dashboard content",

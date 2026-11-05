@@ -1,4 +1,5 @@
 import { createStore } from "@/api/stores";
+import { MY_STORES_KEY } from "@/constants";
 import { StoreOnboardingPage } from "@/pages/store-owner/StoreOnboardingPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -7,9 +8,9 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 jest.mock("@/api/stores", () => ({ createStore: jest.fn() }));
 const createMock = createStore as jest.Mock;
 
-const renderPage = () =>
+const renderPage = (client = new QueryClient()) =>
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={["/owner/onboarding"]}>
         <Routes>
           <Route path="/owner/onboarding" element={<StoreOnboardingPage />} />
@@ -65,6 +66,23 @@ describe("StoreOnboardingPage", () => {
     expect(localStorage.getItem("x-store-id")).toBe("new-store");
   });
 
+  it("also puts the new store in the portal's store list, so it is the open store when the dashboard loads", async () => {
+    createMock.mockResolvedValue({ id: "new-store", name: "Corner Market" });
+    const client = new QueryClient();
+    // The list the portal already holds: the owner's previous store.
+    client.setQueryData(MY_STORES_KEY, [{ id: "old-store", name: "Old Shop" }]);
+    renderPage(client);
+    fillValid();
+    fireEvent.click(screen.getByRole("button", { name: "Create store" }));
+    await screen.findByText("Dashboard page");
+
+    const ids = (client.getQueryData(MY_STORES_KEY) as { id: string }[]).map(
+      (s) => s.id,
+    );
+    expect(ids).toEqual(["old-store", "new-store"]);
+    expect(localStorage.getItem("x-store-id")).toBe("new-store");
+  });
+
   it("stays on the page and shows the error when creation fails; nothing is persisted", async () => {
     createMock.mockRejectedValue({
       response: {
@@ -95,7 +113,9 @@ describe("StoreOnboardingPage", () => {
       screen.getByRole("dialog", { name: "Welcome to Near Commerce" }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
-    expect(screen.queryByRole("dialog", { name: /Welcome/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: /Welcome/ }),
+    ).not.toBeInTheDocument();
     expect(localStorage.getItem("nc-owner-tour-seen")).toBe("1");
   });
 });

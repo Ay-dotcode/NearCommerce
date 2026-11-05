@@ -1,7 +1,7 @@
-import { installImageLoadStub } from "@/testing/image";
-import { ToastProvider } from "@nearcommerce/ui";
 import StoreOwnerDashboard from "@/pages/store-owner/Dashboard";
+import { installImageLoadStub } from "@/testing/image";
 import { apiClient } from "@nearcommerce/api";
+import { ToastProvider } from "@nearcommerce/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   fireEvent,
@@ -215,6 +215,31 @@ describe("Inventory layout switch and category chips", () => {
       ).toBeInTheDocument();
     });
 
+    it('gives the long "Confirm still in stock" button a row of its own, with Edit and Delete beside each other below it', async () => {
+      renderDashboard();
+      fireEvent.click(await screen.findByRole("button", { name: "Grid view" }));
+      const card = (
+        await screen.findByRole("button", { name: /Edit Whole Milk/ })
+      ).closest("li")!;
+      const confirm = within(card).getByRole("button", {
+        name: /Confirm still in stock: Whole Milk/,
+      });
+      const edit = within(card).getByRole("button", {
+        name: /Edit Whole Milk/,
+      });
+      const remove = within(card).getByRole("button", {
+        name: /Delete Whole Milk/,
+      });
+
+      // Not squeezed into one row with the other two (which is what made its label wrap out of
+      // the button), and as wide as the card.
+      expect(confirm.parentElement).not.toBe(edit.parentElement);
+      expect(confirm).toHaveClass("w-full");
+      expect(edit.parentElement).toBe(remove.parentElement);
+      expect(edit).toHaveClass("flex-1");
+      expect(remove).toHaveClass("flex-1");
+    });
+
     it("opens the details dialog from a card", async () => {
       renderDashboard();
       fireEvent.click(await screen.findByRole("button", { name: "Grid view" }));
@@ -253,7 +278,8 @@ describe("Inventory layout switch and category chips", () => {
   });
 
   describe("category chips", () => {
-    const chips = () => screen.getByRole("group", { name: "Filter by category" });
+    const chips = () =>
+      screen.getByRole("group", { name: "Filter by category" });
 
     it("shows All, each category in use with its count, and Uncategorized", async () => {
       renderDashboard();
@@ -267,22 +293,22 @@ describe("Inventory layout switch and category chips", () => {
       expect(names).toEqual(["All3", "Dairy1", "Bakery1", "Uncategorized1"]);
       // "Garden" has no products, so there is nothing to filter by.
       expect(within(group).queryByText("Garden")).not.toBeInTheDocument();
-      expect(within(group).getByRole("button", { name: /^All/ })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      );
+      expect(
+        within(group).getByRole("button", { name: /^All/ }),
+      ).toHaveAttribute("aria-pressed", "true");
     });
 
     it("filters through the API by category and returns to everything", async () => {
       renderDashboard();
       await screen.findByRole("table");
       fireEvent.click(
-        await within(await screen.findByRole("group", { name: "Filter by category" })).findByRole(
-          "button",
-          { name: /^Dairy/ },
-        ),
+        await within(
+          await screen.findByRole("group", { name: "Filter by category" }),
+        ).findByRole("button", { name: /^Dairy/ }),
       );
-      await waitFor(() => expect(lastListParams().categoryId).toBe("cat-dairy"));
+      await waitFor(() =>
+        expect(lastListParams().categoryId).toBe("cat-dairy"),
+      );
       await waitFor(() =>
         expect(screen.queryByText("Rye Bread")).not.toBeInTheDocument(),
       );
@@ -300,10 +326,9 @@ describe("Inventory layout switch and category chips", () => {
       renderDashboard();
       await screen.findByRole("table");
       fireEvent.click(
-        await within(await screen.findByRole("group", { name: "Filter by category" })).findByRole(
-          "button",
-          { name: /^Uncategorized/ },
-        ),
+        await within(
+          await screen.findByRole("group", { name: "Filter by category" }),
+        ).findByRole("button", { name: /^Uncategorized/ }),
       );
       await waitFor(() => expect(lastListParams().categoryId).toBe("none"));
       expect(await screen.findByText("Mystery Box")).toBeInTheDocument();
@@ -313,10 +338,9 @@ describe("Inventory layout switch and category chips", () => {
       renderDashboard();
       await screen.findByRole("table");
       fireEvent.click(
-        await within(await screen.findByRole("group", { name: "Filter by category" })).findByRole(
-          "button",
-          { name: /^Bakery/ },
-        ),
+        await within(
+          await screen.findByRole("group", { name: "Filter by category" }),
+        ).findByRole("button", { name: /^Bakery/ }),
       );
       await waitFor(() => expect(lastListParams()).toMatchObject({ page: 1 }));
     });
@@ -325,10 +349,9 @@ describe("Inventory layout switch and category chips", () => {
       renderDashboard();
       fireEvent.click(await screen.findByRole("button", { name: "Grid view" }));
       fireEvent.click(
-        await within(await screen.findByRole("group", { name: "Filter by category" })).findByRole(
-          "button",
-          { name: /^Bakery/ },
-        ),
+        await within(
+          await screen.findByRole("group", { name: "Filter by category" }),
+        ).findByRole("button", { name: /^Bakery/ }),
       );
       await waitFor(() =>
         expect(lastListParams().categoryId).toBe("cat-bakery"),
@@ -349,10 +372,9 @@ describe("Inventory layout switch and category chips", () => {
       renderDashboard();
       await screen.findByRole("table");
       fireEvent.click(
-        await within(await screen.findByRole("group", { name: "Filter by category" })).findByRole(
-          "button",
-          { name: /^Dairy/ },
-        ),
+        await within(
+          await screen.findByRole("group", { name: "Filter by category" }),
+        ).findByRole("button", { name: /^Dairy/ }),
       );
       expect(
         await screen.findByText("No products match your filters"),

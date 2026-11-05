@@ -1,5 +1,6 @@
 import { AppRoutes } from "@/constants/routes";
 import { InventoryPageSkeleton } from "@/features/products/ui/InventorySkeleton";
+import { ReviewsPageSkeleton } from "@/features/reviews/ui/ReviewsSkeleton";
 import { StoreSettingsSkeleton } from "@/features/stores/ui/StoreSkeleton";
 import { Skeleton, SkeletonGroup } from "@nearcommerce/ui";
 import { useLocation } from "react-router-dom";
@@ -8,11 +9,11 @@ import { useLocation } from "react-router-dom";
 // right shape while the owner's stores load.
 export function PortalPageSkeleton() {
   const { pathname } = useLocation();
-  return pathname.startsWith(AppRoutes.storeProfile) ? (
-    <StoreSettingsSkeleton />
-  ) : (
-    <InventoryPageSkeleton />
-  );
+  if (pathname.startsWith(AppRoutes.storeProfile))
+    return <StoreSettingsSkeleton />;
+  if (pathname.startsWith(AppRoutes.storeReviews))
+    return <ReviewsPageSkeleton />;
+  return <InventoryPageSkeleton />;
 }
 
 // First paint of the app, before the router knows which page it is on: a header bar and a

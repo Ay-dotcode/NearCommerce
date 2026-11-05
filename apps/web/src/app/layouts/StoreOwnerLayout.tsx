@@ -1,13 +1,5 @@
 import { listMyStores } from "@/api/stores";
 import { PortalPageSkeleton } from "@/app/PageSkeletons";
-import {
-  BrandIcon,
-  Button,
-  PageTransition,
-  PointerGlow,
-  Skeleton,
-  ThemeToggle,
-} from "@nearcommerce/ui";
 import { MY_STORES_KEY } from "@/constants";
 import { AppRoutes } from "@/constants/routes";
 import {
@@ -19,6 +11,15 @@ import { OwnerTour } from "@/features/onboarding/OwnerTour";
 import { useOwnerTour } from "@/features/onboarding/useOwnerTour";
 import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { parseApiError, STORE_KEY } from "@nearcommerce/api";
+import { cn } from "@nearcommerce/helpers";
+import {
+  BrandIcon,
+  Button,
+  PageTransition,
+  PointerGlow,
+  Skeleton,
+  ThemeToggle,
+} from "@nearcommerce/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
@@ -28,10 +29,10 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { cn } from "@nearcommerce/helpers";
 
 const navItems = [
   { to: AppRoutes.storeOwnerDashboard, label: "Inventory" },
+  { to: AppRoutes.storeReviews, label: "Reviews" },
   { to: AppRoutes.storeProfile, label: "Store settings" },
 ];
 
@@ -51,9 +52,8 @@ export function StoreOwnerLayout() {
   const stores = storesQuery.data ?? [];
   const activeStore = stores.find((s) => s.id === selectedStoreId) ?? stores[0];
 
-  // Keep the persisted X-Store-ID in sync with what the account actually owns.
   useEffect(() => {
-    if (!storesQuery.data) return;
+    if (!storesQuery.data || storesQuery.isFetching) return;
     if (storesQuery.data.length === 0) {
       localStorage.removeItem(STORE_KEY);
       navigate(AppRoutes.onboarding, { replace: true });
@@ -63,7 +63,13 @@ export function StoreOwnerLayout() {
       setSelectedStoreId(activeStore.id);
     if (activeStore && localStorage.getItem(STORE_KEY) !== activeStore.id)
       setActiveStoreId(activeStore.id);
-  }, [storesQuery.data, activeStore, selectedStoreId, navigate]);
+  }, [
+    storesQuery.data,
+    storesQuery.isFetching,
+    activeStore,
+    selectedStoreId,
+    navigate,
+  ]);
 
   const error = storesQuery.isError ? parseApiError(storesQuery.error) : null;
   useEffect(() => {
@@ -115,7 +121,7 @@ export function StoreOwnerLayout() {
             )}
 
             {ready && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <label
                   htmlFor="store-switcher"
                   className="text-sm font-medium text-slate-600"
@@ -146,7 +152,7 @@ export function StoreOwnerLayout() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <ThemeToggle compact />
             <Button variant="ghost" size="sm" onClick={tour.start}>
               Take the tour

@@ -1,9 +1,9 @@
-import { Badge, Button } from "@nearcommerce/ui";
 import { ProductImage } from "@/features/products/ui/ProductImage";
+import { categoryLabel, isStale } from "@/helpers/products";
 import type { Category } from "@/types/categories";
 import type { StoreProduct } from "@/types/products";
-import { categoryLabel, isStale } from "@/helpers/products";
 import { cn, formatPrice, timeAgo } from "@nearcommerce/helpers";
+import { Badge, Button } from "@nearcommerce/ui";
 
 interface Props {
   products: StoreProduct[];
@@ -97,11 +97,11 @@ export function ProductGrid({
                 )}
                 {stale && <Badge tone="warning">Needs verification</Badge>}
               </div>
-              <div className="mt-auto flex flex-wrap gap-1 pt-1">
+              <div className="mt-auto flex flex-col gap-1 pt-1">
                 <Button
                   size="sm"
                   variant={stale ? "primary" : "secondary"}
-                  className="flex-1"
+                  className="w-full"
                   loading={confirming}
                   disabled={confirmDisabled}
                   aria-label={`Confirm still in stock: ${product.name}`}
@@ -109,23 +109,26 @@ export function ProductGrid({
                 >
                   {confirming ? "Verifying…" : "Confirm still in stock"}
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  aria-label={`Edit ${product.name}`}
-                  onClick={() => onEdit(product)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-red-700 hover:bg-red-50"
-                  aria-label={`Delete ${product.name}`}
-                  onClick={() => onDelete(product)}
-                >
-                  Delete
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1"
+                    aria-label={`Edit ${product.name}`}
+                    onClick={() => onEdit(product)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 text-red-700 hover:bg-red-50"
+                    aria-label={`Delete ${product.name}`}
+                    onClick={() => onDelete(product)}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </div>
             </div>
           </li>
