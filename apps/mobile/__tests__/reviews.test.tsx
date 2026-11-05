@@ -93,6 +93,27 @@ describe("ReviewsSection", () => {
     });
   });
 
+  it("shows which store sells the reviewed product", async () => {
+    api.get.mockResolvedValue({
+      data: page([review({ store_name: "Corner Market" })]),
+    });
+    const { findByText } = renderWithClient(
+      <ReviewsSection target={{ productId: "p1" }} />,
+    );
+    expect(await findByText("Sold by Corner Market")).toBeTruthy();
+  });
+
+  it("shows no selling store on a review of a store (the store is the target)", async () => {
+    api.get.mockResolvedValue({
+      data: page([review({ store_name: null })]),
+    });
+    const { findByText, queryByText } = renderWithClient(
+      <ReviewsSection target={target} />,
+    );
+    await findByText("Friendly staff");
+    expect(queryByText(/Sold by/)).toBeNull();
+  });
+
   it("invites the first review when there are none", async () => {
     api.get.mockResolvedValue({ data: page([], 0) });
     const { findByText } = renderWithClient(<ReviewsSection target={target} />);

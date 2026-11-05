@@ -1,9 +1,10 @@
+import { TextInput } from "react-native";
 import { Linking } from "react-native";
-import SearchScreen from "@/app/(tabs)/search";
+import SearchScreen, { KEYBOARD_DELAY_MS } from "@/app/(tabs)/search";
 import { pickPhoto } from "@/helpers/photo";
 import { renderWithClient } from "@/testing/render";
 import { apiClient } from "@nearcommerce/api";
-import { fireEvent, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, waitFor } from "@testing-library/react-native";
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
 jest.mock("react-native-safe-area-context", () => ({
@@ -12,6 +13,9 @@ jest.mock("react-native-safe-area-context", () => ({
 }));
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({}),
+  // Runs the effect once, when the screen is shown.
+  useFocusEffect: (effect: () => void | (() => void)) =>
+    require("react").useEffect(effect, []),
   router: { push: jest.fn() },
 }));
 jest.mock("@nearcommerce/api", () => ({
@@ -262,5 +266,47 @@ describe("SearchScreen photo search", () => {
     expect(getByPlaceholderText("Search nearby products").props.value).toBe(
       "bread",
     );
+  });
+
+  describe("raising the keyboard", () => {
+    const focus = TextInput.prototype.focus as unknown as jest.Mock;
+    const wait = (ms: number) =>
+      act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, ms));
+      });
+
+    beforeEach(() => focus.mockClear());
+
+    it("does not raise it while the tab is still sliding in (autoFocus used to, mid-animation)", async () => {
+      const { getByPlaceholderText } = renderWithClient(<SearchScreen />);
+      expect(
+        getByPlaceholderText("Search nearby products").props.autoFocus,
+      ).toBeFalsy();
+      await wait(KEYBOARD_DELAY_MS / 2);
+      expect(focus).not.toHaveBeenCalled();
+    });
+
+    it("raises it once the slide has finished, for an empty box", async () => {
+      renderWithClient(<SearchScreen />);
+      // Generous: this has to hold up on a busy machine too.
+      await waitFor(() => expect(focus).toHaveBeenCalledTimes(1), {
+        timeout: 5000,
+      });
+    });
+
+    it("does not raise it when the shopper has already started typing", async () => {
+      const { getByPlaceholderText } = renderWithClient(<SearchScreen />);
+      // Two letters: not enough to start a search, so nothing else is going on.
+      fireEvent.changeText(getByPlaceholderText("Search nearby products"), "mi");
+      await wait(KEYBOARD_DELAY_MS + 300);
+      expect(focus).not.toHaveBeenCalled();
+    });
+
+    it("cancels the pending keyboard when the tab is left straight away", async () => {
+      const { unmount } = renderWithClient(<SearchScreen />);
+      unmount();
+      await wait(KEYBOARD_DELAY_MS + 300);
+      expect(focus).not.toHaveBeenCalled();
+    });
   });
 });

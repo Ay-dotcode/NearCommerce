@@ -5,7 +5,10 @@ import {
   reviewsKey,
   targetId,
 } from "@/api/reviews";
+import { ReviewsSkeleton } from "@/components/skeletons";
 import { Stars } from "@/components/StarRating";
+import { Skeleton, useDialogs } from "@/components/ui";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import type { Review, ReviewTarget } from "@/types/reviews";
 import {
   useInfiniteQuery,
@@ -13,11 +16,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
-import { ReviewsSkeleton } from "@/components/skeletons";
-import { Skeleton, useDialogs } from "@/components/ui";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 
 type Props = { target: ReviewTarget };
 
@@ -160,6 +160,9 @@ export default function ReviewsSection({ target }: Props) {
               {formatDate(review.created_at)}
               {review.updated_at ? " (edited)" : ""}
             </Text>
+            {review.store_name ? (
+              <Text style={styles.muted}>Sold by {review.store_name}</Text>
+            ) : null}
           </View>
           {review.comment ? (
             <Text style={styles.comment}>{review.comment}</Text>

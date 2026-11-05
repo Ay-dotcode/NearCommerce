@@ -3,13 +3,21 @@ import { Button, SegmentedControl, Slider, useDialogs } from "@/components/ui";
 import { SEARCH_RADIUS_MAX_KM, SEARCH_RADIUS_MIN_KM } from "@/constants";
 import { switchToDeviceLocation } from "@/helpers/location";
 import { notify } from "@/helpers/notify";
+import { changeThemeWithWave, type WaveOrigin } from "@/helpers/themeWave";
 import { useAuth } from "@/src/context/AuthContext";
 import { useOptionalOnboarding } from "@/src/context/OnboardingContext";
 import { useDeviceLocationName } from "@/src/hooks/useDeviceLocationName";
 import { useManualLocation } from "@/src/hooks/useManualLocation";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useThemePreference } from "@/src/hooks/useThemePreference";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import {
+  darkTheme,
+  lightTheme,
+  useColors,
+  useTheme,
+  useThemedStyles,
+  type ThemeColors,
+} from "@/theme";
 import { apiClient } from "@nearcommerce/api";
 import {
   formatKm,
@@ -23,8 +31,6 @@ import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 interface Props {
   onOpenZip: () => void;
   onOpenSupport: () => void;
-  // Closes the drawer. Used before leaving the screen (signing out) and after actions whose
-  // confirmation pop-up must not be hidden behind the drawer.
   onClose: () => void;
 }
 
@@ -33,7 +39,6 @@ const THEME_OPTIONS = THEME_PREFERENCES.map((value) => ({
   label: THEME_LABELS[value],
 }));
 
-// Everything a shopper can configure, shown inside the settings drawer.
 export default function SettingsContent({
   onOpenZip,
   onOpenSupport,
@@ -47,6 +52,14 @@ export default function SettingsContent({
   const manualLocation = useManualLocation();
   const radius = useSearchRadius();
   const theme = useThemePreference();
+  const { isDark } = useTheme();
+
+  const changeTheme = (value: ThemePreference, press?: WaveOrigin) => {
+    const apply = () => void theme.setPreference(value);
+    if (value === "system" || (value === "dark") === isDark) return apply();
+    const target = value === "dark" ? darkTheme : lightTheme;
+    void changeThemeWithWave(press, target.colors.background, apply);
+  };
   const [draftKm, setDraftKm] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);
   const deviceName = useDeviceLocationName(!manualLocation);
@@ -215,7 +228,7 @@ export default function SettingsContent({
           testID="theme-control"
           options={THEME_OPTIONS}
           value={theme.preference}
-          onChange={(value) => void theme.setPreference(value)}
+          onChange={changeTheme}
         />
         <Text style={[styles.hint, styles.gapTop]}>
           {theme.preference === "system"

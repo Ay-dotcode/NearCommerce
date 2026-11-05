@@ -8,6 +8,8 @@ export type Review = {
   updated_at: string | null;
   reviewer_name: string;
   is_mine: boolean;
+  // For a review of a product: the store that sells it.
+  store_name?: string | null;
 };
 
 export type ReviewSummary = {

@@ -1,23 +1,21 @@
 import { searchByImage, searchProducts } from "@/api/client";
 import ProductCard from "@/components/ProductCard";
 import { ProductListSkeleton } from "@/components/skeletons";
-import {
-  pickPhoto,
-  type PhotoSource,
-} from "@/helpers/photo";
 import { openAppSettings } from "@/helpers/appSettings";
+import { pickPhoto, type PhotoSource } from "@/helpers/photo";
 import { photoErrorMessage } from "@/helpers/photoErrors";
+import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useSessionCoords } from "@/src/hooks/useSessionCoords";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { SCREEN_EDGES } from "@/theme/layout";
 import { Ionicons } from "@expo/vector-icons";
-import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import {
   FlatList,
+  InteractionManager,
   Pressable,
   StyleSheet,
   Text,
@@ -29,23 +27,47 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const VISION_UNAVAILABLE_NOTICE =
   "Image search is unavailable right now. Text search is still working.";
 
+export const KEYBOARD_DELAY_MS = 250;
+
 export default function SearchScreen() {
   const styles = useThemedStyles(makeStyles);
   const c = useColors();
 
   const params = useLocalSearchParams<{ q?: string }>();
   const [searchQuery, setSearchQuery] = useState(params.q ?? "");
+  const inputRef = useRef<TextInput>(null);
+  const searchQueryRef = useRef(searchQuery);
+  searchQueryRef.current = searchQuery;
+
+  useFocusEffect(
+    useCallback(() => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const interactions = InteractionManager.runAfterInteractions(() => {
+        timer = setTimeout(() => {
+          if (!searchQueryRef.current) inputRef.current?.focus();
+        }, KEYBOARD_DELAY_MS);
+      });
+      return () => {
+        interactions.cancel();
+        if (timer) clearTimeout(timer);
+        inputRef.current?.blur();
+      };
+    }, []),
+  );
   const location = useSessionCoords();
   const radius = useSearchRadius();
-  // Set once the server reports the vision model is down; photo search is then hidden
-  // and text search carries on (SRS 3.2.1).
   const [visionUnavailable, setVisionUnavailable] = useState(false);
   const [photoNotice, setPhotoNotice] = useState<string | null>(null);
-  // The camera permission was refused: only photo search stops working; offer a way back in.
   const [cameraDenied, setCameraDenied] = useState(false);
 
   const query = useQuery({
-    queryKey: ["search", searchQuery, location, radius.meters, radius.nearbyOnly],
+    queryKey: [
+      "search",
+      searchQuery,
+      location,
+      radius.meters,
+      radius.nearbyOnly,
+    ],
     queryFn: () =>
       searchProducts(
         searchQuery.trim(),
@@ -65,7 +87,7 @@ export default function SearchScreen() {
       const photo = await pickPhoto(source);
       if (photo === "denied")
         throw Object.assign(new Error("denied"), { denied: true });
-      if (photo === null) return null; // backed out of the picker
+      if (photo === null) return null;
       return searchByImage(
         photo,
         location!.latitude,
@@ -78,7 +100,6 @@ export default function SearchScreen() {
       setPhotoNotice(null);
       setCameraDenied(false);
     },
-    // Show what the photo was understood as in the search bar, so the shopper can correct it.
     onSuccess: (result) => {
       if (result) setSearchQuery(result.detected_query);
     },
@@ -91,8 +112,7 @@ export default function SearchScreen() {
         setPhotoNotice(
           "Camera access is off. Allow it in Settings to search by photo.",
         );
-      }
-      else setPhotoNotice(photoErrorMessage(error));
+      } else setPhotoNotice(photoErrorMessage(error));
     },
   });
 
@@ -105,8 +125,6 @@ export default function SearchScreen() {
   };
 
   const photoResult = photoSearch.data ?? null;
-  // The photo's own results are shown while the search bar still holds what the photo was read
-  // as. Once the shopper edits it, a normal text search takes over.
   const showingPhoto =
     photoResult !== null &&
     !photoSearch.isPending &&
@@ -129,7 +147,7 @@ export default function SearchScreen() {
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={c.textMuted} />
           <TextInput
-            autoFocus
+            ref={inputRef}
             style={styles.input}
             placeholder="Search nearby products"
             placeholderTextColor={c.placeholder}

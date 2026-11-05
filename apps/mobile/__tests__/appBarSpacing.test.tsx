@@ -29,6 +29,8 @@ jest.mock("expo-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
   router: { push: jest.fn(), back: jest.fn() },
   useLocalSearchParams: () => ({ id: "x", storeId: "x" }),
+  useFocusEffect: (effect: () => void | (() => void)) =>
+    require("react").useEffect(effect, []),
 }));
 jest.mock("react-native-toast-message", () => ({
   __esModule: true,
