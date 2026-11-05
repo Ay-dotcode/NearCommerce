@@ -12,6 +12,7 @@ import { escapeLike } from "@/utils/like";
 import {
   AdminDeleteSchema,
   AdminUserListQuerySchema,
+  DemoteAdminSchema,
   PaginationQuerySchema,
   PromoteAdminSchema,
   ToggleSuspensionSchema,
@@ -320,11 +321,13 @@ export async function listReviews(req: Request, res: Response) {
             u.full_name AS reviewer_name, u.email AS reviewer_email,
             CASE WHEN r.store_id IS NOT NULL THEN 'STORE' ELSE 'PRODUCT' END
               AS target_type,
-            COALESCE(s.name, p.name) AS target_name
+            COALESCE(s.name, p.name) AS target_name,
+            ps.name AS store_name
      FROM reviews r
      JOIN users u ON u.id = r.user_id
      LEFT JOIN stores s ON s.id = r.store_id
      LEFT JOIN products p ON p.id = r.product_id
+     LEFT JOIN stores ps ON ps.id = p.store_id
      ORDER BY r.created_at DESC, r.id LIMIT $1 OFFSET $2`,
     [pagination.limit, offset],
   );
@@ -550,16 +553,68 @@ export const deleteUser = (req: Request, res: Response) =>
 export const deleteStore = (req: Request, res: Response) =>
   deleteTarget(req, res, "stores", "STORE", "DELETE_STORE");
 
+// Checks the password the acting admin typed to confirm a sensitive action (making someone an
+// admin, or removing admin rights). Sends the error response itself and returns false when the
+// action must not go ahead. Wrong guesses count towards the same lockout as the login form, so a
+// hijacked session cannot be used to guess passwords.
+async function confirmActingAdminPassword(
+  req: Request,
+  res: Response,
+  password: string,
+): Promise<boolean> {
+  const ip = req.ip ?? "unknown";
+  try {
+    const actor = await db.query(
+      "SELECT email, password_hash FROM users WHERE id = $1",
+      [req.user!.id],
+    );
+    if (!actor.rows.length) {
+      res.status(401).json({ error: "Invalid token" });
+      return false;
+    }
+
+    const lockedFor = await getLoginLockout(actor.rows[0].email, ip);
+    if (lockedFor > 0) {
+      res.setHeader("Retry-After", String(lockedFor));
+      res.status(429).json({
+        error: `Too many failed attempts. Try again in ${lockedFor} seconds.`,
+      });
+      return false;
+    }
+    const passwordOk = await bcrypt.compare(
+      password,
+      actor.rows[0].password_hash,
+    );
+    if (!passwordOk) {
+      await recordLoginFailure(actor.rows[0].email, ip);
+      res
+        .status(403)
+        .json({ error: "Incorrect password.", code: "INVALID_PASSWORD" });
+      return false;
+    }
+    await clearLoginFailures(actor.rows[0].email, ip);
+    return true;
+  } catch (error) {
+    console.error("[ADMIN] password confirmation error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+    return false;
+  }
+}
+
 // PATCH /admin/users/:userId/demote
-// Turns a SYSTEM_ADMIN into a CUSTOMER. Another admin has to do it (SRS 1.3.3).
+// Turns a SYSTEM_ADMIN into a CUSTOMER. Another admin has to do it (SRS 1.3.3), and has to type
+// their own password, as when making someone an admin. The reason is optional.
 export async function demoteAdmin(req: Request, res: Response) {
-  const parsed = parseBody(AdminDeleteSchema, req.body);
+  const parsed = parseBody(DemoteAdminSchema, req.body);
   if ("error" in parsed) return sendValidationError(res, parsed.error);
   const userId = req.params.userId;
   if (!isUuid(userId))
     return res.status(404).json({ error: "User not found." });
   if (userId === req.user!.id)
     return res.status(409).json({ error: "Another admin must demote you." });
+
+  if (!(await confirmActingAdminPassword(req, res, parsed.data.password)))
+    return;
 
   const client = await db.connect();
   try {
@@ -599,7 +654,7 @@ export async function demoteAdmin(req: Request, res: Response) {
       [
         req.user!.id,
         userId,
-        parsed.data.reason,
+        parsed.data.reason ?? null,
         JSON.stringify(auditSnapshot(target.rows[0])),
       ],
     );
@@ -626,38 +681,8 @@ export async function promoteToAdmin(req: Request, res: Response) {
   if (userId === req.user!.id)
     return res.status(409).json({ error: "You are already an admin." });
 
-  const ip = req.ip ?? "unknown";
-  try {
-    const actor = await db.query(
-      "SELECT email, password_hash FROM users WHERE id = $1",
-      [req.user!.id],
-    );
-    if (!actor.rows.length)
-      return res.status(401).json({ error: "Invalid token" });
-
-    // Same progressive lockout as the login form, so a hijacked session cannot guess passwords.
-    const lockedFor = await getLoginLockout(actor.rows[0].email, ip);
-    if (lockedFor > 0) {
-      res.setHeader("Retry-After", String(lockedFor));
-      return res.status(429).json({
-        error: `Too many failed attempts. Try again in ${lockedFor} seconds.`,
-      });
-    }
-    const passwordOk = await bcrypt.compare(
-      parsed.data.password,
-      actor.rows[0].password_hash,
-    );
-    if (!passwordOk) {
-      await recordLoginFailure(actor.rows[0].email, ip);
-      return res
-        .status(403)
-        .json({ error: "Incorrect password.", code: "INVALID_PASSWORD" });
-    }
-    await clearLoginFailures(actor.rows[0].email, ip);
-  } catch (error) {
-    console.error("[ADMIN] promoteToAdmin password check error:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
+  if (!(await confirmActingAdminPassword(req, res, parsed.data.password)))
+    return;
 
   const client = await db.connect();
   try {

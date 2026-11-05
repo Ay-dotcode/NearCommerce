@@ -7,6 +7,8 @@ import {
 import { app } from "@/app";
 import { db } from "@/config/database";
 import redisClient from "@/config/redis";
+import { recordLoginFailure } from "@/features/auth/services/loginLockout.service";
+import bcrypt from "bcrypt";
 import request from "supertest";
 
 jest.mock("@/config/redis", () => ({
@@ -20,6 +22,12 @@ jest.mock("@/config/redis", () => ({
   connectRedis: jest.fn(),
 }));
 
+jest.mock("@/features/auth/services/loginLockout.service", () => ({
+  getLoginLockout: jest.fn().mockResolvedValue(0),
+  recordLoginFailure: jest.fn().mockResolvedValue(undefined),
+  clearLoginFailures: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.setTimeout(30000);
 
 describe("Admin user moderation: search, demote and force delete", () => {
@@ -30,11 +38,17 @@ describe("Admin user moderation: search, demote and force delete", () => {
 
   const auth = (u: TestUser) => `Bearer ${u.token}`;
   const reason = { reason: "Policy violation" };
+  // Demoting an admin needs the acting admin's own password (reason optional).
+  const PASSWORD = "AdminPass123!";
 
   beforeAll(async () => {
     admin = await createTestUser("SYSTEM_ADMIN");
     otherAdmin = await createTestUser("SYSTEM_ADMIN");
     customer = await createTestUser("CUSTOMER");
+    await db.query(
+      `UPDATE users SET password_hash = $1 WHERE id = ANY($2::uuid[])`,
+      [await bcrypt.hash(PASSWORD, 4), [admin.id, otherAdmin.id]],
+    );
   });
 
   beforeEach(() => jest.clearAllMocks());
@@ -128,7 +142,11 @@ describe("Admin user moderation: search, demote and force delete", () => {
   });
 
   describe("PATCH /admin/users/:id/demote", () => {
-    const demote = (who: TestUser, targetId: string, body: object = reason) =>
+    const demote = (
+      who: TestUser,
+      targetId: string,
+      body: object = { password: PASSWORD, ...reason },
+    ) =>
       request(app)
         .patch(`/api/admin/users/${targetId}/demote`)
         .set("Authorization", auth(who))
@@ -146,7 +164,10 @@ describe("Admin user moderation: search, demote and force delete", () => {
         ],
       );
 
-      const res = await demote(admin, target.id, { reason: "Left the team" });
+      const res = await demote(admin, target.id, {
+        password: PASSWORD,
+        reason: "Left the team",
+      });
       expect(res.status).toBe(200);
       expect(res.body.data).toMatchObject({ id: target.id, role: "CUSTOMER" });
 
@@ -193,9 +214,59 @@ describe("Admin user moderation: search, demote and force delete", () => {
       ).toBe(404);
       expect((await demote(admin, "not-a-uuid")).status).toBe(404);
       expect(
-        (await demote(admin, otherAdmin.id, { reason: "no" })).status,
+        (await demote(admin, otherAdmin.id, { password: PASSWORD, reason: "no" }))
+          .status,
       ).toBe(400);
-      expect((await demote(admin, otherAdmin.id, {})).status).toBe(400);
+    });
+
+    it("needs the acting admin's password, and changes nothing without the right one", async () => {
+      const target = await createTestUser("SYSTEM_ADMIN");
+      extraUsers.push(target.id);
+
+      // No password at all (the old request shape that used to work).
+      expect((await demote(admin, target.id, reason)).status).toBe(400);
+      expect((await demote(admin, target.id, { password: "", ...reason })).status).toBe(400);
+
+      // A wrong password is refused and counted towards the lockout.
+      const wrong = await demote(admin, target.id, {
+        password: "not-my-password",
+        ...reason,
+      });
+      expect(wrong.status).toBe(403);
+      expect(wrong.body.code).toBe("INVALID_PASSWORD");
+      expect(recordLoginFailure).toHaveBeenCalledTimes(1);
+
+      const row = await db.query(`SELECT role FROM users WHERE id = $1`, [
+        target.id,
+      ]);
+      expect(row.rows[0].role).toBe("SYSTEM_ADMIN");
+      const audit = await db.query(
+        `SELECT 1 FROM admin_audit_logs WHERE target_id = $1 AND action = 'DEMOTE_ADMIN'`,
+        [target.id],
+      );
+      expect(audit.rows).toHaveLength(0);
+    });
+
+    it("does not need a reason: it is optional, and is stored as empty when left out", async () => {
+      const target = await createTestUser("SYSTEM_ADMIN");
+      extraUsers.push(target.id);
+
+      const res = await demote(admin, target.id, { password: PASSWORD });
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({ id: target.id, role: "CUSTOMER" });
+
+      const audit = await db.query(
+        `SELECT reason FROM admin_audit_logs WHERE target_id = $1 AND action = 'DEMOTE_ADMIN'`,
+        [target.id],
+      );
+      expect(audit.rows).toHaveLength(1);
+      expect(audit.rows[0].reason).toBeNull();
+    });
+
+    it("rejects a demotion that sends only a reason, with the password as the missing piece", async () => {
+      const res = await demote(admin, otherAdmin.id, reason);
+      expect(res.status).toBe(400);
+      expect(JSON.stringify(res.body)).toMatch(/password/i);
     });
 
     it("is admin only", async () => {

@@ -2,6 +2,7 @@ import { db } from "@/config/database";
 import type { ReviewTarget } from "@/types/review";
 import type {
   CreateReviewInput,
+  OwnerProductReviewsQuery,
   ReviewListQuery,
   UpdateReviewInput,
 } from "@nearcommerce/api";
@@ -85,8 +86,12 @@ export async function listTargetReviews(
   const [page, summary] = await Promise.all([
     db.query(
       `SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at,
-              u.full_name, (r.user_id = $4::uuid) AS is_mine
-         FROM reviews r JOIN users u ON u.id = r.user_id
+              u.full_name, (r.user_id = $4::uuid) AS is_mine,
+              ps.name AS store_name
+         FROM reviews r
+         JOIN users u ON u.id = r.user_id
+         LEFT JOIN products p ON p.id = r.product_id
+         LEFT JOIN stores ps ON ps.id = p.store_id
         WHERE r.${column} = $1
         ORDER BY r.created_at DESC, r.id
         LIMIT $2 OFFSET $3`,
@@ -142,10 +147,12 @@ export async function listMyReviews(
               CASE WHEN r.store_id IS NOT NULL THEN 'STORE' ELSE 'PRODUCT' END
                 AS target_type,
               COALESCE(s.name, p.name) AS target_name,
-              p.store_id AS product_store_id
+              p.store_id AS product_store_id,
+              ps.name AS store_name
          FROM reviews r
          LEFT JOIN stores s ON s.id = r.store_id
          LEFT JOIN products p ON p.id = r.product_id
+         LEFT JOIN stores ps ON ps.id = p.store_id
         WHERE r.user_id = $1
         ORDER BY r.created_at DESC, r.id
         LIMIT $2 OFFSET $3`,
@@ -158,6 +165,60 @@ export async function listMyReviews(
   return {
     data: rows.rows,
     pagination: { page, limit, total: count.rows[0].count },
+  };
+}
+
+// The reviews shoppers left on the products of one store, newest first, for that store's owner.
+// Reviewers are shown the way they are to the public ("Jane D."), never by email. The summary
+// covers every product review of the store, not just this page or one product.
+export async function listOwnerProductReviews(
+  storeId: string,
+  query: OwnerProductReviewsQuery,
+) {
+  const offset = (query.page - 1) * query.limit;
+  const productFilter = query.product_id ?? null;
+
+  const [page, summary] = await Promise.all([
+    db.query(
+      `SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at,
+              r.product_id, p.name AS product_name, u.full_name
+         FROM reviews r
+         JOIN products p ON p.id = r.product_id
+         JOIN users u ON u.id = r.user_id
+        WHERE p.store_id = $1 AND ($4::uuid IS NULL OR p.id = $4::uuid)
+        ORDER BY r.created_at DESC, r.id
+        LIMIT $2 OFFSET $3`,
+      [storeId, query.limit, offset, productFilter],
+    ),
+    db.query(
+      `SELECT r.rating, COUNT(*)::int AS count
+         FROM reviews r JOIN products p ON p.id = r.product_id
+        WHERE p.store_id = $1 AND ($2::uuid IS NULL OR p.id = $2::uuid)
+        GROUP BY r.rating`,
+      [storeId, productFilter],
+    ),
+  ]);
+
+  const distribution: Record<string, number> = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
+  let total = 0;
+  let points = 0;
+  for (const row of summary.rows) {
+    distribution[String(row.rating)] = row.count;
+    total += row.count;
+    points += row.rating * row.count;
+  }
+
+  return {
+    data: page.rows.map(({ full_name, ...review }) => ({
+      ...review,
+      reviewer_name: displayName(full_name),
+    })),
+    summary: {
+      rating: total ? Math.round((points / total) * 10) / 10 : 0,
+      review_count: total,
+      distribution,
+    },
+    pagination: { page: query.page, limit: query.limit, total },
   };
 }
 

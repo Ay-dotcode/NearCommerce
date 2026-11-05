@@ -9,7 +9,7 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'household_list_items' AND column_name = 'item_name'
+    WHERE table_schema = current_schema() AND table_name = 'household_list_items' AND column_name = 'item_name'
   ) THEN
     ALTER TABLE household_list_items ADD COLUMN item_name VARCHAR(255);
     
@@ -29,7 +29,7 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'products' AND column_name = 'search_tsv'
+    WHERE table_schema = current_schema() AND table_name = 'products' AND column_name = 'search_tsv'
   ) THEN
     ALTER TABLE products ADD COLUMN search_tsv tsvector GENERATED ALWAYS AS (
       to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))
@@ -46,7 +46,7 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'admin_audit_logs' AND column_name = 'admin_email'
+    WHERE table_schema = current_schema() AND table_name = 'admin_audit_logs' AND column_name = 'admin_email'
   ) THEN
     ALTER TABLE admin_audit_logs ADD COLUMN admin_email VARCHAR(255);
     ALTER TABLE admin_audit_logs ADD COLUMN admin_name VARCHAR(100);

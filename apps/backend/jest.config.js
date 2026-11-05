@@ -2,6 +2,9 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
+  // Each run gets its own throwaway database schema: nothing the tests create outlives the run.
+  globalSetup: "<rootDir>/test/globalSetup.cjs",
+  globalTeardown: "<rootDir>/test/globalTeardown.cjs",
   testTimeout: 30000,
   testMatch: ["**/src/**/*.test.ts"],
   moduleFileExtensions: ["ts", "js", "json"],

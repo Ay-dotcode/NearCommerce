@@ -197,7 +197,7 @@ describe("Admins making other admins, and protection of root admins", () => {
       const res = await request(app)
         .patch(`/api/admin/users/${root.id}/demote`)
         .set(as(promoted))
-        .send(reason);
+        .send({ password: PASSWORD, ...reason });
       expect(res.status).toBe(403);
       expect(res.body.code).toBe("ROOT_ADMIN_PROTECTED");
       expect(await roleOf(root.id)).toMatchObject({
@@ -246,7 +246,7 @@ describe("Admins making other admins, and protection of root admins", () => {
       const res = await request(app)
         .patch(`/api/admin/users/${target.id}/demote`)
         .set(as(root))
-        .send(reason);
+        .send({ password: PASSWORD, ...reason });
       expect(res.status).toBe(200);
       expect(await roleOf(target.id)).toMatchObject({
         role: "CUSTOMER",
@@ -268,7 +268,7 @@ describe("Admins making other admins, and protection of root admins", () => {
       const res = await request(app)
         .patch(`/api/admin/users/${otherRoot.id}/demote`)
         .set(as(root))
-        .send(reason);
+        .send({ password: PASSWORD, ...reason });
       expect(res.status).toBe(200);
     });
 

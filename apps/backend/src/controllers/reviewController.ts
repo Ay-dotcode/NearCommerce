@@ -4,6 +4,7 @@ import {
   isOwnTarget,
   isTargetVisible,
   listMyReviews,
+  listOwnerProductReviews as listOwnerProductReviewsForStore,
   listTargetReviews,
   updateOwnReview,
 } from "@/services/review.service";
@@ -11,6 +12,7 @@ import { isUuid, sendValidationError } from "@/utils/http";
 import {
   CreateReviewSchema,
   MyReviewsQuerySchema,
+  OwnerProductReviewsQuerySchema,
   ReviewListQuerySchema,
   UpdateReviewSchema,
 } from "@nearcommerce/api";
@@ -61,6 +63,21 @@ export async function createReview(req: Request, res: Response) {
         .status(409)
         .json({ error: "You have already reviewed this item." });
     console.error("[REVIEWS] createReview error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+// GET /stores/:storeId/product-reviews (the store's owner only; ownership is checked by the route)
+export async function listOwnerProductReviews(req: Request, res: Response) {
+  const parsed = OwnerProductReviewsQuerySchema.safeParse(req.query);
+  if (!parsed.success)
+    return sendValidationError(res, parsed.error.issues, "Invalid query");
+  try {
+    return res.json(
+      await listOwnerProductReviewsForStore(req.params.storeId, parsed.data),
+    );
+  } catch (error) {
+    console.error("[REVIEWS] listOwnerProductReviews error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }

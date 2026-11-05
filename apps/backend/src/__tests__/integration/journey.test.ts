@@ -323,7 +323,7 @@ describe("user journey", () => {
     const demoted = await request(app)
       .patch(`/admin/users/${second.id}/demote`)
       .set(auth(admin))
-      .send({ reason: "Journey test demotion" });
+      .send({ password: PASSWORD, reason: "Journey test demotion" });
     expect(demoted.status).toBe(200);
 
     // Same access token, still unexpired, but the role is re-read.
