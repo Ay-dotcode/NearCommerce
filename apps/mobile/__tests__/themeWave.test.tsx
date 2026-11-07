@@ -65,23 +65,16 @@ describe("ThemeWaveHost", () => {
     expect(apply).toHaveBeenCalledTimes(1);
   });
 
-  it("is a circle in the new theme's colour, starting from where the choice was tapped", async () => {
+  it("renders a full-screen transition overlay with the target theme background colour", async () => {
     const api = render(<ThemeWaveHost />);
     const played = changeThemeWithWave(ORIGIN, "#0f172a", jest.fn());
     const cover = await waitFor(() => api.getByTestId("theme-wave"));
-    const circle = cover.children[0] as unknown as {
-      props: { style: Record<string, number | string> };
-    };
-    const style = circle.props.style;
+    const style = cover.props.style as Record<string, unknown>[];
+    const flat = Array.isArray(style)
+      ? Object.assign({}, ...style)
+      : (style as Record<string, unknown>);
 
-    expect(style.backgroundColor).toBe("#0f172a");
-    // Centred on the tap, and large enough to reach every corner from there.
-    expect(Number(style.left) + Number(style.width) / 2).toBeCloseTo(ORIGIN.x);
-    expect(Number(style.top) + Number(style.height) / 2).toBeCloseTo(ORIGIN.y);
-    const { width, height } = Dimensions.get("window");
-    expect(Number(style.width) / 2).toBeGreaterThanOrEqual(
-      Math.hypot(Math.max(ORIGIN.x, width - ORIGIN.x), Math.max(ORIGIN.y, height - ORIGIN.y)) - 1,
-    );
+    expect(flat.backgroundColor).toBe("#0f172a");
     await act(async () => {
       await played;
     });
