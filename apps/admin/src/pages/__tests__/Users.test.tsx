@@ -111,6 +111,27 @@ describe("Admin Users: details modal", () => {
     ).toBeInTheDocument();
   });
 
+  it("does not show a reason error just because the dialog opened, and clears it when the reason is edited", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Suspend" }));
+    const dialog = await screen.findByRole("dialog", { name: /suspend/i });
+    const reason = within(dialog).getByLabelText(/reason/i);
+
+    fireEvent.focus(reason);
+    fireEvent.blur(reason);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(within(dialog).queryByText(/at least 5 characters/i)).toBeNull();
+
+    fireEvent.change(reason, { target: { value: "no" } });
+    fireEvent.submit(dialog.querySelector("form")!);
+    expect(await within(dialog).findByText(/at least 5 characters/i)).toBeInTheDocument();
+
+    fireEvent.change(reason, { target: { value: "Repeated spam reviews" } });
+    await waitFor(() =>
+      expect(within(dialog).queryByText(/at least 5 characters/i)).toBeNull(),
+    );
+  });
+
   it("clicking a row's own Suspend button does not open the details", async () => {
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Suspend" }));
@@ -262,6 +283,30 @@ describe("Admin Users: details modal", () => {
         "amy@shop.test is now an admin.",
       );
       expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("shows no error just because the dialog opened or the field lost focus", async () => {
+      const dialog = await openPromote();
+      const password = within(dialog).getByLabelText("Your password");
+      fireEvent.focus(password);
+      fireEvent.blur(password);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(within(dialog).queryByText("Enter your password to continue.")).toBeNull();
+    });
+
+    it("asks for the password when submitted without one, and the message goes away once typing starts", async () => {
+      const dialog = await openPromote();
+      fireEvent.submit(dialog.querySelector("form")!);
+      expect(
+        await within(dialog).findByText("Enter your password to continue."),
+      ).toBeInTheDocument();
+
+      fireEvent.change(within(dialog).getByLabelText("Your password"), {
+        target: { value: "my-admin-pass" },
+      });
+      await waitFor(() =>
+        expect(within(dialog).queryByText("Enter your password to continue.")).toBeNull(),
+      );
     });
 
     it("also takes an optional reason, and sends it along with the password", async () => {

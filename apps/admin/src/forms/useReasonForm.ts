@@ -7,8 +7,6 @@ import { parseApiError } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import { useEffect } from "react";
 
-// Formik state for "give a reason, then run the action". The form starts empty every time the
-// dialog opens; a thrown error from `onConfirm` is shown under the field.
 export function useReasonForm(
   open: boolean,
   onConfirm: (reason: string) => Promise<unknown>,
@@ -17,6 +15,7 @@ export function useReasonForm(
     initialValues: reasonInitialValues,
     validate: validateReason,
     validateOnChange: false,
+    validateOnBlur: false,
     onSubmit: async ({ reason }, helpers) => {
       try {
         await onConfirm(reason.trim());
@@ -29,10 +28,14 @@ export function useReasonForm(
     },
   });
 
-  const { resetForm } = formik;
+  const { resetForm, setFieldError, errors, values } = formik;
   useEffect(() => {
     if (open) resetForm();
   }, [open, resetForm]);
+
+  useEffect(() => {
+    if (errors.reason) setFieldError("reason", undefined);
+  }, [values.reason]);
 
   return {
     formik,

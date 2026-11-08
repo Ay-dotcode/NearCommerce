@@ -11,6 +11,7 @@ export function usePasswordConfirmForm(
     initialValues: passwordInitialValues,
     validate: validatePassword,
     validateOnChange: false,
+    validateOnBlur: false,
     onSubmit: async ({ password, reason }, helpers) => {
       try {
         await onConfirm(password, reason.trim() || undefined);
@@ -23,10 +24,16 @@ export function usePasswordConfirmForm(
     },
   });
 
-  const { resetForm } = formik;
+  const { resetForm, setFieldError, errors, values } = formik;
   useEffect(() => {
     if (open) resetForm();
   }, [open, resetForm]);
+  useEffect(() => {
+    if (errors.password) setFieldError("password", undefined);
+  }, [values.password]);
+  useEffect(() => {
+    if (errors.reason) setFieldError("reason", undefined);
+  }, [values.reason]);
 
   return {
     formik,
