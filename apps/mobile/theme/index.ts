@@ -1,15 +1,13 @@
+import { isWaveActive, subscribeWave } from "@/helpers/themeWave";
 import {
   constants,
   dark,
   light,
   type Palette,
 } from "@nearcommerce/config/palette";
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useColorScheme } from "react-native";
 
-// Semantic colours for the app. Both appearances come from the shared palette in
-// packages/config (the same one the web and admin apps use), so light and dark mode match
-// everywhere. Screens never use hex values; they read these names.
 const buildColors = (p: Palette) => ({
   background: p.slate[50],
   surface: p.white,
@@ -59,17 +57,27 @@ export interface Theme {
 export const lightTheme: Theme = { isDark: false, colors: buildColors(light) };
 export const darkTheme: Theme = { isDark: true, colors: buildColors(dark) };
 
-// The current theme. Follows the device appearance and updates live when it changes.
+const seeThrough = (theme: Theme): Theme => ({
+  isDark: theme.isDark,
+  colors: { ...theme.colors, background: "transparent" },
+});
+const lightSeeThrough = seeThrough(lightTheme);
+const darkSeeThrough = seeThrough(darkTheme);
+
 export function useTheme(): Theme {
-  return useColorScheme() === "dark" ? darkTheme : lightTheme;
+  const dark = useColorScheme() === "dark";
+  const waving = useSyncExternalStore(
+    subscribeWave,
+    isWaveActive,
+    isWaveActive,
+  );
+  if (waving) return dark ? darkSeeThrough : lightSeeThrough;
+  return dark ? darkTheme : lightTheme;
 }
 
 export const useColors = (): ThemeColors => useTheme().colors;
 
-// Builds a StyleSheet from the current colours. The sheet is rebuilt only when the appearance
-// changes, so screens keep plain `StyleSheet.create` code inside a `makeStyles(c)` function.
 export function useThemedStyles<T>(make: (colors: ThemeColors) => T): T {
   const colors = useColors();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => make(colors), [colors]);
 }

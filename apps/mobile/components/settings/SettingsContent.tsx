@@ -11,8 +11,6 @@ import { useManualLocation } from "@/src/hooks/useManualLocation";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useThemePreference } from "@/src/hooks/useThemePreference";
 import {
-  darkTheme,
-  lightTheme,
   useColors,
   useTheme,
   useThemedStyles,
@@ -56,9 +54,8 @@ export default function SettingsContent({
 
   const changeTheme = (value: ThemePreference, press?: WaveOrigin) => {
     const apply = () => void theme.setPreference(value);
-    if (value === "system" || (value === "dark") === isDark) return apply();
-    const target = value === "dark" ? darkTheme : lightTheme;
-    void changeThemeWithWave(press, target.colors.background, apply);
+    if (value !== "system" && (value === "dark") === isDark) return apply();
+    void changeThemeWithWave(press, apply);
   };
   const [draftKm, setDraftKm] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);

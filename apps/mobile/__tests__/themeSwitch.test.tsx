@@ -1,7 +1,6 @@
 import SettingsContent from "@/components/settings/SettingsContent";
 import { DialogProvider } from "@/components/ui";
 import { registerThemeWave } from "@/helpers/themeWave";
-import { darkTheme, lightTheme } from "@/theme";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { useColorScheme } from "react-native";
 
@@ -39,9 +38,9 @@ function renderSettings() {
 
 // Stands in for the wave: records the request and plays it instantly.
 function recordWaves() {
-  const waves: { origin: unknown; color: string }[] = [];
-  const unregister = registerThemeWave(async (origin, color, apply) => {
-    waves.push({ origin, color });
+  const waves: { origin: unknown }[] = [];
+  const unregister = registerThemeWave(async (origin, apply) => {
+    waves.push({ origin });
     apply();
   });
   return { waves, unregister };
@@ -53,20 +52,18 @@ describe("Settings: choosing a theme", () => {
     scheme.mockReturnValue("light");
   });
 
-  it("spreads the dark theme's colour from the tapped choice, then switches", async () => {
+  it("spreads the wave from the tapped choice, then switches to dark", async () => {
     const { waves, unregister } = recordWaves();
     const { getByTestId } = renderSettings();
 
     fireEvent.press(getByTestId("theme-control-dark"), press);
 
     await waitFor(() => expect(mockSetPreference).toHaveBeenCalledWith("dark"));
-    expect(waves).toEqual([
-      { origin: { x: 200, y: 500 }, color: darkTheme.colors.background },
-    ]);
+    expect(waves).toEqual([{ origin: { x: 200, y: 500 } }]);
     unregister();
   });
 
-  it("spreads the light theme's colour when going from dark to light", async () => {
+  it("plays the wave when going from dark to light", async () => {
     scheme.mockReturnValue("dark");
     const { waves, unregister } = recordWaves();
     const { getByTestId } = renderSettings();
@@ -74,19 +71,19 @@ describe("Settings: choosing a theme", () => {
     fireEvent.press(getByTestId("theme-control-light"), press);
 
     await waitFor(() => expect(mockSetPreference).toHaveBeenCalledWith("light"));
-    expect(waves[0].color).toBe(lightTheme.colors.background);
+    expect(waves).toHaveLength(1);
     unregister();
   });
 
-  it("switches without a wave for Auto (it has no colour of its own to spread)", () => {
+  it("plays the wave for Auto too, from the tapped choice", async () => {
     scheme.mockReturnValue("dark");
     const { waves, unregister } = recordWaves();
     const { getByTestId } = renderSettings();
 
     fireEvent.press(getByTestId("theme-control-system"), press);
 
-    expect(mockSetPreference).toHaveBeenCalledWith("system");
-    expect(waves).toEqual([]);
+    await waitFor(() => expect(mockSetPreference).toHaveBeenCalledWith("system"));
+    expect(waves).toEqual([{ origin: { x: 200, y: 500 } }]);
     unregister();
   });
 

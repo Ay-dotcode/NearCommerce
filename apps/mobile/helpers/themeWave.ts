@@ -1,25 +1,54 @@
-// The wave that spreads across the screen when the theme is changed between light and dark: a
-// circle in the new theme's colour grows out from the control that was pressed until it covers the
-// screen, the theme is switched while it is covered, and it then fades away to show the new look.
-//
-// The ThemeWaveHost (mounted once at the root) does the drawing; this module only lets any
-// screen ask for it without knowing about it.
+import type { Theme } from "@/theme";
+import type { Animated } from "react-native";
 
 export interface WaveOrigin {
   x: number;
   y: number;
 }
 
-// Plays the wave, calling `apply` while the screen is covered. Resolves when it is over.
-type WavePlayer = (
-  origin: WaveOrigin,
-  color: string,
-  apply: () => void,
-) => Promise<void>;
+export interface ActiveWave {
+  origin: WaveOrigin;
+  radius: number;
+  from: Theme;
+  to: Theme | null;
+  grow: Animated.Value;
+}
+
+let active: ActiveWave | null = null;
+const listeners = new Set<() => void>();
+const notify = () => listeners.forEach((listener) => listener());
+
+export const getActiveWave = () => active;
+export const isWaveActive = () => active !== null;
+
+export function subscribeWave(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function beginWave(wave: ActiveWave) {
+  active = wave;
+  notify();
+}
+
+export function updateWave(patch: Partial<Pick<ActiveWave, "to">>) {
+  if (!active) return;
+  active = { ...active, ...patch };
+  notify();
+}
+
+export function endWave() {
+  if (!active) return;
+  active = null;
+  notify();
+}
+
+type WavePlayer = (origin: WaveOrigin, apply: () => void) => Promise<void>;
 
 let player: WavePlayer | null = null;
 
-// Called by the host. Returns a function that unregisters it.
 export function registerThemeWave(next: WavePlayer): () => void {
   player = next;
   return () => {
@@ -27,16 +56,13 @@ export function registerThemeWave(next: WavePlayer): () => void {
   };
 }
 
-// Runs `apply` (which switches the theme) with the wave, or straight away when there is nothing
-// to draw it with, or nowhere known to start it from. `apply` is always run exactly once.
 export async function changeThemeWithWave(
   origin: WaveOrigin | undefined,
-  color: string,
   apply: () => void,
 ): Promise<void> {
   if (!player || !origin) {
     apply();
     return;
   }
-  await player(origin, color, apply);
+  await player(origin, apply);
 }

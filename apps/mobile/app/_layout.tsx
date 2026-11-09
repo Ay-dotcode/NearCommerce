@@ -3,6 +3,7 @@ import LocationFallbackModal from "@/components/LocationFallbackModal";
 import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
 import ToastHost from "@/components/ToastHost";
 import { ThemeWaveHost } from "@/components/ThemeWaveHost";
+import { ThemeWaveLayer } from "@/components/ThemeWaveLayer";
 import { DialogProvider } from "@/components/ui";
 import { API_URL } from "@/constants";
 import { AuthProvider, useAuth } from "@/src/context/AuthContext";
@@ -63,6 +64,7 @@ function AppShell() {
 
   return (
     <View style={styles.root}>
+      <ThemeWaveLayer token="background" />
       {!isLoading && (
         <>
           {onboarding.loaded && !onboarding.firstRun && Boolean(token) && (
