@@ -7,14 +7,22 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Appearance } from "react-native";
 
-// The shopper's theme choice: follow the device ("system"), or force light or dark. It is saved
-// on the phone so it survives a restart. Forcing is done through Appearance, so every screen,
-// the status bar and native pop-ups switch together; "system" hands control back to the phone.
 let preference: ThemePreference = DEFAULT_THEME_PREFERENCE;
-// Bumped on every change, so a slow load can't overwrite a newer choice.
 let version = 0;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((listener) => listener());
+
+let deviceDark: boolean | undefined;
+try {
+  const scheme = Appearance.getColorScheme?.();
+  if (scheme) deviceDark = scheme === "dark";
+  Appearance.addChangeListener?.(({ colorScheme }) => {
+    if (preference === "system" && colorScheme)
+      deviceDark = colorScheme === "dark";
+  });
+} catch {}
+
+export const getDeviceIsDark = () => deviceDark;
 
 export const getThemePreference = () => preference;
 
@@ -28,9 +36,7 @@ export function subscribeThemePreference(listener: () => void) {
 export function applyThemePreference(value: ThemePreference) {
   try {
     Appearance.setColorScheme?.(value === "system" ? "unspecified" : value);
-  } catch {
-    // Not supported on this platform: the choice is still saved, the device setting applies.
-  }
+  } catch {}
 }
 
 export async function loadThemePreference() {

@@ -3,6 +3,7 @@ import { Button, SegmentedControl, Slider, useDialogs } from "@/components/ui";
 import { SEARCH_RADIUS_MAX_KM, SEARCH_RADIUS_MIN_KM } from "@/constants";
 import { switchToDeviceLocation } from "@/helpers/location";
 import { notify } from "@/helpers/notify";
+import { getDeviceIsDark } from "@/helpers/themePreference";
 import { changeThemeWithWave, type WaveOrigin } from "@/helpers/themeWave";
 import { useAuth } from "@/src/context/AuthContext";
 import { useOptionalOnboarding } from "@/src/context/OnboardingContext";
@@ -55,7 +56,9 @@ export default function SettingsContent({
   const changeTheme = (value: ThemePreference, press?: WaveOrigin) => {
     const apply = () => void theme.setPreference(value);
     if (value !== "system" && (value === "dark") === isDark) return apply();
-    void changeThemeWithWave(press, apply);
+    const targetDark =
+      value === "system" ? getDeviceIsDark() : value === "dark";
+    void changeThemeWithWave(press, apply, targetDark);
   };
   const [draftKm, setDraftKm] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);

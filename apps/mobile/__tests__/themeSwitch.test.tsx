@@ -10,6 +10,11 @@ jest.mock("react-native/Libraries/Utilities/useColorScheme", () => ({
 }));
 const scheme = useColorScheme as unknown as jest.Mock;
 
+let mockDeviceIsDark: boolean | undefined = true;
+jest.mock("@/helpers/themePreference", () => ({
+  getDeviceIsDark: () => mockDeviceIsDark,
+}));
+
 const mockSetPreference = jest.fn();
 jest.mock("@/src/hooks/useThemePreference", () => ({
   useThemePreference: () => ({ preference: "system", setPreference: mockSetPreference }),
@@ -38,9 +43,9 @@ function renderSettings() {
 
 // Stands in for the wave: records the request and plays it instantly.
 function recordWaves() {
-  const waves: { origin: unknown }[] = [];
-  const unregister = registerThemeWave(async (origin, apply) => {
-    waves.push({ origin });
+  const waves: { origin: unknown; targetDark?: boolean }[] = [];
+  const unregister = registerThemeWave(async (origin, apply, targetDark) => {
+    waves.push({ origin, targetDark });
     apply();
   });
   return { waves, unregister };
@@ -59,7 +64,7 @@ describe("Settings: choosing a theme", () => {
     fireEvent.press(getByTestId("theme-control-dark"), press);
 
     await waitFor(() => expect(mockSetPreference).toHaveBeenCalledWith("dark"));
-    expect(waves).toEqual([{ origin: { x: 200, y: 500 } }]);
+    expect(waves).toEqual([{ origin: { x: 200, y: 500 }, targetDark: true }]);
     unregister();
   });
 
@@ -71,19 +76,33 @@ describe("Settings: choosing a theme", () => {
     fireEvent.press(getByTestId("theme-control-light"), press);
 
     await waitFor(() => expect(mockSetPreference).toHaveBeenCalledWith("light"));
-    expect(waves).toHaveLength(1);
+    expect(waves).toEqual([{ origin: { x: 200, y: 500 }, targetDark: false }]);
     unregister();
   });
 
-  it("plays the wave for Auto too, from the tapped choice", async () => {
-    scheme.mockReturnValue("dark");
+  it("plays the wave for Auto too, from the tapped choice, towards the phone's own look", async () => {
+    scheme.mockReturnValue("light");
+    mockDeviceIsDark = true;
     const { waves, unregister } = recordWaves();
     const { getByTestId } = renderSettings();
 
     fireEvent.press(getByTestId("theme-control-system"), press);
 
     await waitFor(() => expect(mockSetPreference).toHaveBeenCalledWith("system"));
-    expect(waves).toEqual([{ origin: { x: 200, y: 500 } }]);
+    expect(waves).toEqual([{ origin: { x: 200, y: 500 }, targetDark: true }]);
+    unregister();
+  });
+
+  it("still plays the wave for Auto when the phone's own look isn't known yet", async () => {
+    mockDeviceIsDark = undefined;
+    const { waves, unregister } = recordWaves();
+    const { getByTestId } = renderSettings();
+
+    fireEvent.press(getByTestId("theme-control-system"), press);
+
+    await waitFor(() => expect(mockSetPreference).toHaveBeenCalledWith("system"));
+    expect(waves).toEqual([{ origin: { x: 200, y: 500 }, targetDark: undefined }]);
+    mockDeviceIsDark = true;
     unregister();
   });
 

@@ -4,7 +4,12 @@ import {
 } from "@/components/ThemeWaveHost";
 import { ThemeWaveLayer } from "@/components/ThemeWaveLayer";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { changeThemeWithWave, isWaveActive } from "@/helpers/themeWave";
+import {
+  changeThemeWithWave,
+  getActiveWave,
+  isWaveActive,
+  subscribeWave,
+} from "@/helpers/themeWave";
 import { darkTheme, lightTheme, useTheme } from "@/theme";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Text, useColorScheme, View } from "react-native";
@@ -68,7 +73,7 @@ describe("ThemeWaveHost", () => {
       });
     });
 
-  it("draws the wave behind the content, and switches the theme once it is up", async () => {
+  it("when the new look isn't known beforehand: puts the wave up, switches the theme, then spreads", async () => {
     const api = render(<App />);
     expect(api.queryByTestId("theme-wave-background")).toBeNull();
 
@@ -133,7 +138,7 @@ describe("ThemeWaveHost", () => {
 
   it("spreads the new look's colour over the old one", async () => {
     const api = render(<App />);
-    const played = changeThemeWithWave(ORIGIN, makeApply(api, "dark"));
+    const played = changeThemeWithWave(ORIGIN, makeApply(api, "dark"), true);
 
     const layer = await waitFor(() => api.getByTestId("theme-wave-background"));
     const flat = (node: { props: { style?: unknown } }) =>
@@ -167,6 +172,93 @@ describe("ThemeWaveHost", () => {
       await played;
     });
   });
+
+
+  it("starts spreading straight away when the look is known, and switches the theme while it is moving", async () => {
+    const api = render(<App />);
+    let circleUpWhenApplied: boolean | null = null;
+    const apply = jest.fn(() => {
+      circleUpWhenApplied =
+        api.queryByTestId("theme-wave-background-circle") !== null;
+      act(() => {
+        scheme.mockReturnValue("dark");
+        api.rerender(<App />);
+      });
+    });
+
+    const played = changeThemeWithWave(ORIGIN, apply, true);
+    await waitFor(
+      () => expect(api.getByTestId("theme-wave-background-circle")).toBeTruthy(),
+      { timeout: WAVE_TIMEOUT },
+    );
+    await act(async () => {
+      await played;
+    });
+    // The circle was already out when the theme changed: no dead time with the wrong colours.
+    expect(circleUpWhenApplied).toBe(true);
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(isWaveActive()).toBe(false);
+  });
+
+  it("waits for the phone to report the new look before taking the wave down", async () => {
+    const api = render(<App />);
+    let reportLook: () => void = () => {};
+    // The phone is slow to report: the look changes well after the wave has finished growing.
+    const apply = jest.fn(() => {
+      reportLook = () =>
+        act(() => {
+          scheme.mockReturnValue("dark");
+          api.rerender(<App />);
+        });
+    });
+    let finished = false;
+    const played = changeThemeWithWave(ORIGIN, apply, true).then(() => {
+      finished = true;
+    });
+    await waitFor(() => expect(apply).toHaveBeenCalled(), {
+      timeout: WAVE_TIMEOUT,
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    // The circle has finished growing but the look hasn't been reported: still up.
+    expect(finished).toBe(false);
+    expect(api.queryByTestId("theme-wave-background")).not.toBeNull();
+
+    reportLook();
+    await act(async () => {
+      await played;
+    });
+    expect(finished).toBe(true);
+    expect(api.queryByTestId("theme-wave-background")).toBeNull();
+  }, WAVE_TIMEOUT * 2);
+
+  it("corrects the colour, and shows the correction, if the look turns out not to be the expected one", async () => {
+    const api = render(<App />);
+    // What the circle showed, each time the wave changed: true = dark, false = light.
+    const seen: (boolean | null | "over")[] = [];
+    const unsubscribe = subscribeWave(() => {
+      const wave = getActiveWave();
+      seen.push(wave ? (wave.to ? wave.to.isDark : null) : "over");
+    });
+    // The wave is told the look is going dark, but the phone stays light.
+    const apply = jest.fn();
+    await act(async () => {
+      await changeThemeWithWave(ORIGIN, apply, true);
+    });
+    unsubscribe();
+
+    // Dark was drawn first, then the circle was corrected to light, and only then taken down.
+    const dark = seen.indexOf(true);
+    const light = seen.indexOf(false);
+    expect(dark).toBeGreaterThanOrEqual(0);
+    expect(light).toBeGreaterThan(dark);
+    expect(seen[seen.length - 1]).toBe("over");
+    expect(seen.lastIndexOf("over")).toBeGreaterThan(light);
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(isWaveActive()).toBe(false);
+    expect(api.queryByTestId("theme-wave-background")).toBeNull();
+  }, THEME_WAVE_CHANGE_TIMEOUT_MS + WAVE_TIMEOUT);
 
   it("ends quietly, without drawing a circle, when the look turns out not to change", async () => {
     const api = render(<App />);

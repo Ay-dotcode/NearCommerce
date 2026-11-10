@@ -45,7 +45,11 @@ export function endWave() {
   notify();
 }
 
-type WavePlayer = (origin: WaveOrigin, apply: () => void) => Promise<void>;
+type WavePlayer = (
+  origin: WaveOrigin,
+  apply: () => void,
+  targetDark?: boolean,
+) => Promise<void>;
 
 let player: WavePlayer | null = null;
 
@@ -59,10 +63,11 @@ export function registerThemeWave(next: WavePlayer): () => void {
 export async function changeThemeWithWave(
   origin: WaveOrigin | undefined,
   apply: () => void,
+  targetDark?: boolean,
 ): Promise<void> {
   if (!player || !origin) {
     apply();
     return;
   }
-  await player(origin, apply);
+  await player(origin, apply, targetDark);
 }
