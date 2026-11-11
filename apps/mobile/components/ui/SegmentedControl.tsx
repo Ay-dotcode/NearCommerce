@@ -4,9 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 interface Props<T extends string> {
   options: { value: T; label: string }[];
   value: T;
-  // `press` is where on the screen the choice was tapped (for the theme wave); it is missing when
-  // the platform doesn't report it.
-  onChange: (value: T, press?: { x: number; y: number }) => void;
+  onChange: (value: T) => void;
   label: string;
   testID?: string;
 }
@@ -35,14 +33,7 @@ export function SegmentedControl<T extends string>({
             testID={`${testID}-${option.value}`}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            onPress={(event) =>
-              onChange(
-                option.value,
-                typeof event?.nativeEvent?.pageX === "number"
-                  ? { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY }
-                  : undefined,
-              )
-            }
+            onPress={() => onChange(option.value)}
             style={[styles.segment, selected && styles.selected]}
           >
             <Text style={[styles.text, selected && styles.selectedText]}>

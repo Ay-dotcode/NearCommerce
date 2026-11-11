@@ -3,20 +3,13 @@ import { Button, SegmentedControl, Slider, useDialogs } from "@/components/ui";
 import { SEARCH_RADIUS_MAX_KM, SEARCH_RADIUS_MIN_KM } from "@/constants";
 import { switchToDeviceLocation } from "@/helpers/location";
 import { notify } from "@/helpers/notify";
-import { getDeviceIsDark } from "@/helpers/themePreference";
-import { changeThemeWithWave, type WaveOrigin } from "@/helpers/themeWave";
 import { useAuth } from "@/src/context/AuthContext";
 import { useOptionalOnboarding } from "@/src/context/OnboardingContext";
 import { useDeviceLocationName } from "@/src/hooks/useDeviceLocationName";
 import { useManualLocation } from "@/src/hooks/useManualLocation";
 import { useSearchRadius } from "@/src/hooks/useSearchRadius";
 import { useThemePreference } from "@/src/hooks/useThemePreference";
-import {
-  useColors,
-  useTheme,
-  useThemedStyles,
-  type ThemeColors,
-} from "@/theme";
+import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { apiClient } from "@nearcommerce/api";
 import {
   formatKm,
@@ -51,15 +44,6 @@ export default function SettingsContent({
   const manualLocation = useManualLocation();
   const radius = useSearchRadius();
   const theme = useThemePreference();
-  const { isDark } = useTheme();
-
-  const changeTheme = (value: ThemePreference, press?: WaveOrigin) => {
-    const apply = () => void theme.setPreference(value);
-    if (value !== "system" && (value === "dark") === isDark) return apply();
-    const targetDark =
-      value === "system" ? getDeviceIsDark() : value === "dark";
-    void changeThemeWithWave(press, apply, targetDark);
-  };
   const [draftKm, setDraftKm] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);
   const deviceName = useDeviceLocationName(!manualLocation);
@@ -228,7 +212,7 @@ export default function SettingsContent({
           testID="theme-control"
           options={THEME_OPTIONS}
           value={theme.preference}
-          onChange={changeTheme}
+          onChange={(value) => void theme.setPreference(value)}
         />
         <Text style={[styles.hint, styles.gapTop]}>
           {theme.preference === "system"

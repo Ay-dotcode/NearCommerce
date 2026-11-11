@@ -12,18 +12,6 @@ let version = 0;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((listener) => listener());
 
-let deviceDark: boolean | undefined;
-try {
-  const scheme = Appearance.getColorScheme?.();
-  if (scheme) deviceDark = scheme === "dark";
-  Appearance.addChangeListener?.(({ colorScheme }) => {
-    if (preference === "system" && colorScheme)
-      deviceDark = colorScheme === "dark";
-  });
-} catch {}
-
-export const getDeviceIsDark = () => deviceDark;
-
 export const getThemePreference = () => preference;
 
 export function subscribeThemePreference(listener: () => void) {

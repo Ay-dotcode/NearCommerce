@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ThemeWaveLayer } from "../ThemeWaveLayer";
 import { BlurBackdrop } from "./BlurBackdrop";
 import { motion } from "./motion";
 
@@ -120,7 +119,6 @@ export function Drawer({
           },
         ]}
       >
-        <ThemeWaveLayer token="surface" />
         <View style={styles.header}>
           <Text accessibilityRole="header" style={styles.title}>
             {title}

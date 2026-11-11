@@ -1,11 +1,10 @@
-import { isWaveActive, subscribeWave } from "@/helpers/themeWave";
 import {
   constants,
   dark,
   light,
   type Palette,
 } from "@nearcommerce/config/palette";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
 import { useColorScheme } from "react-native";
 
 const buildColors = (p: Palette) => ({
@@ -57,22 +56,8 @@ export interface Theme {
 export const lightTheme: Theme = { isDark: false, colors: buildColors(light) };
 export const darkTheme: Theme = { isDark: true, colors: buildColors(dark) };
 
-const seeThrough = (theme: Theme): Theme => ({
-  isDark: theme.isDark,
-  colors: { ...theme.colors, background: "transparent" },
-});
-const lightSeeThrough = seeThrough(lightTheme);
-const darkSeeThrough = seeThrough(darkTheme);
-
 export function useTheme(): Theme {
-  const dark = useColorScheme() === "dark";
-  const waving = useSyncExternalStore(
-    subscribeWave,
-    isWaveActive,
-    isWaveActive,
-  );
-  if (waving) return dark ? darkSeeThrough : lightSeeThrough;
-  return dark ? darkTheme : lightTheme;
+  return useColorScheme() === "dark" ? darkTheme : lightTheme;
 }
 
 export const useColors = (): ThemeColors => useTheme().colors;

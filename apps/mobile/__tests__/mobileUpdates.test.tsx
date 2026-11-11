@@ -93,8 +93,7 @@ describe("SegmentedControl", () => {
     );
     expect(getByTestId("t-light").props.accessibilityState.selected).toBe(true);
     fireEvent.press(getByTestId("t-system"));
-    // The second argument is where it was tapped (used for the theme wave); a test press has none.
-    expect(onChange).toHaveBeenCalledWith("system", undefined);
+    expect(onChange).toHaveBeenCalledWith("system");
   });
 });
 
