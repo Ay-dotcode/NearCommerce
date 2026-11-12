@@ -1,6 +1,6 @@
 {
   "name": "@nearcommerce/mobile",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "start": "expo start",
@@ -22,9 +22,11 @@
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.22",
     "expo-dev-client": "~57.0.20",
+    "expo-file-system": "~57.0.7",
     "expo-font": "~57.0.4",
     "expo-image-manipulator": "~57.0.21",
     "expo-image-picker": "~57.0.20",
+    "expo-intent-launcher": "~57.0.1",
     "expo-linking": "~57.0.13",
     "expo-live-activity": "0.4.2",
     "expo-location": "~57.0.22",

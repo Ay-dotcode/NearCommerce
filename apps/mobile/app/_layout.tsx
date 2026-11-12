@@ -3,6 +3,7 @@ import LocationFallbackModal from "@/components/LocationFallbackModal";
 import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
 import ToastHost from "@/components/ToastHost";
 import { DialogProvider } from "@/components/ui";
+import { UpdateScreen } from "@/components/UpdateScreen";
 import { API_URL } from "@/constants";
 import { AuthProvider, useAuth } from "@/src/context/AuthContext";
 import {
@@ -10,6 +11,7 @@ import {
   useOnboarding,
 } from "@/src/context/OnboardingContext";
 import { SettingsProvider } from "@/src/context/SettingsContext";
+import { useAppUpdate } from "@/src/hooks/useAppUpdate";
 import { useLocationFetcher } from "@/src/hooks/useLocationFetcher";
 import {
   useColors,
@@ -56,17 +58,18 @@ function AppShell() {
   const c = useColors();
   const { token, isLoading } = useAuth();
   const onboarding = useOnboarding();
+  const update = useAppUpdate();
   const [splashDone, setSplashDone] = useState(false);
-  // The opening animation stays until sign-in state and the "seen the guide" flag are known.
-  const ready = !isLoading && onboarding.loaded;
+  const ready = !isLoading && onboarding.loaded && update.status !== "checking";
 
   return (
     <View style={styles.root}>
       {!isLoading && (
         <>
-          {onboarding.loaded && !onboarding.firstRun && Boolean(token) && (
-            <LocationLayer signedIn={Boolean(token)} />
-          )}
+          {update.status === "none" &&
+            onboarding.loaded &&
+            !onboarding.firstRun &&
+            Boolean(token) && <LocationLayer signedIn={Boolean(token)} />}
 
           <SettingsProvider>
             <Stack
@@ -92,7 +95,10 @@ function AppShell() {
               <Stack.Screen name="list/[id]" options={{ headerShown: false }} />
               {/* Without a title the header falls back to the raw route name ("store/[id]") */}
               <Stack.Screen name="store/[id]" options={{ title: "Store" }} />
-              <Stack.Screen name="product/[id]" options={{ title: "Product" }} />
+              <Stack.Screen
+                name="product/[id]"
+                options={{ title: "Product" }}
+              />
               <Stack.Screen
                 name="review/index"
                 options={{ title: "Review", animation: "slide_from_bottom" }}
@@ -109,6 +115,17 @@ function AppShell() {
       {ready && onboarding.visible && (
         <OnboardingScreen onFinish={onboarding.finish} />
       )}
+
+      {ready &&
+        (update.status === "required" || update.status === "optional") && (
+          <UpdateScreen
+            mode={update.status}
+            current={update.current}
+            latest={update.latest}
+            url={update.url}
+            onContinue={update.skip}
+          />
+        )}
 
       <ToastHost />
 

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Near Commerce",
     "slug": "nearcommerce",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "scheme": "nearcommerce",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -15,7 +15,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2563EB"
       },
-      "package": "com.nearcommerce.app"
+      "package": "com.nearcommerce.app",
+      "permissions": ["android.permission.REQUEST_INSTALL_PACKAGES"]
     },
     "web": {
       "favicon": "./assets/favicon.png"

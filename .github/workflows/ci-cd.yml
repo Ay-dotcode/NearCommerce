@@ -144,3 +144,4 @@ jobs:
         run: eas update --branch production --message "${{ github.event.head_commit.message }}" --non-interactive
         env:
           EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
+          EXPO_PUBLIC_APP_DOWNLOAD_URL: ${{ vars.APP_DOWNLOAD_URL }}

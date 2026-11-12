@@ -175,6 +175,56 @@ development build.
 `app.json` uses `"runtimeVersion": {"policy": "appVersion"}`, which is what keeps a JavaScript update from
 reaching an app whose native part is too old for it.
 
+### The in-app update screen
+
+Every time the app opens (Android only) it asks GitHub for the newest published release and compares that
+release's tag with its own version (`version` in `apps/mobile/app.json`):
+
+| New release compared with the installed app | What the shopper sees                                                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Same version, or older                      | Nothing                                                                                                              |
+| New **minor** or **patch** (1.0.2 → 1.1.0)  | "Update available" with **Download update** and **Continue**. Continue is remembered, so that version isn't offered again |
+| New **major** (1.9.0 → 2.0.0)               | "Update required" with only **Download update**: the app can't be used until it is installed                         |
+
+**Download update** downloads the release's APK inside the app (with a progress bar) and then opens Android's
+installer, where the shopper taps Install. The first time, Android also asks them to allow installs from
+Near Commerce (a one-time switch in settings); after allowing it they tap **Install update** again. If the
+download fails, **Try again** and "Download in your browser instead" are offered. If the check can't be made
+(offline, slow, GitHub busy) the app simply opens as usual.
+
+**Where the download comes from.** By default, the `.apk` attached to the newest release. To use another address
+set `EXPO_PUBLIC_APP_DOWNLOAD_URL`:
+
+- a direct link to an `.apk` file is downloaded and installed inside the app. `{version}` and `{tag}` are
+  replaced with the new version and tag, e.g. `https://example.com/downloads/NearCommerce-{tag}.apk`;
+- any other link, such as the app's Google Play page, is simply opened (the app can't install from a store
+  itself, so the shopper taps Update there).
+
+It is read when the app is built or an over-the-air update is published, so set it in each place you set
+`EXPO_PUBLIC_API_URL`: `apps/mobile/.env` for local runs, the `env` block of a profile in `eas.json` for APK/AAB
+builds, and the `APP_DOWNLOAD_URL` repository variable (Settings → Secrets and variables → Actions → Variables)
+for over-the-air updates. Leave it empty to use the default.
+
+**If you later publish on Google Play**, do two things: set `EXPO_PUBLIC_APP_DOWNLOAD_URL` to the Play Store page,
+and remove `android.permission.REQUEST_INSTALL_PACKAGES` from `android.permissions` in `app.json` (Google Play
+restricts that permission to apps whose job is installing other apps). With a store link set, the button
+just opens the store page, so the app no longer needs the permission.
+
+What this means when you release:
+
+- Bump `version` in `apps/mobile/app.json` **before** tagging, and tag with the same number
+  (`version` `1.1.0` → tag `v1.1.0`). The workflow stops if they differ; otherwise people who installed the new
+  APK would still be told to update.
+- Use a new **major** number only when old versions must stop working (for example, an API change they can't
+  handle). Everything else should be a minor or patch bump.
+- Only the newest non-draft, non-pre-release release counts, so mark test builds as pre-releases.
+- Installing inside the app needs two native libraries (`expo-file-system`, `expo-intent-launcher`) and the
+  install permission, so the release that adds them (1.1.0) must be built as a new APK; an over-the-air update
+  can't carry it. Phones on an older build don't get it over the air (its `version` differs, so they are
+  skipped); they install the 1.1.0 APK once, and from then on updates install inside the app.
+- To see the screens yourself, install a build whose `version` is older than your latest release: one major
+  behind shows the required screen, one minor behind shows the optional one.
+
 ## 5. Before real shoppers use it
 
 - Use strong `JWT_*` secrets (Render generates them for you) and never commit a `.env` file.

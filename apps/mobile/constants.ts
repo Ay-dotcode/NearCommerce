@@ -32,3 +32,26 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? defaultApiUrl;
 
 // AsyncStorage key that remembers the first-launch introduction was seen ("1").
 export const ONBOARDING_SEEN_KEY = "@onboarding_seen";
+
+// In-app update check. New builds are published as GitHub Releases (see release-android.yml), so
+// the newest release is the newest app. Its tag is the app version, for example "v1.2.0".
+export const UPDATE_RELEASE_API_URL =
+  "https://api.github.com/repos/Ay-dotcode/NearCommerce/releases/latest";
+
+// Release pages and release files are the only GitHub addresses the update check trusts.
+export const UPDATE_RELEASE_PAGE_PREFIX =
+  "https://github.com/Ay-dotcode/NearCommerce/releases/";
+
+// Where the update screen's button goes. Leave it unset to use the APK attached to the newest
+// GitHub Release (what release-android.yml publishes). Set it to use another address:
+//   - a direct link to an .apk file: downloaded and installed inside the app. "{version}" and
+//     "{tag}" are replaced with the new version ("1.2.0") and its tag ("v1.2.0").
+//   - any other link, such as the app's Google Play page: simply opened.
+// Expo only inlines a direct `process.env.EXPO_PUBLIC_*` read, so keep it exactly in this form.
+export const APP_DOWNLOAD_URL = process.env.EXPO_PUBLIC_APP_DOWNLOAD_URL;
+
+// How long opening the app may wait for the update check before carrying on without it.
+export const UPDATE_CHECK_TIMEOUT_MS = 3000;
+
+// AsyncStorage key holding the version whose optional update the shopper chose to skip.
+export const UPDATE_SKIPPED_KEY = "@update_skipped_version";
