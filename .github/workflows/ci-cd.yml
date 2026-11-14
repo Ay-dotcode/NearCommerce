@@ -56,6 +56,15 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Type-check every package
+        run: pnpm lint
+      - name: Lint
+        run: pnpm lint:eslint
+      - name: Check formatting
+        run: pnpm format:check
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
+        continue-on-error: true
       - name: Create the database tables
         run: pnpm --filter @nearcommerce/backend db:migrate
       - name: Run every test

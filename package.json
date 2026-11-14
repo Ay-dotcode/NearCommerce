@@ -2,16 +2,27 @@
   "name": "NearCommerce",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clear-db": "pnpm --filter @nearcommerce/backend run db:clear",
-    "add-admin": "pnpm --filter @nearcommerce/backend run add-admin"
+    "add-admin": "pnpm --filter @nearcommerce/backend run add-admin",
+    "lint:eslint": "eslint . --max-warnings 0",
+    "format": "prettier --write \"{apps,packages}/**/*.{ts,tsx}\" \"apps/*/index.html\"",
+    "format:check": "prettier --check \"{apps,packages}/**/*.{ts,tsx}\" \"apps/*/index.html\"",
+    "check": "pnpm lint && pnpm lint:eslint && pnpm format:check"
   },
   "packageManager": "pnpm@12.4.2",
   "devDependencies": {
-    "turbo": "^2.10.13"
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "turbo": "^2.10.13",
+    "typescript-eslint": "^8.72.2"
   }
 }

@@ -11,3 +11,12 @@ allowBuilds:
   vd-tool: false
 
 minimumReleaseAge: 0
+
+# Security patches for transitive dependencies (see `pnpm audit`). Remove an entry once the
+# packages that depend on it ship a release that no longer needs it.
+overrides:
+  "body-parser@<1.20.9": "^1.20.9"
+  "follow-redirects@<1.16.2": "^1.16.2"
+  "node-forge@<1.4.3": "^1.4.3"
+  "decode-uri-component@<0.5.1": "^0.5.1"
+  "postcss-selector-parser@<6.1.5": "^6.1.5"

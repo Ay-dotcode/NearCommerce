@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+.turbo
+expo-export
+coverage
+pnpm-lock.yaml
+*.onnx
+apps/mobile/android
+apps/mobile/ios
