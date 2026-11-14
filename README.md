@@ -396,4 +396,4 @@ pnpm --filter @nearcommerce/ui generate:app-icons   # re-render mobile icons fro
 
 ## License
 
-This project is released under the MIT License. See the repository license file for details.
+NearCommerce's source code is released under the [MIT License](LICENSE). The bundled YOLOv8n cropper model is the exception: it is AGPL-3.0 and keeps its own terms, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before distributing or commercially operating a build that includes it.
