@@ -33,7 +33,7 @@
     "expo-live-activity": "0.4.2",
     "expo-location": "~57.0.22",
     "expo-notifications": "~57.0.24",
-    "expo-router": "~57.0.29",
+    "expo-router": "~58.0.31",
     "expo-splash-screen": "~57.0.10",
     "expo-status-bar": "~57.0.1",
     "expo-updates": "~57.0.26",
