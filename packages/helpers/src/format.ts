@@ -35,7 +35,11 @@ export function formatPrice(value: number | string): string {
 }
 
 // 3 -> "3 days", 1 -> "1 day". Pass the plural when it is not just "+s" ("category", "categories").
-export function pluralize(count: number, singular: string, plural = `${singular}s`) {
+export function pluralize(
+  count: number,
+  singular: string,
+  plural = `${singular}s`,
+) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 

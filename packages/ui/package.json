@@ -2,6 +2,7 @@
   "name": "@nearcommerce/ui",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {

@@ -18,7 +18,8 @@ const variants: Record<ButtonVariant, string> = {
     "press hover-outline border border-slate-300 bg-white text-slate-700 shadow-card hover:bg-slate-50 focus-visible:ring-brand-500",
   danger:
     "press bg-red-600 text-onbrand shadow-card hover:bg-red-700 hover:shadow-[0_0_24px_-4px_rgb(239_68_68/0.55)] focus-visible:ring-red-500",
-  ghost: "press hover-outline text-slate-600 hover:bg-slate-100 focus-visible:ring-brand-500",
+  ghost:
+    "press hover-outline text-slate-600 hover:bg-slate-100 focus-visible:ring-brand-500",
 };
 
 // `min-h`, not `h`: a label that has to wrap (a long one in a narrow card or on a small phone)

@@ -2,7 +2,11 @@ import { z } from "zod";
 
 // Emails are stored trimmed and lowercase, so every endpoint that looks one up must normalise
 // it the same way. Otherwise "Joe@Example.com" registers fine but can't log in or get emails.
-const EmailSchema = z.string().trim().toLowerCase().email("Invalid email address");
+const EmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Invalid email address");
 
 export const RegisterSchema = z
   .object({

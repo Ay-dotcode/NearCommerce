@@ -17,7 +17,12 @@ export function parseApiError(
   fallback = "Something went wrong. Please try again.",
 ): ParsedApiError {
   const response = (
-    error as { response?: { status?: number; data?: any } } | null
+    error as {
+      response?: {
+        status?: number;
+        data?: { error?: unknown; code?: unknown; details?: unknown };
+      };
+    } | null
   )?.response;
   const data = response?.data;
   return {
@@ -26,7 +31,7 @@ export function parseApiError(
     code: typeof data?.code === "string" ? data.code : undefined,
     details: Array.isArray(data?.details)
       ? data.details.filter(
-          (d: any) =>
+          (d: Partial<ApiErrorDetail> | null): d is ApiErrorDetail =>
             typeof d?.path === "string" && typeof d?.message === "string",
         )
       : [],

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "./schemas/zodConfig";
 import { UserRole } from "./types/roles";
 export * from "./schemas/admin";
 export * from "./schemas/auth";

@@ -28,7 +28,7 @@ export const MAX_PRODUCT_QUANTITY = 1_000_000;
 export const IMPORT_MAX_ROWS = 1000;
 
 const priceSchema = z
-  .number({ invalid_type_error: "Price must be a number" })
+  .number({ error: "Price must be a number" })
   .positive("Price must be greater than zero")
   .max(MAX_PRODUCT_PRICE, "Price is too large")
   .refine((v) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-6, {
@@ -36,7 +36,7 @@ const priceSchema = z
   });
 
 const quantitySchema = z
-  .number({ invalid_type_error: "Quantity must be a number" })
+  .number({ error: "Quantity must be a number" })
   .int("Quantity must be a whole number")
   .nonnegative("Quantity cannot be negative")
   .max(MAX_PRODUCT_QUANTITY, "Quantity is too large");

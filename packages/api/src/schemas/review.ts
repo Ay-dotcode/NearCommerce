@@ -4,7 +4,7 @@ export const REVIEW_COMMENT_MAX = 1000;
 export const REVIEWS_PAGE_SIZE_MAX = 50;
 
 const rating = z
-  .number({ invalid_type_error: "Rating must be a number" })
+  .number({ error: "Rating must be a number" })
   .int("Rating must be a whole number")
   .min(1, "Rating must be between 1 and 5")
   .max(5, "Rating must be between 1 and 5");

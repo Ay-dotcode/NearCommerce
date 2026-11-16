@@ -7,8 +7,14 @@ function Harness({ dismissible = true }: { dismissible?: boolean }) {
   return (
     <>
       <button onClick={() => setOpen(true)}>Open it</button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Edit thing" description="Make changes" dismissible={dismissible}
-        footer={<button>Save</button>}>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Edit thing"
+        description="Make changes"
+        dismissible={dismissible}
+        footer={<button>Save</button>}
+      >
         <input aria-label="Name" />
       </Modal>
     </>
@@ -21,14 +27,20 @@ describe("Modal", () => {
   });
 
   it("renders nothing while closed", () => {
-    render(<Modal open={false} onClose={() => {}} title="T">x</Modal>);
+    render(
+      <Modal open={false} onClose={() => {}} title="T">
+        x
+      </Modal>,
+    );
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("renders into document.body, outside the page's own stacking context", () => {
     const { container } = render(
       <div className="animate-page-in">
-        <Modal open onClose={() => {}} title="Details">x</Modal>
+        <Modal open onClose={() => {}} title="Details">
+          x
+        </Modal>
       </div>,
     );
     const dialog = screen.getByRole("dialog", { name: "Details" });
@@ -39,7 +51,16 @@ describe("Modal", () => {
   });
 
   it("is an accessible, labelled modal dialog", () => {
-    render(<Modal open onClose={() => {}} title="Edit thing" description="Make changes">x</Modal>);
+    render(
+      <Modal
+        open
+        onClose={() => {}}
+        title="Edit thing"
+        description="Make changes"
+      >
+        x
+      </Modal>,
+    );
     const dialog = screen.getByRole("dialog", { name: "Edit thing" });
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(dialog).toHaveAccessibleDescription("Make changes");
@@ -92,10 +113,22 @@ describe("Modal", () => {
 });
 
 describe("ConfirmDialog", () => {
-  const setup = (props: Partial<React.ComponentProps<typeof ConfirmDialog>> = {}) => {
+  const setup = (
+    props: Partial<React.ComponentProps<typeof ConfirmDialog>> = {},
+  ) => {
     const onConfirm = jest.fn();
     const onCancel = jest.fn();
-    render(<ConfirmDialog open title="Delete it?" description="Gone forever" confirmLabel="Delete" onConfirm={onConfirm} onCancel={onCancel} {...props} />);
+    render(
+      <ConfirmDialog
+        open
+        title="Delete it?"
+        description="Gone forever"
+        confirmLabel="Delete"
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+        {...props}
+      />,
+    );
     return { onConfirm, onCancel };
   };
 
@@ -132,7 +165,13 @@ describe("ConfirmDialog", () => {
 
 describe("overlay blur", () => {
   it("renders the shared blurred backdrop behind a modal", () => {
-    render(<Modal open onClose={() => {}} title="T">x</Modal>);
-    expect(screen.getByTestId("modal-backdrop").className).toMatch(/backdrop-blur/);
+    render(
+      <Modal open onClose={() => {}} title="T">
+        x
+      </Modal>,
+    );
+    expect(screen.getByTestId("modal-backdrop").className).toMatch(
+      /backdrop-blur/,
+    );
   });
 });

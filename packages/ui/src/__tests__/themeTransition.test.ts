@@ -4,8 +4,12 @@ import {
   waveRadius,
 } from "@nearcommerce/ui/src/helpers/themeTransition";
 
-type Doc = Document & { startViewTransition?: unknown };
-const doc = document as Doc;
+// Current DOM typings make startViewTransition required; the tests need it optional so they can
+// remove it to simulate browsers without View Transitions.
+type Doc = Omit<Document, "startViewTransition"> & {
+  startViewTransition?: unknown;
+};
+const doc = document as unknown as Doc;
 const animate = jest.fn();
 
 const withMotion = (reduced: boolean) =>
@@ -19,9 +23,16 @@ const withMotion = (reduced: boolean) =>
 
 beforeEach(() => {
   animate.mockReset();
-  (document.documentElement as unknown as { animate: unknown }).animate = animate;
-  Object.defineProperty(window, "innerWidth", { configurable: true, value: 1000 });
-  Object.defineProperty(window, "innerHeight", { configurable: true, value: 800 });
+  (document.documentElement as unknown as { animate: unknown }).animate =
+    animate;
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: 1000,
+  });
+  Object.defineProperty(window, "innerHeight", {
+    configurable: true,
+    value: 800,
+  });
   withMotion(false);
 });
 
@@ -31,9 +42,15 @@ afterEach(() => {
 
 describe("waveRadius", () => {
   it("reaches the corner farthest from where the wave starts", () => {
-    expect(waveRadius({ x: 0, y: 0 }, 1000, 800)).toBeCloseTo(Math.hypot(1000, 800));
-    expect(waveRadius({ x: 1000, y: 800 }, 1000, 800)).toBeCloseTo(Math.hypot(1000, 800));
-    expect(waveRadius({ x: 900, y: 40 }, 1000, 800)).toBeCloseTo(Math.hypot(900, 760));
+    expect(waveRadius({ x: 0, y: 0 }, 1000, 800)).toBeCloseTo(
+      Math.hypot(1000, 800),
+    );
+    expect(waveRadius({ x: 1000, y: 800 }, 1000, 800)).toBeCloseTo(
+      Math.hypot(1000, 800),
+    );
+    expect(waveRadius({ x: 900, y: 40 }, 1000, 800)).toBeCloseTo(
+      Math.hypot(900, 760),
+    );
   });
 });
 
@@ -83,7 +100,10 @@ describe("startThemeWave", () => {
     const change = jest.fn();
     doc.startViewTransition = jest.fn((update: () => void) => {
       update();
-      return { ready: Promise.reject(new Error("skipped")), finished: Promise.resolve() };
+      return {
+        ready: Promise.reject(new Error("skipped")),
+        finished: Promise.resolve(),
+      };
     });
     startThemeWave({ x: 1, y: 1 }, change);
     await Promise.resolve();

@@ -5,7 +5,10 @@ import { z } from "zod";
 export const CATEGORY_NAME_MAX = 100;
 
 const categoryName = z
-  .string({ required_error: "Name is required" })
+  .string({
+    error: (issue) =>
+      issue.input === undefined ? "Name is required" : "Name must be text",
+  })
   .trim()
   .min(1, "Name is required")
   .max(

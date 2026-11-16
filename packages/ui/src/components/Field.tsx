@@ -68,7 +68,10 @@ export type TextFieldProps = FieldShellProps &
   Omit<InputHTMLAttributes<HTMLInputElement>, "className">;
 
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
-  ({ label, hint, error, required, className, hideLabel, id: idProp, ...rest }, ref) => {
+  (
+    { label, hint, error, required, className, hideLabel, id: idProp, ...rest },
+    ref,
+  ) => {
     const generated = useId();
     const id = idProp ?? generated;
     return (
@@ -112,7 +115,10 @@ export type PasswordFieldProps = Omit<TextFieldProps, "type">;
 // A password input with a show/hide button inside it. Edge and some other browsers draw their
 // own reveal icon in password fields; it is hidden here so there is only ever this one button.
 export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
-  ({ label, hint, error, required, className, hideLabel, id: idProp, ...rest }, ref) => {
+  (
+    { label, hint, error, required, className, hideLabel, id: idProp, ...rest },
+    ref,
+  ) => {
     const generated = useId();
     const id = idProp ?? generated;
     const [visible, setVisible] = useState(false);
@@ -155,22 +161,27 @@ export type TextAreaFieldProps = FieldShellProps &
 export const TextAreaField = forwardRef<
   HTMLTextAreaElement,
   TextAreaFieldProps
->(({ label, hint, error, required, className, hideLabel, id: idProp, ...rest }, ref) => {
-  const generated = useId();
-  const id = idProp ?? generated;
-  return (
-    <Shell {...{ id, label, hint, error, required, className, hideLabel }}>
-      <textarea
-        ref={ref}
-        id={id}
-        aria-invalid={Boolean(error) || undefined}
-        aria-describedby={describedBy(id, error, hint)}
-        className={controlClass(Boolean(error))}
-        {...rest}
-      />
-    </Shell>
-  );
-});
+>(
+  (
+    { label, hint, error, required, className, hideLabel, id: idProp, ...rest },
+    ref,
+  ) => {
+    const generated = useId();
+    const id = idProp ?? generated;
+    return (
+      <Shell {...{ id, label, hint, error, required, className, hideLabel }}>
+        <textarea
+          ref={ref}
+          id={id}
+          aria-invalid={Boolean(error) || undefined}
+          aria-describedby={describedBy(id, error, hint)}
+          className={controlClass(Boolean(error))}
+          {...rest}
+        />
+      </Shell>
+    );
+  },
+);
 TextAreaField.displayName = "TextAreaField";
 
 export type SelectFieldProps = FieldShellProps &
@@ -178,7 +189,17 @@ export type SelectFieldProps = FieldShellProps &
 
 export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
   (
-    { label, hint, error, required, className, hideLabel, id: idProp, children, ...rest },
+    {
+      label,
+      hint,
+      error,
+      required,
+      className,
+      hideLabel,
+      id: idProp,
+      children,
+      ...rest
+    },
     ref,
   ) => {
     const generated = useId();

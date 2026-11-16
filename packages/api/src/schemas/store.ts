@@ -26,15 +26,17 @@ const DayHoursSchema = z
   })
   .nullable();
 
+// partialRecord: in zod 4 a record keyed by an enum requires every key, but a store may list
+// only the days it has hours for.
 export const StoreOpeningHoursSchema = z
-  .record(z.enum(WEEKDAYS), DayHoursSchema)
+  .partialRecord(z.enum(WEEKDAYS), DayHoursSchema)
   // A day that is open must close after it opens (overnight hours are not supported).
   .superRefine((hours, ctx) => {
     for (const [day, value] of Object.entries(hours)) {
       if (!value || value.isClosed || value.closed) continue;
       if (value.open >= value.close)
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           message: "Closing time must be after opening time",
           path: [day, "close"],
         });

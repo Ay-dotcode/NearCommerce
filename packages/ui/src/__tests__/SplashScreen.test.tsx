@@ -31,7 +31,11 @@ describe("SplashScreen", () => {
 
   const renderSplash = () =>
     render(
-      <SplashScreen title="Near Commerce" subtitle="Store Owner Portal" durationMs={1000}>
+      <SplashScreen
+        title="Near Commerce"
+        subtitle="Store Owner Portal"
+        durationMs={1000}
+      >
         <button>App content</button>
       </SplashScreen>,
     );
@@ -43,17 +47,23 @@ describe("SplashScreen", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Store Owner Portal")).toBeInTheDocument();
     // The app is already mounted underneath (so it can load), but is inert.
-    expect(screen.getByText("App content").parentElement).toHaveAttribute("inert");
+    expect(screen.getByText("App content").parentElement).toHaveAttribute(
+      "inert",
+    );
   });
 
   it("fades out after the duration, then reveals an interactive app", () => {
     renderSplash();
     act(() => void jest.advanceTimersByTime(1000));
     // Leaving: still on screen for the exit fade.
-    expect(screen.getByRole("status").className).toContain("animate-splash-out");
+    expect(screen.getByRole("status").className).toContain(
+      "animate-splash-out",
+    );
     act(() => void jest.advanceTimersByTime(400));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.getByText("App content").parentElement).not.toHaveAttribute("inert");
+    expect(screen.getByText("App content").parentElement).not.toHaveAttribute(
+      "inert",
+    );
   });
 
   it("plays once per tab session", () => {

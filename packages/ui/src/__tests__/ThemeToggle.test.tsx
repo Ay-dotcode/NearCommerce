@@ -1,8 +1,12 @@
 import { ThemeToggle } from "@nearcommerce/ui/src/index";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-type Doc = Document & { startViewTransition?: unknown };
-const doc = document as Doc;
+// Current DOM typings make startViewTransition required; the tests need it optional so they can
+// remove it to simulate browsers without View Transitions.
+type Doc = Omit<Document, "startViewTransition"> & {
+  startViewTransition?: unknown;
+};
+const doc = document as unknown as Doc;
 const animate = jest.fn();
 let transition: jest.Mock;
 
@@ -11,7 +15,8 @@ const deviceIs = (scheme: "light" | "dark") =>
     configurable: true,
     writable: true,
     value: (query: string) => ({
-      matches: query.includes("prefers-color-scheme: dark") && scheme === "dark",
+      matches:
+        query.includes("prefers-color-scheme: dark") && scheme === "dark",
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
     }),
@@ -21,7 +26,8 @@ beforeEach(() => {
   localStorage.clear();
   delete document.documentElement.dataset.theme;
   animate.mockReset();
-  (document.documentElement as unknown as { animate: unknown }).animate = animate;
+  (document.documentElement as unknown as { animate: unknown }).animate =
+    animate;
   deviceIs("light");
   transition = jest.fn((update: () => void) => {
     update();
@@ -39,7 +45,14 @@ const radio = (name: RegExp) => screen.getByRole("radio", { name });
 // jsdom has no layout; give the pressed button a position.
 const placeAt = (el: HTMLElement, left: number, top: number) =>
   (el.getBoundingClientRect = () =>
-    ({ left, top, width: 40, height: 20, right: left + 40, bottom: top + 20 }) as DOMRect);
+    ({
+      left,
+      top,
+      width: 40,
+      height: 20,
+      right: left + 40,
+      bottom: top + 20,
+    }) as DOMRect);
 
 describe("ThemeToggle wave", () => {
   it("spreads the new theme from the pressed button, and the page changes inside the transition", async () => {
@@ -55,7 +68,9 @@ describe("ThemeToggle wave", () => {
     await Promise.resolve();
     await Promise.resolve();
     // Origin is the centre of the pressed button.
-    expect(animate.mock.calls[0][0].clipPath[0]).toBe("circle(0px at 120px 60px)");
+    expect(animate.mock.calls[0][0].clipPath[0]).toBe(
+      "circle(0px at 120px 60px)",
+    );
     expect(radio(/^Dark$/)).toHaveAttribute("aria-checked", "true");
   });
 

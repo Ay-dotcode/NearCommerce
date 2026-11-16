@@ -150,7 +150,9 @@ describe("PasswordField", () => {
   it("is disabled together with the input, and shows errors like other fields", () => {
     render(<PasswordField label="Password" disabled error="Too short" />);
     expect(screen.getByLabelText("Password")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Show password" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Show password" }),
+    ).toBeDisabled();
     expect(screen.getByRole("alert")).toHaveTextContent("Too short");
   });
 });
