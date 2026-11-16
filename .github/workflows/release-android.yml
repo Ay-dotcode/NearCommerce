@@ -53,7 +53,7 @@ jobs:
           EXT=$([ "${{ inputs.profile || 'preview' }}" = production ] && echo aab || echo apk)
           curl --fail --location "$URL" --output "NearCommerce-${GITHUB_REF_NAME//\//-}.$EXT"
       - name: Attach it to a GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: NearCommerce-*
           generate_release_notes: true
