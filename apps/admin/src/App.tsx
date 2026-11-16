@@ -1,9 +1,10 @@
 import { AdminLayout, ProtectedRoute } from "@/components/AdminLayout";
 import { AdminShellSkeleton } from "@/components/PageSkeletons";
 import { restoreSession } from "@/session";
+import { NotFoundPage } from "@nearcommerce/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
 
 const AuditLogs = lazy(() => import("@/pages/AuditLogs"));
 const Categories = lazy(() => import("@/pages/Categories"));
@@ -40,7 +41,21 @@ export default function App() {
                 <Route path="/audit-logs" element={<AuditLogs />} />
               </Route>
             </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route
+              path="*"
+              element={
+                <NotFoundPage
+                  action={
+                    <Link
+                      to="/dashboard"
+                      className="inline-flex min-h-10 items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-onbrand hover:bg-brand-700"
+                    >
+                      Back to the dashboard
+                    </Link>
+                  }
+                />
+              }
+            />
           </Routes>
         </Suspense>
       </BrowserRouter>

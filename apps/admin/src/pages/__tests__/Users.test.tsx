@@ -124,7 +124,9 @@ describe("Admin Users: details modal", () => {
 
     fireEvent.change(reason, { target: { value: "no" } });
     fireEvent.submit(dialog.querySelector("form")!);
-    expect(await within(dialog).findByText(/at least 5 characters/i)).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText(/at least 5 characters/i),
+    ).toBeInTheDocument();
 
     fireEvent.change(reason, { target: { value: "Repeated spam reviews" } });
     await waitFor(() =>
@@ -259,14 +261,20 @@ describe("Admin Users: details modal", () => {
   describe("making someone an admin", () => {
     const openPromote = async () => {
       renderPage();
-      fireEvent.click(await screen.findByRole("button", { name: "Make admin" }));
-      return screen.findByRole("dialog", { name: /make amy@shop.test an admin/i });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Make admin" }),
+      );
+      return screen.findByRole("dialog", {
+        name: /make amy@shop.test an admin/i,
+      });
     };
 
     it("asks for the admin's own password and sends it to the API", async () => {
       patch.mockResolvedValue({ data: {} });
       const dialog = await openPromote();
-      const confirm = within(dialog).getByRole("button", { name: "Make admin" });
+      const confirm = within(dialog).getByRole("button", {
+        name: "Make admin",
+      });
       expect(confirm).toBeDisabled();
 
       fireEvent.change(within(dialog).getByLabelText("Your password"), {
@@ -291,7 +299,9 @@ describe("Admin Users: details modal", () => {
       fireEvent.focus(password);
       fireEvent.blur(password);
       await new Promise((resolve) => setTimeout(resolve, 50));
-      expect(within(dialog).queryByText("Enter your password to continue.")).toBeNull();
+      expect(
+        within(dialog).queryByText("Enter your password to continue."),
+      ).toBeNull();
     });
 
     it("asks for the password when submitted without one, and the message goes away once typing starts", async () => {
@@ -305,14 +315,18 @@ describe("Admin Users: details modal", () => {
         target: { value: "my-admin-pass" },
       });
       await waitFor(() =>
-        expect(within(dialog).queryByText("Enter your password to continue.")).toBeNull(),
+        expect(
+          within(dialog).queryByText("Enter your password to continue."),
+        ).toBeNull(),
       );
     });
 
     it("also takes an optional reason, and sends it along with the password", async () => {
       patch.mockResolvedValue({ data: {} });
       const dialog = await openPromote();
-      const confirm = within(dialog).getByRole("button", { name: "Make admin" });
+      const confirm = within(dialog).getByRole("button", {
+        name: "Make admin",
+      });
 
       fireEvent.change(within(dialog).getByLabelText("Your password"), {
         target: { value: "my-admin-pass" },
@@ -341,9 +355,13 @@ describe("Admin Users: details modal", () => {
       fireEvent.change(within(dialog).getByLabelText("Your password"), {
         target: { value: "nope" },
       });
-      fireEvent.click(within(dialog).getByRole("button", { name: "Make admin" }));
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Make admin" }),
+      );
 
-      expect(await within(dialog).findByText("Incorrect password.")).toBeInTheDocument();
+      expect(
+        await within(dialog).findByText("Incorrect password."),
+      ).toBeInTheDocument();
       expect(
         screen.getByRole("dialog", { name: /make amy@shop.test an admin/i }),
       ).toBeInTheDocument();
@@ -354,15 +372,23 @@ describe("Admin Users: details modal", () => {
       fireEvent.click(
         await screen.findByRole("button", { name: "View details: Amy Owner" }),
       );
-      const details = await screen.findByRole("dialog", { name: "User details" });
-      fireEvent.click(within(details).getByRole("button", { name: "Make admin" }));
+      const details = await screen.findByRole("dialog", {
+        name: "User details",
+      });
+      fireEvent.click(
+        within(details).getByRole("button", { name: "Make admin" }),
+      );
       expect(
-        await screen.findByRole("dialog", { name: /make amy@shop.test an admin/i }),
+        await screen.findByRole("dialog", {
+          name: /make amy@shop.test an admin/i,
+        }),
       ).toBeInTheDocument();
     });
 
     it("is not offered for admins, and is disabled for suspended users", async () => {
-      mockApi([user({ id: "a2", role: "SYSTEM_ADMIN", full_name: "Other Admin" })]);
+      mockApi([
+        user({ id: "a2", role: "SYSTEM_ADMIN", full_name: "Other Admin" }),
+      ]);
       renderPage();
       await screen.findByText("Other Admin");
       expect(screen.queryByRole("button", { name: "Make admin" })).toBeNull();
@@ -371,7 +397,9 @@ describe("Admin Users: details modal", () => {
     it("disables it for a suspended user", async () => {
       mockApi([user({ is_suspended: true })]);
       renderPage();
-      expect(await screen.findByRole("button", { name: "Make admin" })).toBeDisabled();
+      expect(
+        await screen.findByRole("button", { name: "Make admin" }),
+      ).toBeDisabled();
     });
 
     it("marks admins added by the owner and explains why they cannot be demoted by others", async () => {
@@ -396,7 +424,13 @@ describe("Admin Users: details modal", () => {
 
 describe("Admin Users: taking admin rights away", () => {
   const admin = (over = {}) =>
-    user({ id: "a2", role: "SYSTEM_ADMIN", full_name: "Other Admin", email: "other@admin.test", ...over });
+    user({
+      id: "a2",
+      role: "SYSTEM_ADMIN",
+      full_name: "Other Admin",
+      email: "other@admin.test",
+      ...over,
+    });
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -412,7 +446,9 @@ describe("Admin Users: taking admin rights away", () => {
   it("asks for the admin's own password, like making someone an admin does", async () => {
     patch.mockResolvedValue({ data: {} });
     const dialog = await openDemote();
-    const confirm = within(dialog).getByRole("button", { name: "Demote to customer" });
+    const confirm = within(dialog).getByRole("button", {
+      name: "Demote to customer",
+    });
     expect(confirm).toBeDisabled();
 
     fireEvent.change(within(dialog).getByLabelText("Your password"), {
@@ -434,7 +470,9 @@ describe("Admin Users: taking admin rights away", () => {
   it("still asks for a reason, but it is optional, and is sent when given", async () => {
     patch.mockResolvedValue({ data: {} });
     const dialog = await openDemote();
-    const confirm = within(dialog).getByRole("button", { name: "Demote to customer" });
+    const confirm = within(dialog).getByRole("button", {
+      name: "Demote to customer",
+    });
 
     fireEvent.change(within(dialog).getByLabelText("Your password"), {
       target: { value: "my-admin-pass" },
@@ -462,9 +500,13 @@ describe("Admin Users: taking admin rights away", () => {
     fireEvent.change(within(dialog).getByLabelText("Reason (optional)"), {
       target: { value: "no" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Demote to customer" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Demote to customer" }),
+    );
 
-    expect(await within(dialog).findByText(/at least 5 characters/i)).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText(/at least 5 characters/i),
+    ).toBeInTheDocument();
     expect(patch).not.toHaveBeenCalled();
   });
 
@@ -477,20 +519,30 @@ describe("Admin Users: taking admin rights away", () => {
     fireEvent.change(within(dialog).getByLabelText("Your password"), {
       target: { value: "nope" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Demote to customer" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Demote to customer" }),
+    );
 
-    expect(await within(dialog).findByText("Incorrect password.")).toBeInTheDocument();
-    expect(screen.getByRole("dialog", { name: /demote other@admin.test/i })).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Incorrect password."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: /demote other@admin.test/i }),
+    ).toBeInTheDocument();
   });
 
   it("starts empty each time the dialog is opened", async () => {
     const dialog = await openDemote();
-    fireEvent.change(within(dialog).getByLabelText("Your password"), { target: { value: "secret" } });
+    fireEvent.change(within(dialog).getByLabelText("Your password"), {
+      target: { value: "secret" },
+    });
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
     fireEvent.click(screen.getByRole("button", { name: "Demote" }));
-    const again = await screen.findByRole("dialog", { name: /demote other@admin.test/i });
+    const again = await screen.findByRole("dialog", {
+      name: /demote other@admin.test/i,
+    });
     expect(within(again).getByLabelText("Your password")).toHaveValue("");
   });
 });

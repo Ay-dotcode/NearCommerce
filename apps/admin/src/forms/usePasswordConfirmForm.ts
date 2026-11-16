@@ -1,4 +1,5 @@
 import { passwordInitialValues, validatePassword } from "@/forms/password.form";
+import { useClearFieldError } from "@/forms/useClearFieldError";
 import { parseApiError } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import { useEffect } from "react";
@@ -28,12 +29,13 @@ export function usePasswordConfirmForm(
   useEffect(() => {
     if (open) resetForm();
   }, [open, resetForm]);
-  useEffect(() => {
-    if (errors.password) setFieldError("password", undefined);
-  }, [values.password]);
-  useEffect(() => {
-    if (errors.reason) setFieldError("reason", undefined);
-  }, [values.reason]);
+  useClearFieldError(
+    "password",
+    values.password,
+    errors.password,
+    setFieldError,
+  );
+  useClearFieldError("reason", values.reason, errors.reason, setFieldError);
 
   return {
     formik,

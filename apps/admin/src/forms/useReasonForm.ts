@@ -3,6 +3,7 @@ import {
   reasonInitialValues,
   validateReason,
 } from "@/forms/reason.form";
+import { useClearFieldError } from "@/forms/useClearFieldError";
 import { parseApiError } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import { useEffect } from "react";
@@ -33,9 +34,7 @@ export function useReasonForm(
     if (open) resetForm();
   }, [open, resetForm]);
 
-  useEffect(() => {
-    if (errors.reason) setFieldError("reason", undefined);
-  }, [values.reason]);
+  useClearFieldError("reason", values.reason, errors.reason, setFieldError);
 
   return {
     formik,

@@ -2,7 +2,7 @@ import App from "@/App";
 import "@/index.css";
 import { installTokenRefresh } from "@/session";
 import { configureApiClient } from "@nearcommerce/api";
-import { SplashScreen } from "@nearcommerce/ui";
+import { ErrorBoundary, SplashScreen } from "@nearcommerce/ui";
 import React from "react";
 import ReactDOM from "react-dom/client";
 
@@ -13,8 +13,10 @@ installTokenRefresh(() => {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <SplashScreen title="Near Commerce" subtitle="Admin Console">
-      <App />
-    </SplashScreen>
+    <ErrorBoundary>
+      <SplashScreen title="Near Commerce" subtitle="Admin Console">
+        <App />
+      </SplashScreen>
+    </ErrorBoundary>
   </React.StrictMode>,
 );

@@ -21,8 +21,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 type CategoryForm =
-  | { mode: "create" }
-  | { mode: "edit"; category: AdminCategory };
+  { mode: "create" } | { mode: "edit"; category: AdminCategory };
 type SubForm =
   | { mode: "create"; category: AdminCategory }
   | { mode: "edit"; category: AdminCategory; sub: AdminSubcategory };
@@ -60,10 +59,11 @@ export default function Categories() {
   const refreshAudit = () =>
     queryClient.invalidateQueries({ queryKey: ["admin-audit-logs"] });
 
+  const wrapped = query.data as { data?: unknown } | undefined;
   const categories: AdminCategory[] = Array.isArray(query.data)
     ? query.data
-    : Array.isArray((query.data as any)?.data)
-      ? (query.data as any).data
+    : Array.isArray(wrapped?.data)
+      ? (wrapped.data as AdminCategory[])
       : [];
 
   return (

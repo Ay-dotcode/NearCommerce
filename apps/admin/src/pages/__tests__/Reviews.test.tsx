@@ -28,7 +28,11 @@ const review = (over = {}) => ({
 
 const renderPage = () =>
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
       <Reviews />
     </QueryClientProvider>,
   );
@@ -42,7 +46,9 @@ describe("Admin Reviews: which store sells the reviewed product", () => {
     });
     renderPage();
     const line = await screen.findByText(/Fresh Milk/);
-    expect(line).toHaveTextContent("Product: Fresh Milk · Sold by Corner Market");
+    expect(line).toHaveTextContent(
+      "Product: Fresh Milk · Sold by Corner Market",
+    );
   });
 
   it("does not add a selling store to a review of a store (the store is the target)", async () => {
