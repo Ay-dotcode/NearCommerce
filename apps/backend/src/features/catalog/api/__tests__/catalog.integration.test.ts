@@ -107,9 +107,8 @@ describe("Categories", () => {
       ["PATCH", `/admin/subcategories/${UNKNOWN}`],
       ["DELETE", `/admin/subcategories/${UNKNOWN}`],
     ])("%s %s requires a token", async (method, path) => {
-      const res = await (request(app) as any)
-        [method.toLowerCase()](path)
-        .send({});
+      const agent = request(app) as any;
+      const res = await agent[method.toLowerCase()](path).send({});
       expect(res.status).toBe(401);
     });
 

@@ -14,8 +14,8 @@ export interface NormalizedDay {
 }
 export type NormalizedHours = Record<string, NormalizedDay | null>;
 
- // Collapses the legacy `closed` flag into `isClosed` so the database only ever
- // holds one shape. Days that are omitted stay omitted (treated as closed).
+// Collapses the legacy `closed` flag into `isClosed` so the database only ever
+// holds one shape. Days that are omitted stay omitted (treated as closed).
 export function normalizeOpeningHours(
   hours: Record<
     string,
@@ -54,7 +54,11 @@ const timezoneError = () =>
     { path: "timezone", message: "Unknown IANA timezone" },
   ]);
 
-export function toStoreDto(row: Record<string, any>) {
+export function toStoreDto(row: {
+  opening_hours: Parameters<typeof checkIfStoreIsOpen>[0];
+  timezone: string;
+  [column: string]: unknown;
+}) {
   const isOpen = checkIfStoreIsOpen(row.opening_hours, row.timezone);
   return { ...row, isOpen, is_open_now: isOpen };
 }

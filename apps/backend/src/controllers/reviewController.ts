@@ -56,9 +56,9 @@ export async function createReview(req: Request, res: Response) {
     return res
       .status(201)
       .json({ message: "Review submitted successfully", data: review });
-  } catch (error: any) {
+  } catch (error) {
     // 23505 is the PostgreSQL error code for unique_violation
-    if (error?.code === "23505")
+    if ((error as { code?: string } | null)?.code === "23505")
       return res
         .status(409)
         .json({ error: "You have already reviewed this item." });

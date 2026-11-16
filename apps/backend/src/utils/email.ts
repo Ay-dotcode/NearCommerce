@@ -33,8 +33,14 @@ function frontendBaseUrl(): string {
 
 // Fails with a clear message instead of a confusing connection error to localhost.
 function assertEmailConfigured(): void {
-  if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST && !process.env.SMTP_PASS) {
-    throw new Error("Neither RESEND_API_KEY nor SMTP_HOST is set, so no email can be sent");
+  if (
+    !process.env.RESEND_API_KEY &&
+    !process.env.SMTP_HOST &&
+    !process.env.SMTP_PASS
+  ) {
+    throw new Error(
+      "Neither RESEND_API_KEY nor SMTP_HOST is set, so no email can be sent",
+    );
   }
 }
 
@@ -50,8 +56,12 @@ interface SendMailOptions {
 async function dispatchMail(options: SendMailOptions): Promise<void> {
   const resendApiKey =
     process.env.RESEND_API_KEY ||
-    (process.env.SMTP_PASS?.startsWith("re_") ? process.env.SMTP_PASS : undefined) ||
-    (process.env.SMTP_HOST?.includes("resend.com") ? process.env.SMTP_PASS : undefined);
+    (process.env.SMTP_PASS?.startsWith("re_")
+      ? process.env.SMTP_PASS
+      : undefined) ||
+    (process.env.SMTP_HOST?.includes("resend.com")
+      ? process.env.SMTP_PASS
+      : undefined);
 
   if (resendApiKey) {
     const response = await fetch("https://api.resend.com/emails", {

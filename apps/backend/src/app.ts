@@ -1,3 +1,4 @@
+import { buildCorsOptions } from "@/config/cors";
 import authRouter from "@/features/auth/api/auth.routes";
 import categoryRouter from "@/features/catalog/api/category.routes";
 import favoriteRouter from "@/features/favorites/api/favorite.routes";
@@ -8,25 +9,28 @@ import {
   imageRouter,
   uploadRouter,
 } from "@/features/uploads/api/upload.routes";
+import { errorHandler, notFoundHandler } from "@/middleware/errorHandler";
 import adminRouter from "@/routes/admin.routes";
+import healthRouter from "@/routes/health.routes";
 import productRouter from "@/routes/productRoutes";
 import reviewRouter from "@/routes/reviewRoutes";
 import storeRouter from "@/routes/storeRoutes";
 import userRouter from "@/routes/user.routes";
+import compression from "compression";
 import cors from "cors";
 import express from "express";
+import helmet from "helmet";
 
 export const app = express();
 
 app.set("trust proxy", 1);
 
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
-);
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(compression());
+app.use(cors(buildCorsOptions()));
 app.use(express.json({ limit: "2mb" }));
+
+app.use("/health", healthRouter);
 
 app.use("/auth", authRouter);
 app.use("/search", searchRouter);
@@ -50,3 +54,6 @@ app.use("/api/images", imageRouter);
 app.use("/images", imageRouter);
 app.use("/api/admin", adminRouter);
 app.use("/admin", adminRouter);
+
+app.use(notFoundHandler);
+app.use(errorHandler);

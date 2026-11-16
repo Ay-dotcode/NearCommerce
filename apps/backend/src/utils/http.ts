@@ -12,13 +12,14 @@ export interface ValidationDetail {
 }
 
 interface IssueLike {
-  path: (string | number)[];
+  // zod 4 reports PropertyKey[] (symbols are possible), so segments are stringified below.
+  path: PropertyKey[];
   message: string;
 }
 
 export const toValidationDetails = (issues: IssueLike[]): ValidationDetail[] =>
   issues.map((issue) => ({
-    path: issue.path.join("."),
+    path: issue.path.map(String).join("."),
     message: issue.message,
   }));
 

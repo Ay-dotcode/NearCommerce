@@ -55,7 +55,10 @@ const ROOT_ADMIN_PROTECTED = {
 };
 
 type Queryable = {
-  query: (text: string, values?: unknown[]) => Promise<{ rows: any[] }>;
+  query: (
+    text: string,
+    values?: unknown[],
+  ) => Promise<{ rows: Record<string, unknown>[] }>;
 };
 
 async function isRootAdmin(
@@ -81,7 +84,7 @@ async function blocksRootAdmin(
 
 type PaginationResult =
   | { page: number; limit: number }
-  | { error: { path: (string | number)[]; message: string }[] };
+  | { error: { path: PropertyKey[]; message: string }[] };
 
 const parsePagination = (query: Request["query"]): PaginationResult => {
   const parsed = PaginationQuerySchema.safeParse(query);
@@ -371,7 +374,7 @@ export async function deleteReview(req: Request, res: Response) {
     ]);
     await client.query("COMMIT");
     return res.json({ message: "Review deleted and audited successfully." });
-  } catch (error) {
+  } catch {
     await client.query("ROLLBACK");
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -422,7 +425,7 @@ export async function toggleUserSuspension(req: Request, res: Response) {
 
     await invalidateSuspensionCache(req.params.userId, is_suspended);
     return res.json({ data: result.rows[0] });
-  } catch (error) {
+  } catch {
     await client.query("ROLLBACK");
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -462,7 +465,7 @@ export async function toggleStoreSuspension(req: Request, res: Response) {
     await client.query("COMMIT");
     await invalidateSuspensionCache(store.owner_id);
     return res.json({ data: store });
-  } catch (error) {
+  } catch {
     await client.query("ROLLBACK");
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {

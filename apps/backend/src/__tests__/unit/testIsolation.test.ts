@@ -15,7 +15,9 @@ const isolated = process.env.TEST_DB_ISOLATION !== "off";
 
   it("is fully migrated", async () => {
     // (Not asserted to be empty: other test files run in the same schema at the same time.)
-    const migrations = await db.query("SELECT COUNT(*)::int AS n FROM schema_migrations");
+    const migrations = await db.query(
+      "SELECT COUNT(*)::int AS n FROM schema_migrations",
+    );
     expect(migrations.rows[0].n).toBeGreaterThan(0);
     await db.query("SELECT 1 FROM admin_audit_logs LIMIT 1");
   });

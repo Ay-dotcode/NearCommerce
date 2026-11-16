@@ -39,7 +39,14 @@ const SELECT_PRODUCT = (distance: string) => `
 
 // Shoppers see stock and freshness on every result card (SRS 5.2.2). Stock is derived
 // purely from quantity, and the raw timestamp stays server-side.
-const toProductResult = (row: any) => {
+interface ProductRow {
+  price: string | number;
+  quantity: number;
+  last_verified_at: Date | string | null;
+  [column: string]: unknown;
+}
+
+const toProductResult = (row: ProductRow) => {
   const { last_verified_at, ...rest } = row;
   return {
     ...rest,
@@ -130,7 +137,7 @@ export async function findProducts(
   }
 
   return {
-    data: (rows as any[]).map(toProductResult),
+    data: (rows as ProductRow[]).map(toProductResult),
     used_fallback: usedFallback,
   };
 }

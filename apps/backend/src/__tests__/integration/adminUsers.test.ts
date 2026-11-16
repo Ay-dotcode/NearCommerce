@@ -214,8 +214,12 @@ describe("Admin user moderation: search, demote and force delete", () => {
       ).toBe(404);
       expect((await demote(admin, "not-a-uuid")).status).toBe(404);
       expect(
-        (await demote(admin, otherAdmin.id, { password: PASSWORD, reason: "no" }))
-          .status,
+        (
+          await demote(admin, otherAdmin.id, {
+            password: PASSWORD,
+            reason: "no",
+          })
+        ).status,
       ).toBe(400);
     });
 
@@ -225,7 +229,9 @@ describe("Admin user moderation: search, demote and force delete", () => {
 
       // No password at all (the old request shape that used to work).
       expect((await demote(admin, target.id, reason)).status).toBe(400);
-      expect((await demote(admin, target.id, { password: "", ...reason })).status).toBe(400);
+      expect(
+        (await demote(admin, target.id, { password: "", ...reason })).status,
+      ).toBe(400);
 
       // A wrong password is refused and counted towards the lockout.
       const wrong = await demote(admin, target.id, {

@@ -26,9 +26,12 @@ export const deleteAccount = async (req: Request, res: Response) => {
 
     await client.query("COMMIT");
     return res.status(200).json({ message: "Account successfully deleted." });
-  } catch (error: any) {
+  } catch (error) {
     await client.query("ROLLBACK");
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({
+      error:
+        error instanceof Error ? error.message : "Could not delete account.",
+    });
   } finally {
     client.release();
   }

@@ -89,9 +89,9 @@ describe.skip("auth emails", () => {
     it("fails with a clear message instead of trying localhost", async () => {
       delete env.SMTP_HOST;
       const sendMail = mockSend();
-      await expect(
-        sendVerificationEmail("a@example.com", "t"),
-      ).rejects.toThrow(/SMTP_HOST/);
+      await expect(sendVerificationEmail("a@example.com", "t")).rejects.toThrow(
+        /SMTP_HOST/,
+      );
       await expect(
         sendPasswordResetEmail("a@example.com", "t"),
       ).rejects.toThrow(/SMTP_HOST/);

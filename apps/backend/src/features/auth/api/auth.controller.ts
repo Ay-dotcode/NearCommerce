@@ -1,5 +1,5 @@
 import { db, withTransaction } from "@/config/database";
-import { BCRYPT_SALT_ROUNDS, PASSWORD_RESET_TOKEN_TTL_MS } from "@/constants";
+import { BCRYPT_SALT_ROUNDS } from "@/constants";
 // Email verification and password reset are switched off (see registerUser).
 // verifyEmail, resendVerification, forgotPassword and resetPassword handlers are kept
 // for interface stability.
@@ -20,16 +20,13 @@ import {
   revokeSession,
   rotateSession,
 } from "@/features/auth/services/session.service";
-import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import { createDefaultList } from "@/features/lists/services/list.service";
 import {
-  ForgotPasswordSchema,
   LoginSchema,
   LogoutSchema,
   RefreshTokenSchema,
   RegisterSchema,
   ResendVerificationSchema,
-  ResetPasswordSchema,
   VerifyEmailSchema,
 } from "@nearcommerce/api";
 import bcrypt from "bcrypt";
@@ -158,13 +155,15 @@ export const resendVerification = async (req: Request, res: Response) => {
 
 export const forgotPassword = async (req: Request, res: Response) => {
   return res.status(501).json({
-    error: "Password reset is disabled on this mock application. Please contact support.",
+    error:
+      "Password reset is disabled on this mock application. Please contact support.",
   });
 };
 
 export const resetPassword = async (req: Request, res: Response) => {
   return res.status(501).json({
-    error: "Password reset is disabled on this mock application. Please contact support.",
+    error:
+      "Password reset is disabled on this mock application. Please contact support.",
   });
 };
 

@@ -31,9 +31,16 @@ export interface ProductDto {
   isStale: boolean;
 }
 
-export function serializeProduct(row: Record<string, any>): ProductDto {
+// A product row as returned by the database, before it is turned into a ProductDto.
+type ProductRow = {
+  price: string | number;
+  last_verified_at: Date | string | null;
+  [column: string]: unknown;
+};
+
+export function serializeProduct(row: ProductRow): ProductDto {
   return {
-    ...(row as Omit<ProductDto, "price" | "isStale">),
+    ...(row as unknown as Omit<ProductDto, "price" | "isStale">),
     price: Number(row.price),
     isStale: isProductStale(row.last_verified_at),
   };
@@ -271,6 +278,18 @@ export function dedupeImportRows(rows: ImportProductRow[]) {
 // New product: published only when it has an image (and the row doesn't say otherwise).
 // Existing product: a row without an image never unpublishes or wipes the current image,
 // so a price/quantity-only CSV is safe to re-upload.
+// The columns the import reads for a product that already exists in the store.
+interface ExistingImportRow {
+  id: string;
+  key: string;
+  description: string | null;
+  price: string | number;
+  quantity: number;
+  image_url: string | null;
+  is_published: boolean;
+  missing_embedding: boolean;
+}
+
 export function resolveImportVisibility(
   row: ImportProductRow,
   existing?: { image_url: string | null; is_published: boolean },
@@ -299,7 +318,7 @@ export async function importProducts(
         ORDER BY created_at ASC`,
       [storeId, rows.map((r) => importKey(r.name))],
     );
-    const existing = new Map<string, Record<string, any>>();
+    const existing = new Map<string, ExistingImportRow>();
     for (const e of existingRes.rows)
       if (!existing.has(e.key)) existing.set(e.key, e);
 
@@ -307,7 +326,7 @@ export async function importProducts(
     const toUpdate: {
       id: string;
       row: ImportProductRow;
-      existing: Record<string, any>;
+      existing: ExistingImportRow;
     }[] = [];
     const embeddingIds: string[] = [];
 
@@ -347,7 +366,7 @@ export async function importProducts(
 
     if (toUpdate.length > 0) {
       const visibility = toUpdate.map((u) =>
-        resolveImportVisibility(u.row, u.existing as any),
+        resolveImportVisibility(u.row, u.existing),
       );
       await client.query(
         `UPDATE products p

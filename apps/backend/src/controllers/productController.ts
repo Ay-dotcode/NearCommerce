@@ -208,7 +208,7 @@ export async function importOwnerProducts(req: Request, res: Response) {
     if (parsed.success) return rows.push(parsed.data);
     for (const issue of parsed.error.issues)
       problems.push({
-        path: `row ${index + 1}: ${issue.path.join(".") || "row"}`,
+        path: `row ${index + 1}: ${issue.path.map(String).join(".") || "row"}`,
         message: issue.message,
       });
   });

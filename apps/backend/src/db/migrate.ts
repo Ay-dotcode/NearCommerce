@@ -50,7 +50,9 @@ async function migrate() {
       console.log(`📌 Applying migration: ${file}`);
       // Applied as written: some files manage their own transactions.
       await db.query(fs.readFileSync(path.join(dir, file), "utf8"));
-      await db.query("INSERT INTO schema_migrations (filename) VALUES ($1)", [file]);
+      await db.query("INSERT INTO schema_migrations (filename) VALUES ($1)", [
+        file,
+      ]);
     }
     console.log(`✅ Applied ${todo.length} migration(s).`);
   } catch (error) {

@@ -28,10 +28,12 @@ export async function addAdmin(
   input: { email: string; password: string; fullName?: string },
 ): Promise<AddAdminResult> {
   // Reuse the registration rules so the same email / password limits apply.
-  const parsed = RegisterSchema.pick({ email: true, password: true }).safeParse({
-    email: input.email,
-    password: input.password,
-  });
+  const parsed = RegisterSchema.pick({ email: true, password: true }).safeParse(
+    {
+      email: input.email,
+      password: input.password,
+    },
+  );
   if (!parsed.success)
     throw new Error(parsed.error.issues.map((i) => i.message).join("; "));
   const { email, password } = parsed.data;
@@ -63,7 +65,11 @@ export async function addAdmin(
     await pool.query("DELETE FROM user_sessions WHERE user_id = $1", [
       rows[0].id,
     ]);
-  return { id: rows[0].id, email: rows[0].email, created: !existing.rows.length };
+  return {
+    id: rows[0].id,
+    email: rows[0].email,
+    created: !existing.rows.length,
+  };
 }
 
 // Asks for the password without echoing it, so it stays out of shell history.
@@ -99,11 +105,14 @@ async function main() {
     process.exit(1);
   }
   if (!process.env.DATABASE_URL) {
-    console.error("DATABASE_URL is not set. Add it to the .env file in the repo root.");
+    console.error(
+      "DATABASE_URL is not set. Add it to the .env file in the repo root.",
+    );
     process.exit(1);
   }
   const password =
-    passwordArg ?? (process.stdin.isTTY ? await promptHidden("Password: ") : "");
+    passwordArg ??
+    (process.stdin.isTTY ? await promptHidden("Password: ") : "");
 
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   try {
@@ -124,7 +133,9 @@ async function main() {
       "code" in error &&
       error.code === "42703"
     )
-      console.error("❌ The database is out of date. Run: pnpm --filter @nearcommerce/backend db:migrate");
+      console.error(
+        "❌ The database is out of date. Run: pnpm --filter @nearcommerce/backend db:migrate",
+      );
     else console.error("❌", error instanceof Error ? error.message : error);
     process.exitCode = 1;
   } finally {

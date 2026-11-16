@@ -57,14 +57,31 @@ describe("Reviews of products: the selling store, and the owner's view", () => {
     admin = await createTestUser("SYSTEM_ADMIN");
     alice = await createTestUser("CUSTOMER");
     bob = await createTestUser("CUSTOMER");
-    await db.query(`UPDATE users SET full_name = 'Alice Wonderland' WHERE id = $1`, [alice.id]);
-    await db.query(`UPDATE users SET full_name = 'Bob' WHERE id = $1`, [bob.id]);
+    await db.query(
+      `UPDATE users SET full_name = 'Alice Wonderland' WHERE id = $1`,
+      [alice.id],
+    );
+    await db.query(`UPDATE users SET full_name = 'Bob' WHERE id = $1`, [
+      bob.id,
+    ]);
 
     storeId = await createTestStore(owner.id, "Corner Market");
     otherStoreId = await createTestStore(otherOwner.id, "Tea House");
-    milk = await createTestProduct(storeId, { name: "Fresh Milk", isPublished: true, imageUrl: IMAGE });
-    bread = await createTestProduct(storeId, { name: "Sourdough", isPublished: true, imageUrl: IMAGE });
-    tea = await createTestProduct(otherStoreId, { name: "Green Tea", isPublished: true, imageUrl: IMAGE });
+    milk = await createTestProduct(storeId, {
+      name: "Fresh Milk",
+      isPublished: true,
+      imageUrl: IMAGE,
+    });
+    bread = await createTestProduct(storeId, {
+      name: "Sourdough",
+      isPublished: true,
+      imageUrl: IMAGE,
+    });
+    tea = await createTestProduct(otherStoreId, {
+      name: "Green Tea",
+      isPublished: true,
+      imageUrl: IMAGE,
+    });
 
     await review(alice, { productId: milk }, 5, "Very fresh", 30);
     await review(bob, { productId: milk }, 3, "Okay", 20);
@@ -74,7 +91,9 @@ describe("Reviews of products: the selling store, and the owner's view", () => {
   });
 
   afterAll(async () => {
-    await db.query(`DELETE FROM reviews WHERE user_id = ANY($1::uuid[])`, [[alice.id, bob.id]]);
+    await db.query(`DELETE FROM reviews WHERE user_id = ANY($1::uuid[])`, [
+      [alice.id, bob.id],
+    ]);
     await cleanupFixtures();
     await db.end();
   });
@@ -97,10 +116,12 @@ describe("Reviews of products: the selling store, and the owner's view", () => {
       const res = await request(app).get("/api/reviews/mine").set(as(alice));
       expect(res.status).toBe(200);
       const byTarget = Object.fromEntries(
-        res.body.data.map((r: { target_name: string; store_name: string | null }) => [
-          r.target_name,
-          r.store_name,
-        ]),
+        res.body.data.map(
+          (r: { target_name: string; store_name: string | null }) => [
+            r.target_name,
+            r.store_name,
+          ],
+        ),
       );
       expect(byTarget["Fresh Milk"]).toBe("Corner Market");
       expect(byTarget["Sourdough"]).toBe("Corner Market");
@@ -108,11 +129,18 @@ describe("Reviews of products: the selling store, and the owner's view", () => {
     });
 
     it("on the admin's list of reviews", async () => {
-      const res = await request(app).get("/api/admin/reviews?limit=100").set(as(admin));
+      const res = await request(app)
+        .get("/api/admin/reviews?limit=100")
+        .set(as(admin));
       expect(res.status).toBe(200);
       const find = (name: string) =>
-        res.body.data.find((r: { target_name: string }) => r.target_name === name);
-      expect(find("Fresh Milk")).toMatchObject({ target_type: "PRODUCT", store_name: "Corner Market" });
+        res.body.data.find(
+          (r: { target_name: string }) => r.target_name === name,
+        );
+      expect(find("Fresh Milk")).toMatchObject({
+        target_type: "PRODUCT",
+        store_name: "Corner Market",
+      });
       expect(find("Green Tea")).toMatchObject({ store_name: "Tea House" });
     });
   });
@@ -165,7 +193,9 @@ describe("Reviews of products: the selling store, and the owner's view", () => {
       expect(one.body.summary).toMatchObject({ review_count: 2, rating: 4 });
 
       const page2 = await ownerReviews(owner, storeId, "?limit=1&page=2");
-      expect(page2.body.data.map((r: { comment: string }) => r.comment)).toEqual(["Okay"]);
+      expect(
+        page2.body.data.map((r: { comment: string }) => r.comment),
+      ).toEqual(["Okay"]);
       expect(page2.body.pagination).toEqual({ page: 2, limit: 1, total: 3 });
     });
 
@@ -180,11 +210,16 @@ describe("Reviews of products: the selling store, and the owner's view", () => {
     it("is only for the store's own owner", async () => {
       expect((await ownerReviews(otherOwner, storeId)).status).toBe(403);
       expect((await ownerReviews(alice, storeId)).status).toBe(403);
-      expect((await request(app).get(`/api/stores/${storeId}/product-reviews`)).status).toBe(401);
+      expect(
+        (await request(app).get(`/api/stores/${storeId}/product-reviews`))
+          .status,
+      ).toBe(401);
     });
 
     it("rejects bad input", async () => {
-      expect((await ownerReviews(owner, storeId, "?product_id=nope")).status).toBe(400);
+      expect(
+        (await ownerReviews(owner, storeId, "?product_id=nope")).status,
+      ).toBe(400);
       expect((await ownerReviews(owner, storeId, "?limit=0")).status).toBe(400);
       expect((await ownerReviews(owner, "not-a-uuid")).status).toBe(400);
     });

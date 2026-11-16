@@ -3,7 +3,6 @@ import { db } from "@/config/database";
 import redisClient, { connectRedis } from "@/config/redis";
 import { LOGIN_MAX_FAILURES } from "@/constants";
 import { clearLoginFailures } from "@/features/auth/services/loginLockout.service";
-import { generateVerificationToken } from "@/features/auth/utils/crypto";
 import {
   forgotPasswordLimiter,
   resendVerificationLimiter,
@@ -238,7 +237,10 @@ describe("Auth Integration Tests", () => {
 
       const response = await request(app)
         .post("/auth/login")
-        .send({ email: transform(testUser.email), password: testUser.password });
+        .send({
+          email: transform(testUser.email),
+          password: testUser.password,
+        });
 
       expect(response.status).toBe(200);
       expect(response.body.access_token).toBeDefined();

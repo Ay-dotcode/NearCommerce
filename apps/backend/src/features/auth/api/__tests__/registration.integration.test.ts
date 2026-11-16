@@ -132,9 +132,13 @@ describe("Registration without email verification", () => {
 
   it("creates no list when registration is rejected", async () => {
     await register();
-    const before = (await db.query("SELECT COUNT(*)::int AS n FROM household_lists")).rows[0].n;
+    const before = (
+      await db.query("SELECT COUNT(*)::int AS n FROM household_lists")
+    ).rows[0].n;
     expect((await register()).status).toBe(409);
-    const after = (await db.query("SELECT COUNT(*)::int AS n FROM household_lists")).rows[0].n;
+    const after = (
+      await db.query("SELECT COUNT(*)::int AS n FROM household_lists")
+    ).rows[0].n;
     expect(after).toBe(before);
   });
 

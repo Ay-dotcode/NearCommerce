@@ -70,7 +70,9 @@ describe("pnpm add-admin", () => {
       is_root_admin: true,
       full_name: "Existing Shopper",
     });
-    expect(await bcrypt.compare("BrandNewPass1", user.password_hash)).toBe(true);
+    expect(await bcrypt.compare("BrandNewPass1", user.password_hash)).toBe(
+      true,
+    );
     const sessions = await db.query(
       "SELECT 1 FROM user_sessions WHERE user_id = $1",
       [rows[0].id],

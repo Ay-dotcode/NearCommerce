@@ -199,7 +199,13 @@ export async function listOwnerProductReviews(
     ),
   ]);
 
-  const distribution: Record<string, number> = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
+  const distribution: Record<string, number> = {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+  };
   let total = 0;
   let points = 0;
   for (const row of summary.rows) {
