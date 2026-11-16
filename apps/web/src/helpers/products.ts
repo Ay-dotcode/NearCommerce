@@ -5,7 +5,10 @@ import { hasAtMostTwoDecimals } from "@nearcommerce/helpers";
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 // "Dairy › Milk" for a product, or null when it has no subcategory.
-export function categoryLabel(product: StoreProduct, categories: Category[] = []) {
+export function categoryLabel(
+  product: StoreProduct,
+  categories: Category[] = [],
+) {
   if (!product.subcategory_id) return null;
   for (const category of categories) {
     const sub = category.subcategories.find(

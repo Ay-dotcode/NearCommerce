@@ -1,5 +1,10 @@
 import { persistSession } from "@/features/auth/session";
-import { apiClient, RegisterInput, UserRole, type AuthResponse } from "@nearcommerce/api";
+import {
+  apiClient,
+  RegisterInput,
+  UserRole,
+  type AuthResponse,
+} from "@nearcommerce/api";
 import { useMutation } from "@tanstack/react-query";
 
 // POST /auth/register then immediately POST /auth/login so the store owner

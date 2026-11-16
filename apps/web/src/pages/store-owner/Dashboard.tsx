@@ -7,7 +7,16 @@ import {
 import CsvImporter from "@/components/store-owner/CsvImporter";
 import { CATEGORIES_KEY, PRODUCTS_KEY } from "@/constants";
 import { applyVerified } from "@/helpers/productCache";
-import { Badge, Button, ConfirmDialog, EmptyState, Modal, Skeleton, useDebouncedValue, useToast } from "@nearcommerce/ui";
+import {
+  Badge,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  Modal,
+  Skeleton,
+  useDebouncedValue,
+  useToast,
+} from "@nearcommerce/ui";
 import { CategoryChips } from "@/features/products/ui/CategoryChips";
 import {
   ProductsGridSkeleton,
@@ -328,7 +337,11 @@ export default function StoreOwnerDashboard() {
       />
 
       {productsQuery.isLoading &&
-        (view === "grid" ? <ProductsGridSkeleton /> : <ProductsTableSkeleton />)}
+        (view === "grid" ? (
+          <ProductsGridSkeleton />
+        ) : (
+          <ProductsTableSkeleton />
+        ))}
 
       {productsQuery.isError && (
         <div

@@ -24,7 +24,8 @@ export const VerifyEmailPage: React.FC = () => {
   if (!token)
     return (
       <AuthLayout
-        title="Verification link missing" backTo={AppRoutes.login}
+        title="Verification link missing"
+        backTo={AppRoutes.login}
         subtitle="Open the link from your email, or log in to request a new one."
       >
         <Link
@@ -59,7 +60,10 @@ export const VerifyEmailPage: React.FC = () => {
 
   if (verify.isError)
     return (
-      <AuthLayout title="We couldn't verify your email" backTo={AppRoutes.login}>
+      <AuthLayout
+        title="We couldn't verify your email"
+        backTo={AppRoutes.login}
+      >
         <div
           role="alert"
           className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"

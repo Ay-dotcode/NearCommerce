@@ -7,7 +7,7 @@ import {
 import { AppRoutes } from "@/constants/routes";
 import { useRegister } from "@/features/auth/api/useRegister";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
-import { UserRole } from "@nearcommerce/api";
+import { parseApiError, UserRole } from "@nearcommerce/api";
 import { useFormik } from "formik";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -37,10 +37,10 @@ export const RegisterForm: React.FC = () => {
             setSubmitting(false);
             navigate(AppRoutes.storeOwnerDashboard, { replace: true });
           },
-          onError: (error: any) => {
+          onError: (error) => {
             setServerError(
-              error.response?.data?.error ||
-                "Registration failed. Please try again.",
+              parseApiError(error, "Registration failed. Please try again.")
+                .message,
             );
             setSubmitting(false);
           },

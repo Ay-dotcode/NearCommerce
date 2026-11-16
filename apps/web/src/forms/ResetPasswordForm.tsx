@@ -75,10 +75,7 @@ export const ResetPasswordForm: React.FC = () => {
       subtitle="Use at least 8 characters."
     >
       <form onSubmit={formik.handleSubmit} noValidate>
-        <BusyFieldset
-          busy={reset.isPending}
-          className="space-y-4"
-        >
+        <BusyFieldset busy={reset.isPending} className="space-y-4">
           <PasswordField
             label="New password"
             required

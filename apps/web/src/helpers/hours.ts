@@ -35,7 +35,9 @@ export function hoursFromApi(
       ? {
           open: value.open,
           close: value.close,
-          isClosed: Boolean(value.isClosed || (value as any).closed),
+          isClosed: Boolean(
+            value.isClosed || (value as { closed?: boolean }).closed,
+          ),
         }
       : { ...base[day], isClosed: true };
   }

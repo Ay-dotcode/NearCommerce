@@ -90,9 +90,12 @@ describe("RegisterForm auto-login", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "jane@shop.test" },
     });
-    fireEvent.change(screen.getByLabelText(/password/i, { selector: "input" }), {
-      target: { value: "password123" },
-    });
+    fireEvent.change(
+      screen.getByLabelText(/password/i, { selector: "input" }),
+      {
+        target: { value: "password123" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(screen.queryByText(/resend verification/i)).toBeNull();

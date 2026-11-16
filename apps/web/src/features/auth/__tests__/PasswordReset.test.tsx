@@ -27,7 +27,9 @@ describe("ForgotPasswordForm (Password Reset Disabled)", () => {
     renderAt(<ForgotPasswordForm />);
     expect(screen.getByText("Feature Disabled")).toBeInTheDocument();
     expect(
-      screen.getByText(/password reset via email is disabled on this mock app/i),
+      screen.getByText(
+        /password reset via email is disabled on this mock app/i,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /contact support/i }),

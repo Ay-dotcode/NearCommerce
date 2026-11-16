@@ -42,7 +42,13 @@ export function CategoryChips({
       count: countOf.get(c.id) ?? 0,
     })),
     ...(showUncategorized
-      ? [{ id: UNCATEGORIZED_FILTER, label: "Uncategorized", count: uncategorized }]
+      ? [
+          {
+            id: UNCATEGORIZED_FILTER,
+            label: "Uncategorized",
+            count: uncategorized,
+          },
+        ]
       : []),
   ];
 

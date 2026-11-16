@@ -39,10 +39,10 @@ const HEADER_ALIASES: Record<string, string> = {
   image_link: "image_url",
 };
 
-// "Image URL", " image-url ", "﻿Name" -> "image_url" / "name".
+// "Image URL", " image-url ", "\uFEFFName" -> "image_url" / "name".
 export function normaliseHeader(header: string): string {
   const cleaned = header
-    .replace(/^﻿/, "")
+    .replace(/^\uFEFF/, "")
     .trim()
     .toLowerCase()
     .replace(/[\s-]+/g, "_");

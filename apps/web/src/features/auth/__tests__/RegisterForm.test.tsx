@@ -59,7 +59,9 @@ describe("RegisterForm", () => {
 
   it("registers as STORE_OWNER, logs in and redirects to dashboard", async () => {
     // First call: register (returns 201 with message).
-    post.mockResolvedValueOnce({ data: { message: "Account created. You can log in now." } });
+    post.mockResolvedValueOnce({
+      data: { message: "Account created. You can log in now." },
+    });
     // Second call: automatic login.
     post.mockResolvedValueOnce({
       data: {
@@ -91,7 +93,9 @@ describe("RegisterForm", () => {
   });
 
   it("accepts a pasted email with stray spaces and sends it trimmed", async () => {
-    post.mockResolvedValueOnce({ data: { message: "Account created. You can log in now." } });
+    post.mockResolvedValueOnce({
+      data: { message: "Account created. You can log in now." },
+    });
     post.mockResolvedValueOnce({
       data: { access_token: "tok", user: { id: "u2", role: "STORE_OWNER" } },
     });

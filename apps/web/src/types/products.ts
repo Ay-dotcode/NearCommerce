@@ -14,11 +14,7 @@ export interface StoreProduct {
 }
 
 export type ProductStatusFilter =
-  | "all"
-  | "published"
-  | "draft"
-  | "stale"
-  | "out_of_stock";
+  "all" | "published" | "draft" | "stale" | "out_of_stock";
 
 export type InventoryView = "list" | "grid";
 

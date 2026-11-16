@@ -68,7 +68,9 @@ export default function CsvImporter() {
           error,
           "Server error during import. Please try again.",
         );
-        const totalProblems = (error as any)?.response?.data?.totalProblems;
+        const totalProblems = (
+          error as { response?: { data?: { totalProblems?: unknown } } } | null
+        )?.response?.data?.totalProblems;
         setReport({
           kind: "error",
           message: apiError.message,

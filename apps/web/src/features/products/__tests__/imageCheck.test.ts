@@ -1,7 +1,4 @@
-import {
-  checkImageUrl,
-  clearImageCheckCache,
-} from "@/helpers/image";
+import { checkImageUrl, clearImageCheckCache } from "@/helpers/image";
 import { installImageLoadStub } from "@/testing/image";
 
 describe("checkImageUrl", () => {

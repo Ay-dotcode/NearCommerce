@@ -18,11 +18,17 @@ type ViewTransitionDocument = Document & {
 };
 
 export function prefersReducedMotion(): boolean {
-  return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  return Boolean(
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+  );
 }
 
 // Radius of the circle that reaches the farthest corner of the window from the origin.
-export function waveRadius({ x, y }: WaveOrigin, width: number, height: number) {
+export function waveRadius(
+  { x, y }: WaveOrigin,
+  width: number,
+  height: number,
+) {
   return Math.hypot(Math.max(x, width - x), Math.max(y, height - y));
 }
 

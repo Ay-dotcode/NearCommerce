@@ -1,9 +1,5 @@
 import { Button } from "@nearcommerce/ui";
-import {
-  DAY_LABELS,
-  type DayState,
-  type HoursState,
-} from "@/helpers/hours";
+import { DAY_LABELS, type DayState, type HoursState } from "@/helpers/hours";
 import { WEEKDAYS, type Weekday } from "@nearcommerce/api";
 import { cn } from "@nearcommerce/helpers";
 

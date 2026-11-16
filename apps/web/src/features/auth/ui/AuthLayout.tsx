@@ -1,4 +1,9 @@
-import { BackButton, BrandIcon, PointerGlow, ThemeToggle } from "@nearcommerce/ui";
+import {
+  BackButton,
+  BrandIcon,
+  PointerGlow,
+  ThemeToggle,
+} from "@nearcommerce/ui";
 import { ReactNode } from "react";
 
 // Shared frame for the sign-in family of pages. Pages that are not the login page itself pass
