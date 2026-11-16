@@ -48,8 +48,7 @@ function mockRelease(
   global.fetch = jest.fn(() =>
     Promise.resolve({
       ok: true,
-      json: () =>
-        Promise.resolve({ tag_name: tag, html_url: url, assets }),
+      json: () => Promise.resolve({ tag_name: tag, html_url: url, assets }),
     }),
   ) as unknown as typeof fetch;
 }
@@ -200,9 +199,22 @@ describe("fetchLatestRelease", () => {
 
   it.each([
     ["a reply without a tag", {}],
-    ["a tag that isn't a version", { tag_name: "nightly", html_url: `${RELEASES}/x` }],
-    ["a page somewhere else", { tag_name: "v2.0.0", html_url: "https://evil.example/app" }],
-    ["a page that only looks similar", { tag_name: "v2.0.0", html_url: "https://github.com/Ay-dotcode/NearCommerce-fake/releases/tag/v2.0.0" }],
+    [
+      "a tag that isn't a version",
+      { tag_name: "nightly", html_url: `${RELEASES}/x` },
+    ],
+    [
+      "a page somewhere else",
+      { tag_name: "v2.0.0", html_url: "https://evil.example/app" },
+    ],
+    [
+      "a page that only looks similar",
+      {
+        tag_name: "v2.0.0",
+        html_url:
+          "https://github.com/Ay-dotcode/NearCommerce-fake/releases/tag/v2.0.0",
+      },
+    ],
   ])("gives null for %s", async (_name, body) => {
     global.fetch = jest.fn(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve(body) }),
@@ -249,7 +261,9 @@ describe("resolveUpdateUrl", () => {
         release,
         "https://play.google.com/store/apps/details?id=com.nearcommerce.app",
       ),
-    ).toBe("https://play.google.com/store/apps/details?id=com.nearcommerce.app");
+    ).toBe(
+      "https://play.google.com/store/apps/details?id=com.nearcommerce.app",
+    );
   });
 
   it.each(["", "   "])("ignores an empty setting (%p)", (configured) => {

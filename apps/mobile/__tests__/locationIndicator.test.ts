@@ -8,7 +8,9 @@ const mockNotifications = {
   requestPermissionsAsync: jest.fn(),
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn(async () => null),
-  scheduleNotificationAsync: jest.fn(async () => "nearcommerce-location-status"),
+  scheduleNotificationAsync: jest.fn(
+    async () => "nearcommerce-location-status",
+  ),
   dismissNotificationAsync: jest.fn(async () => undefined),
   AndroidImportance: { LOW: 4 },
   AndroidNotificationPriority: { LOW: -1 },
@@ -152,7 +154,9 @@ describe("on Android", () => {
     const stop = startLocationIndicator();
     await flush();
     expect(mockNotifications.requestPermissionsAsync).toHaveBeenCalledTimes(1);
-    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledTimes(
+      1,
+    );
     const stopped = stop();
     await flush();
     jest.advanceTimersByTime(MIN_VISIBLE_MS);
@@ -232,7 +236,9 @@ describe("on Android, as an Android 16 Live Update", () => {
     });
     const stop = startLocationIndicator();
     await flush();
-    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledTimes(
+      1,
+    );
     const stopped = stop();
     await flush();
     jest.advanceTimersByTime(MIN_VISIBLE_MS);

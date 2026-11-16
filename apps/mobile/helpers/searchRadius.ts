@@ -19,7 +19,10 @@ const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((listener) => listener());
 
 export const clampRadiusKm = (value: number) =>
-  Math.min(SEARCH_RADIUS_MAX_KM, Math.max(SEARCH_RADIUS_MIN_KM, Math.round(value)));
+  Math.min(
+    SEARCH_RADIUS_MAX_KM,
+    Math.max(SEARCH_RADIUS_MIN_KM, Math.round(value)),
+  );
 
 export const kmToMeters = (km: number) => Math.round(km * METERS_PER_KM);
 

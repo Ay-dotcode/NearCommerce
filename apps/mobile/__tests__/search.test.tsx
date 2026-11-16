@@ -136,7 +136,9 @@ describe("SearchScreen photo search", () => {
   });
 
   it("lets the shopper open the phone's settings after refusing the camera", async () => {
-    const openSettings = jest.spyOn(Linking, "openSettings").mockResolvedValue();
+    const openSettings = jest
+      .spyOn(Linking, "openSettings")
+      .mockResolvedValue();
     pick.mockResolvedValue("denied");
     const { getByLabelText, findByTestId } = renderWithClient(<SearchScreen />);
     fireEvent.press(getByLabelText("Search by photo"));
@@ -297,7 +299,10 @@ describe("SearchScreen photo search", () => {
     it("does not raise it when the shopper has already started typing", async () => {
       const { getByPlaceholderText } = renderWithClient(<SearchScreen />);
       // Two letters: not enough to start a search, so nothing else is going on.
-      fireEvent.changeText(getByPlaceholderText("Search nearby products"), "mi");
+      fireEvent.changeText(
+        getByPlaceholderText("Search nearby products"),
+        "mi",
+      );
       await wait(KEYBOARD_DELAY_MS + 300);
       expect(focus).not.toHaveBeenCalled();
     });

@@ -51,16 +51,18 @@ function controlledDownload() {
   let finish: (uri: string) => void = () => {};
   let fail: (error: Error) => void = () => {};
   const cancel = jest.fn(() => fail(new Error("aborted")));
-  (downloadApk as jest.Mock).mockImplementationOnce((_url, _version, report) => {
-    onProgress = report;
-    return {
-      promise: new Promise<string>((resolve, reject) => {
-        finish = resolve;
-        fail = reject;
-      }),
-      cancel,
-    };
-  });
+  (downloadApk as jest.Mock).mockImplementationOnce(
+    (_url, _version, report) => {
+      onProgress = report;
+      return {
+        promise: new Promise<string>((resolve, reject) => {
+          finish = resolve;
+          fail = reject;
+        }),
+        cancel,
+      };
+    },
+  );
   return {
     cancel,
     progress: (fraction: number | null) => act(() => onProgress(fraction)),
@@ -144,7 +146,9 @@ describe("UpdateScreen: Update with a link that isn't an APK (a store page)", ()
     jest.spyOn(Linking, "openURL").mockRejectedValue(new Error("no browser"));
     const { getByTestId, findByText } = setup("required", PAGE);
     fireEvent.press(getByTestId("update-button"));
-    expect(await findByText("Couldn't open the update page. Try again.")).toBeTruthy();
+    expect(
+      await findByText("Couldn't open the update page. Try again."),
+    ).toBeTruthy();
     expect(getByTestId("update-button")).toHaveTextContent("Try again");
   });
 
@@ -163,7 +167,9 @@ describe("UpdateScreen: Download update (an APK, installed inside the app)", () 
   it("offers to download, and says what will happen", () => {
     const { getByTestId, getByText, queryByTestId } = setup("required", APK);
     expect(getByTestId("update-button")).toHaveTextContent("Download update");
-    expect(getByText(/downloads here, then android asks you to confirm/i)).toBeTruthy();
+    expect(
+      getByText(/downloads here, then android asks you to confirm/i),
+    ).toBeTruthy();
     expect(queryByTestId("update-progress")).toBeNull();
   });
 
@@ -182,9 +188,11 @@ describe("UpdateScreen: Download update (an APK, installed inside the app)", () 
 
     download.progress(0.42);
     expect(getByTestId("update-button")).toHaveTextContent("Downloading… 42%");
-    expect(
-      getByTestId("update-progress").props.accessibilityValue,
-    ).toEqual({ min: 0, max: 100, now: 42 });
+    expect(getByTestId("update-progress").props.accessibilityValue).toEqual({
+      min: 0,
+      max: 100,
+      now: 42,
+    });
   });
 
   it("doesn't show a percentage while the size isn't known", async () => {
@@ -258,9 +266,7 @@ describe("UpdateScreen: Download update (an APK, installed inside the app)", () 
       await waitFor(() => expect(downloadApk).toHaveBeenCalled());
       await first.fail();
 
-      expect(
-        await findByText(/couldn't download the update/i),
-      ).toBeTruthy();
+      expect(await findByText(/couldn't download the update/i)).toBeTruthy();
       expect(getByTestId("update-button")).toHaveTextContent("Try again");
 
       const second = controlledDownload();
@@ -283,14 +289,18 @@ describe("UpdateScreen: Download update (an APK, installed inside the app)", () 
     });
 
     it("says so when the installer can't be opened, and tries only the install again", async () => {
-      (installApk as jest.Mock).mockRejectedValueOnce(new Error("no installer"));
+      (installApk as jest.Mock).mockRejectedValueOnce(
+        new Error("no installer"),
+      );
       const download = controlledDownload();
       const { getByTestId, findByText } = setup("required", APK);
       fireEvent.press(getByTestId("update-button"));
       await waitFor(() => expect(downloadApk).toHaveBeenCalled());
       await download.finish();
 
-      expect(await findByText("Couldn't open the installer. Try again.")).toBeTruthy();
+      expect(
+        await findByText("Couldn't open the installer. Try again."),
+      ).toBeTruthy();
       fireEvent.press(getByTestId("update-button"));
       await waitFor(() => expect(installApk).toHaveBeenCalledTimes(2));
       expect(downloadApk).toHaveBeenCalledTimes(1);
@@ -307,7 +317,9 @@ describe("UpdateScreen: Download update (an APK, installed inside the app)", () 
       fireEvent.press(getByTestId("update-cancel"));
       expect(download.cancel).toHaveBeenCalledTimes(1);
       await waitFor(() =>
-        expect(getByTestId("update-button")).toHaveTextContent("Download update"),
+        expect(getByTestId("update-button")).toHaveTextContent(
+          "Download update",
+        ),
       );
       expect(queryByTestId("update-progress")).toBeNull();
       expect(installApk).not.toHaveBeenCalled();

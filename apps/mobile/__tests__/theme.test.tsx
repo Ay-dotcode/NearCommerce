@@ -62,7 +62,10 @@ describe("theme colours", () => {
   it("are valid hex colours in both appearances, and differ between them", () => {
     for (const theme of [lightTheme, darkTheme])
       for (const [name, value] of Object.entries(theme.colors))
-        (expect(value).toMatch(/^#[0-9a-f]{6}$/i), name);
+        expect({ name, value }).toEqual({
+          name,
+          value: expect.stringMatching(/^#[0-9a-f]{6}$/i),
+        });
     expect(darkTheme.colors.background).not.toBe(lightTheme.colors.background);
     expect(darkTheme.colors.text).not.toBe(lightTheme.colors.text);
   });

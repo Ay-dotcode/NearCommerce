@@ -105,7 +105,9 @@ describe("the update check when the app opens", () => {
     mockRelease("v1.1.0");
     const first = render(<Shell />);
     fireEvent.press(await first.findByTestId("update-continue"));
-    await waitFor(() => expect(first.queryByTestId("update-screen")).toBeNull());
+    await waitFor(() =>
+      expect(first.queryByTestId("update-screen")).toBeNull(),
+    );
     expect(first.getByTestId("status").props.children).toBe("none");
     await waitFor(async () =>
       expect(await AsyncStorage.getItem(UPDATE_SKIPPED_KEY)).toBe("1.1.0"),

@@ -1,7 +1,6 @@
 import SettingsContent from "@/components/settings/SettingsContent";
 import { DialogProvider } from "@/components/ui";
 import { apiClient } from "@nearcommerce/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import Toast from "react-native-toast-message";

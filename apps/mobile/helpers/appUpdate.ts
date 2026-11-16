@@ -14,7 +14,9 @@ type Version = [major: number, minor: number, patch: number];
 // "1.2.3", "v1.2.3", "1.2" and "v2" (a missing part counts as 0). Anything after a "-" or "+"
 // (such as "-beta.1") is ignored. Returns null for text that is not a version.
 export function parseVersion(text: string): Version | null {
-  const match = /^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:[-+].*)?$/.exec(text.trim());
+  const match = /^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:[-+].*)?$/.exec(
+    text.trim(),
+  );
   if (!match) return null;
   return [Number(match[1]), Number(match[2] ?? 0), Number(match[3] ?? 0)];
 }

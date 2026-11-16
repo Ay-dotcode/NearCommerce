@@ -4,7 +4,8 @@ import { API_URL } from "@/constants";
 // /api/images/<id>. The URL saved on the product was built from whatever host the store owner
 // uploaded from (often localhost or an old address), which a shopper's phone can't reach, so
 // those are rebuilt against the API address this app was built with.
-const UPLOADED_IMAGE = /\/api\/images\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
+const UPLOADED_IMAGE =
+  /\/api\/images\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
 
 const apiBase = () => API_URL.replace(/\/+$/, "");
 

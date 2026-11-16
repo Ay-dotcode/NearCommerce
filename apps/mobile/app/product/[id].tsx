@@ -6,7 +6,7 @@ import ProductImage from "@/components/ProductImage";
 import ReviewsSection from "@/components/ReviewsSection";
 import { ProductDetailSkeleton } from "@/components/skeletons";
 import { useDialogs } from "@/components/ui";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 import { STACK_SCREEN_EDGES } from "@/theme/layout";
 import { ALREADY_ON_LIST_MESSAGE } from "@/types/lists";
 import { apiClient } from "@nearcommerce/api";
@@ -39,7 +39,6 @@ interface ProductDetail {
 export default function ProductDetailScreen() {
   const styles = useThemedStyles(makeStyles);
   const { choose } = useDialogs();
-  const c = useColors();
 
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -51,7 +50,10 @@ export default function ProductDetailScreen() {
     },
     enabled: Boolean(id),
   });
-  const refreshControl = usePullToRefresh([["product", id], ["reviews", "product", id]]);
+  const refreshControl = usePullToRefresh([
+    ["product", id],
+    ["reviews", "product", id],
+  ]);
 
   const addToList = async (listId: string, listName: string) => {
     try {

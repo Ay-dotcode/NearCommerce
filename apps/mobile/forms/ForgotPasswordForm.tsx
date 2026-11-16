@@ -5,10 +5,9 @@ import { useThemedStyles, type ThemeColors } from "@/theme";
 import { router } from "expo-router";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
-export function ForgotPasswordForm({
-  onSentChange,
-}: {
-  // Lets the screen change its subtitle once the email has been sent.
+export function ForgotPasswordForm(_props: {
+  // Lets the screen change its subtitle once the email has been sent (not used while password
+  // reset is switched off).
   onSentChange?: (sent: boolean) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
@@ -83,4 +82,3 @@ const makeStyles = (c: ThemeColors) =>
     },
     successBody: { color: c.successText, marginBottom: 8 },
   });
-

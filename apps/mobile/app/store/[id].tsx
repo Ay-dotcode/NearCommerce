@@ -3,7 +3,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import ProductCard from "@/components/ProductCard";
 import ReviewsSection from "@/components/ReviewsSection";
 import { StoreDetailSkeleton } from "@/components/skeletons";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 import { STACK_SCREEN_EDGES } from "@/theme/layout";
 import { apiClient } from "@nearcommerce/api";
 import { usePullToRefresh } from "@/src/hooks/usePullToRefresh";
@@ -36,7 +36,6 @@ interface Store {
 
 export default function StoreDetailScreen() {
   const styles = useThemedStyles(makeStyles);
-  const c = useColors();
 
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -48,7 +47,10 @@ export default function StoreDetailScreen() {
     },
     enabled: Boolean(id),
   });
-  const refreshControl = usePullToRefresh([["store", id], ["reviews", "store", id]]);
+  const refreshControl = usePullToRefresh([
+    ["store", id],
+    ["reviews", "store", id],
+  ]);
 
   if (isLoading)
     return (

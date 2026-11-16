@@ -133,7 +133,6 @@ function Picture({
 // a couple of concrete tips per page. It can be skipped at any time.
 export default function OnboardingScreen({ onFinish }: Props) {
   const styles = useThemedStyles(makeStyles);
-  const c = useColors();
   const { width } = useWindowDimensions();
   const scrollX = useRef(new Animated.Value(0)).current;
   const pager = useRef<ScrollView>(null);
@@ -345,7 +344,12 @@ const makeStyles = (c: ThemeColors) =>
     },
     tips: { marginTop: 18, gap: 10, alignSelf: "center", maxWidth: 340 },
     tipRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
-    tip: { color: c.textSecondary, fontSize: 14, lineHeight: 20, textAlign: "center" },
+    tip: {
+      color: c.textSecondary,
+      fontSize: 14,
+      lineHeight: 20,
+      textAlign: "center",
+    },
     footer: {
       paddingHorizontal: 24,
       paddingBottom: 16,

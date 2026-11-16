@@ -49,7 +49,9 @@ describe("map links", () => {
         buildMapsUrl(35.1, 33.9) as string,
       ])
         // Only the coordinates (and fixed flags) appear: no free text to search for.
-        expect(url.replace(/[0-9.,-]+/g, "#")).not.toMatch(/%20|\(|[?&]q=[A-Za-z]/);
+        expect(url.replace(/[0-9.,-]+/g, "#")).not.toMatch(
+          /%20|\(|[?&]q=[A-Za-z]/,
+        );
     }
   });
 

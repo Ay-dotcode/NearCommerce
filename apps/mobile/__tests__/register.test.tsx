@@ -16,7 +16,10 @@ jest.mock("react-native-toast-message", () => ({
   __esModule: true,
   default: { show: jest.fn() },
 }));
-jest.mock("@nearcommerce/api", () => ({ apiClient: { post: jest.fn() } }));
+jest.mock("@nearcommerce/api", () => ({
+  ...jest.requireActual("@nearcommerce/api"),
+  apiClient: { post: jest.fn() },
+}));
 
 const post = apiClient.post as jest.Mock;
 

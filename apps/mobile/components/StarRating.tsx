@@ -64,7 +64,7 @@ export function StarPicker({ value, onChange, disabled }: PickerProps) {
   );
 }
 
-const makeStyles = (c: ThemeColors) =>
+const makeStyles = (_c: ThemeColors) =>
   StyleSheet.create({
     row: { flexDirection: "row", gap: 4 },
   });

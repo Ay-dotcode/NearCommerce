@@ -35,7 +35,10 @@ export default function CategoryScreen() {
     staleTime: 5 * 60 * 1000,
   });
   const category = categories.data?.find((c) => c.id === id);
-  const refreshControl = usePullToRefresh([["category-products", id], CATEGORIES_KEY]);
+  const refreshControl = usePullToRefresh([
+    ["category-products", id],
+    CATEGORIES_KEY,
+  ]);
 
   const products = useQuery({
     queryKey: [

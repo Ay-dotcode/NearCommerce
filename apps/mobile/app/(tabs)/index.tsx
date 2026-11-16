@@ -132,25 +132,25 @@ export default function HomeScreen() {
               ))}
             </View>
             {categories.length > COLLAPSED_CATEGORY_COUNT && (
-                <Pressable
-                  testID="categories-toggle"
-                  onPress={() => setShowAllCategories((v) => !v)}
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: showAllCategories }}
-                  style={styles.showMore}
-                >
-                  <Text style={styles.showMoreText}>
-                    {showAllCategories
-                      ? "Show fewer"
-                      : `Show ${hiddenCategories} more`}
-                  </Text>
-                  <Ionicons
-                    name={showAllCategories ? "chevron-up" : "chevron-down"}
-                    size={16}
-                    color={c.primaryText}
-                  />
-                </Pressable>
-              )}
+              <Pressable
+                testID="categories-toggle"
+                onPress={() => setShowAllCategories((v) => !v)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showAllCategories }}
+                style={styles.showMore}
+              >
+                <Text style={styles.showMoreText}>
+                  {showAllCategories
+                    ? "Show fewer"
+                    : `Show ${hiddenCategories} more`}
+                </Text>
+                <Ionicons
+                  name={showAllCategories ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={c.primaryText}
+                />
+              </Pressable>
+            )}
 
             {/* Section heading */}
             <View style={styles.sectionHeading}>

@@ -8,10 +8,16 @@ export interface AddressParts {
   name?: string | null;
 }
 
-export function formatPlaceName(address: AddressParts | undefined): string | null {
+export function formatPlaceName(
+  address: AddressParts | undefined,
+): string | null {
   if (!address) return null;
   const locality =
-    address.city || address.district || address.subregion || address.region || address.name;
+    address.city ||
+    address.district ||
+    address.subregion ||
+    address.region ||
+    address.name;
   const area = locality
     ? address.country && address.country !== locality
       ? address.country

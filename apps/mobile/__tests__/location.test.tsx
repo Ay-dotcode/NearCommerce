@@ -259,7 +259,9 @@ describe("Settings location", () => {
   });
 
   it("shows the saved ZIP code and can switch back to the device", async () => {
-    loc.requestForegroundPermissionsAsync.mockResolvedValue({ status: "granted" });
+    loc.requestForegroundPermissionsAsync.mockResolvedValue({
+      status: "granted",
+    });
     loc.getCurrentPositionAsync.mockResolvedValue({
       coords: { latitude: 35.17, longitude: 33.36 },
     });
@@ -305,7 +307,9 @@ describe("ZIP sheet", () => {
 
 describe("Using the device location from settings", () => {
   const granted = () => {
-    loc.requestForegroundPermissionsAsync.mockResolvedValue({ status: "granted" });
+    loc.requestForegroundPermissionsAsync.mockResolvedValue({
+      status: "granted",
+    });
     loc.getCurrentPositionAsync.mockResolvedValue({
       coords: { latitude: 35.17, longitude: 33.36 },
     });
@@ -317,7 +321,11 @@ describe("Using the device location from settings", () => {
     const onClose = jest.fn();
     const { findByText, getByText } = render(
       <DialogProvider>
-        <SettingsContent onOpenZip={() => {}} onOpenSupport={() => {}} onClose={onClose} />
+        <SettingsContent
+          onOpenZip={() => {}}
+          onOpenSupport={() => {}}
+          onClose={onClose}
+        />
       </DialogProvider>,
     );
     await findByText("Using ZIP code 94103");
@@ -336,18 +344,27 @@ describe("Using the device location from settings", () => {
   });
 
   it("says so, and keeps the ZIP code, when location access is off", async () => {
-    loc.requestForegroundPermissionsAsync.mockResolvedValue({ status: "denied" });
+    loc.requestForegroundPermissionsAsync.mockResolvedValue({
+      status: "denied",
+    });
     await setManualLocation(SF);
     const { findByText, getByText } = render(
       <DialogProvider>
-        <SettingsContent onOpenZip={() => {}} onOpenSupport={() => {}} onClose={() => {}} />
+        <SettingsContent
+          onOpenZip={() => {}}
+          onOpenSupport={() => {}}
+          onClose={() => {}}
+        />
       </DialogProvider>,
     );
     await findByText("Using ZIP code 94103");
     fireEvent.press(getByText("Use my device location"));
     await waitFor(() =>
       expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "error", text1: "Location access is off" }),
+        expect.objectContaining({
+          type: "error",
+          text1: "Location access is off",
+        }),
       ),
     );
     expect(getManualLocation()).toEqual(SF);
@@ -359,7 +376,11 @@ describe("Using the device location from settings", () => {
     });
     const { findByText } = render(
       <DialogProvider>
-        <SettingsContent onOpenZip={() => {}} onOpenSupport={() => {}} onClose={() => {}} />
+        <SettingsContent
+          onOpenZip={() => {}}
+          onOpenSupport={() => {}}
+          onClose={() => {}}
+        />
       </DialogProvider>,
     );
     expect(
@@ -370,7 +391,9 @@ describe("Using the device location from settings", () => {
 
 describe("Telling the shopper the location is being read", () => {
   const granted = () => {
-    loc.requestForegroundPermissionsAsync.mockResolvedValue({ status: "granted" });
+    loc.requestForegroundPermissionsAsync.mockResolvedValue({
+      status: "granted",
+    });
     loc.getCurrentPositionAsync.mockResolvedValue({
       coords: { latitude: 35.17, longitude: 33.36 },
     });
@@ -439,7 +462,9 @@ describe("Telling the shopper the location is being read", () => {
 
 describe("Getting back to the phone's settings after refusing location", () => {
   it("offers to open the settings when location was refused, and the ZIP form still works", () => {
-    const openSettings = jest.spyOn(Linking, "openSettings").mockResolvedValue();
+    const openSettings = jest
+      .spyOn(Linking, "openSettings")
+      .mockResolvedValue();
     const { getByTestId } = render(
       <LocationFallbackModal visible reason="denied" onClose={jest.fn()} />,
     );

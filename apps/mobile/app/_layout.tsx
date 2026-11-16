@@ -2,6 +2,7 @@ import { AnimatedSplash } from "@/components/AnimatedSplash";
 import LocationFallbackModal from "@/components/LocationFallbackModal";
 import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
 import ToastHost from "@/components/ToastHost";
+import { ErrorScreen } from "@/components/ErrorScreen";
 import { DialogProvider } from "@/components/ui";
 import { UpdateScreen } from "@/components/UpdateScreen";
 import { API_URL } from "@/constants";
@@ -30,6 +31,17 @@ import { StyleSheet, View } from "react-native";
 configureApiClient({ baseURL: API_URL });
 
 const queryClient = new QueryClient();
+
+// Expo Router renders this instead of a blank screen when a screen throws while rendering.
+export function ErrorBoundary({
+  error,
+  retry,
+}: {
+  error: Error;
+  retry: () => Promise<void>;
+}) {
+  return <ErrorScreen error={error} retry={retry} />;
+}
 
 // Asks for the phone's location. While it is being read, the shopper is told through a system
 // notification / Live Activity (see helpers/locationIndicator), not an in-app banner. It is kept

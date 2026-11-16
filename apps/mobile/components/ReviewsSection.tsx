@@ -8,7 +8,7 @@ import {
 import { ReviewsSkeleton } from "@/components/skeletons";
 import { Stars } from "@/components/StarRating";
 import { Skeleton, useDialogs } from "@/components/ui";
-import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 import type { Review, ReviewTarget } from "@/types/reviews";
 import {
   useInfiniteQuery,
@@ -31,7 +31,6 @@ const formatDate = (iso: string) =>
 export default function ReviewsSection({ target }: Props) {
   const styles = useThemedStyles(makeStyles);
   const { confirm } = useDialogs();
-  const c = useColors();
 
   const queryClient = useQueryClient();
   const key = reviewsKey(target);

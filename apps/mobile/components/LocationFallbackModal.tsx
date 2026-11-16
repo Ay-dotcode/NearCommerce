@@ -60,6 +60,10 @@ export default function LocationFallbackModal({
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    settingsLink: { alignSelf: "flex-start", paddingVertical: 8, marginBottom: 4 },
+    settingsLink: {
+      alignSelf: "flex-start",
+      paddingVertical: 8,
+      marginBottom: 4,
+    },
     settingsLinkText: { color: c.primary, fontSize: 14, fontWeight: "700" },
   });

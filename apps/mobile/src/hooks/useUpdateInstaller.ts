@@ -9,11 +9,7 @@ import { openUpdatePage } from "@/helpers/appUpdate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type InstallPhase =
-  | "idle"
-  | "downloading"
-  | "installing"
-  | "returned"
-  | "failed";
+  "idle" | "downloading" | "installing" | "returned" | "failed";
 
 export type InstallFailure = "download" | "install" | "link";
 

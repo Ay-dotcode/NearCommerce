@@ -33,17 +33,21 @@ export function UpdateScreen({
     onContinue();
   };
 
+  const cancelInstall = installer.cancel;
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
         if (required) BackHandler.exitApp();
-        else carryOn();
+        else {
+          cancelInstall();
+          onContinue();
+        }
         return true;
       },
     );
     return () => subscription.remove();
-  }, [required, onContinue, installer.cancel]);
+  }, [required, onContinue, cancelInstall]);
 
   const downloading = phase === "downloading";
   const working = downloading || phase === "installing";

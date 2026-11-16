@@ -2,11 +2,13 @@
   "name": "@nearcommerce/mobile",
   "version": "1.1.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "test": "jest --runInBand --detectOpenHandles --forceExit --silent"
+    "test": "jest --runInBand --detectOpenHandles --forceExit --silent",
+    "lint": "node scripts/typecheck.mjs"
   },
   "main": "expo-router/entry",
   "dependencies": {
@@ -48,6 +50,7 @@
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.9.0",
     "@types/jest": "^29.5.14",
+    "@types/node": "^22.20.5",
     "@types/react": "~19.2.18",
     "babel-preset-expo": "^57.0.13",
     "expo-doctor": "^1.21.5",

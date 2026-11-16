@@ -24,7 +24,9 @@ export function subscribeThemePreference(listener: () => void) {
 export function applyThemePreference(value: ThemePreference) {
   try {
     Appearance.setColorScheme?.(value === "system" ? "unspecified" : value);
-  } catch {}
+  } catch {
+    // Not every platform supports forcing a colour scheme; the device setting then applies.
+  }
 }
 
 export async function loadThemePreference() {

@@ -68,7 +68,12 @@ const makeStyles = (c: ThemeColors) =>
       padding: 14,
       marginBottom: 12,
     },
-    label: { color: c.textMuted, fontSize: 12, fontWeight: "800", letterSpacing: 1 },
+    label: {
+      color: c.textMuted,
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 1,
+    },
     code: {
       color: c.text,
       fontSize: 22,

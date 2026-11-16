@@ -64,5 +64,5 @@ export const useColors = (): ThemeColors => useTheme().colors;
 
 export function useThemedStyles<T>(make: (colors: ThemeColors) => T): T {
   const colors = useColors();
-  return useMemo(() => make(colors), [colors]);
+  return useMemo(() => make(colors), [make, colors]);
 }

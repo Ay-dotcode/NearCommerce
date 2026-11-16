@@ -59,7 +59,9 @@ describe("scroll indicators", () => {
           ? "showsHorizontalScrollIndicator={false}"
           : "showsVerticalScrollIndicator={false}";
         if (!tag.includes(prop))
-          offenders.push(`${file.replace(ROOT + "/", "")}: ${tag.split("\n")[0]}`);
+          offenders.push(
+            `${file.replace(ROOT + "/", "")}: ${tag.split("\n")[0]}`,
+          );
       }
     expect(offenders).toEqual([]);
   });

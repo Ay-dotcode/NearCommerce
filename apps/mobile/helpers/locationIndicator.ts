@@ -32,7 +32,8 @@ type ActiveIndicator = { shownAt: number; end: () => Promise<void> };
 let holders = 0;
 let active: Promise<ActiveIndicator | null> | null = null;
 
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function loadNotifications(): typeof import("expo-notifications") | null {
   try {
@@ -173,7 +174,8 @@ async function showAndroidNotification(): Promise<ActiveIndicator | null> {
   });
 
   return (
-    (await showAndroidLiveUpdate()) ?? (await showPlainNotification(Notifications))
+    (await showAndroidLiveUpdate()) ??
+    (await showPlainNotification(Notifications))
   );
 }
 

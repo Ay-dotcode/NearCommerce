@@ -72,7 +72,9 @@ export function downloadApk(
       // Never keep half a download.
       try {
         if (file.exists) file.delete();
-      } catch {}
+      } catch {
+        // Cleanup is best effort; the original download error is the one to report.
+      }
       throw error;
     }
   })();

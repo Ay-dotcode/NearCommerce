@@ -7,7 +7,7 @@ import {
 } from "@/components/ui";
 import { registerInitialValues, registerSchema } from "@/forms/register.form";
 import { useAuth } from "@/src/context/AuthContext";
-import { apiClient, type AuthResponse } from "@nearcommerce/api";
+import { apiClient, parseApiError, type AuthResponse } from "@nearcommerce/api";
 import { router } from "expo-router";
 import { FormikProvider, useFormik } from "formik";
 
@@ -35,13 +35,12 @@ export function RegisterForm() {
         });
         await login(res.data.access_token, res.data.refresh_token);
         router.replace("/(tabs)");
-      } catch (err: any) {
-        const message =
-          err?.response?.data?.error ??
-          "Registration failed. Please try again.";
+      } catch (err) {
+        const { message, details, status } = parseApiError(
+          err,
+          "Registration failed. Please try again.",
+        );
         // Problems the server ties to a field show on that field; the rest in the banner.
-        const details: { path?: string; message?: string }[] =
-          err?.response?.data?.details ?? [];
         const fieldMap: Record<string, string> = {
           full_name: "fullName",
           email: "email",
@@ -51,7 +50,7 @@ export function RegisterForm() {
         for (const d of details)
           if (d.path && fieldMap[d.path] && d.message)
             errors[fieldMap[d.path]] ??= d.message;
-        if (err?.response?.status === 409) errors.email ??= message;
+        if (status === 409) errors.email ??= message;
         helpers.setErrors(errors);
         if (Object.keys(errors).length === 0)
           helpers.setStatus({ form: message });

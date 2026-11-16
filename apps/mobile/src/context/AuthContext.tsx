@@ -71,7 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     return () => configureTokenRefresh(null);
     // The handlers only use stable setters and module-level objects.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (newToken: string, refreshToken?: string) => {

@@ -23,7 +23,6 @@ const FILTERS: { key: Filter; label: string }[] = [
 
 export default function FavoritesScreen() {
   const styles = useThemedStyles(makeStyles);
-  const c = useColors();
 
   const [filter, setFilter] = useState<Filter>("all");
   const {
