@@ -22,6 +22,8 @@ services:
         generateValue: true
       - key: FRONTEND_URL
         sync: false
+      - key: GOOGLE_CLIENT_IDS
+        sync: false
       - key: CORS_ORIGINS
         sync: false
       - key: GEMINI_API_KEY
