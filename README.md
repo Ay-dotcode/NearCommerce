@@ -138,6 +138,7 @@ All backend endpoints support optional `/api` prefixes for reverse-proxy compati
 | --- | --- | --- | --- |
 | **Auth** | `POST /auth/register` | Public | Create Customer or Store Owner account |
 | | `POST /auth/login` | Public | Authenticate user, return access token & set refresh session |
+| | `POST /auth/google` | Public | Sign in or sign up with a Google ID token (see [Google sign-in](#google-sign-in)) |
 | | `POST /auth/refresh` | Public | Exchange refresh token for new access token |
 | | `POST /auth/logout` | Public | Invalidate refresh token session |
 | | `POST /auth/forgot-password` | Public | Request password reset guidance / token |
@@ -214,6 +215,38 @@ All backend endpoints support optional `/api` prefixes for reverse-proxy compati
 | **Support** | `GET /support` | Public | Retrieve support contact email and official channels |
 
 ---
+
+## Google sign-in
+
+Shoppers (mobile app) and store owners (store portal) can use **Continue with Google**. It is off until you create OAuth client ids, and every part hides itself when its id is missing, so a deployment without Google set up simply shows no Google button (and `POST /auth/google` answers `503`).
+
+**1. Google Cloud Console**
+
+1. Create or pick a project, then configure the **OAuth consent screen** (app name, support email). Only the basic `openid`, `email` and `profile` scopes are used. Set the publishing status to **In production**, otherwise only listed test users can sign in.
+2. **Credentials → Create credentials → OAuth client ID**, three times as needed:
+   - **Web application**: add the store portal origin (for example `https://nearcommerce-owner.pages.dev`) and `http://localhost:3001` under _Authorized JavaScript origins_. No redirect URI is needed. This is the **Web client id** used everywhere below.
+   - **Android**: package name `com.nearcommerce.app` and the **SHA-1** of the key the build is signed with. Add one client per key (the development build, the EAS preview/production key, and the Play App Signing key if you publish on Google Play). `eas credentials` shows the SHA-1.
+   - **iOS** (only if you ship iOS): bundle id `com.nearcommerce.app`.
+
+**2. Configure each app with the Web client id**
+
+| Where | Setting |
+| --- | --- |
+| Backend (Render) | `GOOGLE_CLIENT_IDS=<web client id>` (comma-separate extra ids if needed) |
+| Store portal (Cloudflare Pages build variable) | `VITE_GOOGLE_CLIENT_ID=<web client id>`, then redeploy because Vite bakes it in at build time |
+| Mobile app (EAS environment variable or `apps/mobile/.env`) | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<web client id>`, plus `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` for iOS |
+
+For iOS also replace `REPLACE_WITH_IOS_CLIENT_ID` in the `@react-native-google-signin/google-signin` entry of `apps/mobile/app.json` with your iOS client's reversed id (`com.googleusercontent.apps.<id>`). The plugin requires a value even for Android-only builds, so the placeholder is safe to leave while you do not build for iOS.
+
+The Google sign-in library is a native module, so the mobile app needs a **new native build** (`eas build`). An over-the-air update cannot deliver it, and it does not work in Expo Go.
+
+**How it behaves**
+
+- The apps only receive a Google ID token. The API verifies its signature, expiry and that it was issued for one of your client ids, and only accepts accounts whose Google email is verified.
+- First sign-in creates an account without a password (a shopper in the mobile app, a store owner in the portal). Signing in again finds it by Google's stable user id, so a changed email address does not create a second account.
+- If the email already belongs to a **password account, Google is not linked to it**: the person is told to log in with their password. Password sign-ups here are not email-verified, so linking automatically would let someone who registered an address first keep access after its real owner signs in with Google.
+- **Administrator accounts never use Google**; they always sign in with a password.
+- Suspended accounts are refused, exactly as with a password login.
 
 ## Prerequisites
 
