@@ -584,10 +584,9 @@ async function confirmActingAdminPassword(
       });
       return false;
     }
-    const passwordOk = await bcrypt.compare(
-      password,
-      actor.rows[0].password_hash,
-    );
+    const passwordOk = actor.rows[0].password_hash
+      ? await bcrypt.compare(password, actor.rows[0].password_hash)
+      : false;
     if (!passwordOk) {
       await recordLoginFailure(actor.rows[0].email, ip);
       res

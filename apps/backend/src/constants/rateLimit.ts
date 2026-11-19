@@ -4,6 +4,7 @@ export const RATE_LIMIT_MAX_REQUESTS = 5; // Limit each IP to 5 requests per win
 export const RESEND_RATE_LIMIT_MAX_REQUESTS = 3; // Limit resend requests to 3 per 15 minutes per IP
 export const REFRESH_RATE_LIMIT_MAX = 60; // per IP per window (RATE_LIMIT_WINDOW_MS)
 export const REGISTER_RATE_LIMIT_MAX = 10; // registrations per IP per window
+export const GOOGLE_AUTH_RATE_LIMIT_MAX = 30; // Google sign-ins per IP per window
 export const LOGIN_MAX_FAILURES = 5; // failed logins per email+IP before a lockout starts
 export const LOGIN_LOCKOUT_BASE_SECONDS = 60; // first lockout; doubles with each further failure
 export const LOGIN_LOCKOUT_MAX_SECONDS = 15 * 60; // lockout never exceeds one rate-limit window

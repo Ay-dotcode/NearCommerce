@@ -1,4 +1,5 @@
 import {
+  GOOGLE_AUTH_RATE_LIMIT_MAX,
   IMAGE_SEARCH_RATE_LIMIT_MAX,
   JOIN_LIST_RATE_LIMIT_MAX,
   RATE_LIMIT_MAX_REQUESTS,
@@ -96,4 +97,15 @@ export const imageSearchLimiter = rateLimit({
   legacyHeaders: false,
   skip: () => process.env.NODE_ENV === "test",
   message: { error: "Too many photo searches, please try again later." },
+});
+
+// Google sign-ins are verified cryptographically, so guessing is pointless; the cap just stops
+// one client from hammering the token check and account creation.
+export const googleAuthLimiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: GOOGLE_AUTH_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test",
+  message: { error: "Too many sign-in attempts, please try again later." },
 });
