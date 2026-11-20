@@ -1,5 +1,6 @@
 import { isSuspendedError, loginErrorMessage } from "@/api/errors";
 import AuthLink from "@/components/auth/AuthLink";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import {
   Button,
   FormError,
@@ -99,6 +100,12 @@ export function LoginForm() {
           title="Sign in"
           loading={formik.isSubmitting}
           onPress={() => formik.handleSubmit()}
+        />
+
+        <GoogleSignInButton
+          onFailure={({ message, suspended }) =>
+            formik.setStatus({ form: message, suspended })
+          }
         />
 
         <AuthLink

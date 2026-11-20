@@ -7,7 +7,9 @@ import {
 import { AppRoutes } from "@/constants/routes";
 import { useRegister } from "@/features/auth/api/useRegister";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
+import { GoogleSignInButton } from "@/features/auth/ui/GoogleSignInButton";
 import { parseApiError, UserRole } from "@nearcommerce/api";
+import { clearSession } from "@/features/auth/session";
 import { useFormik } from "formik";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -101,6 +103,20 @@ export const RegisterForm: React.FC = () => {
           <Button type="submit" className="w-full" loading={busy}>
             {busy ? "Registering…" : "Create account"}
           </Button>
+
+          <GoogleSignInButton
+            onSignedIn={(data) => {
+              if (data.user.role === UserRole.STORE_OWNER)
+                return navigate(AppRoutes.storeOwnerDashboard, {
+                  replace: true,
+                });
+              clearSession();
+              setServerError(
+                "That Google account is a shopper account, and this portal is for store owners. Use a different Google account, or shop in the mobile app.",
+              );
+            }}
+            onError={({ message }) => setServerError(message)}
+          />
 
           <p className="text-center text-sm text-slate-600">
             Already have an account?{" "}

@@ -8,10 +8,12 @@ import { AppRoutes } from "@/constants/routes";
 import { useLogin } from "@/features/auth/api/useLogin";
 import { clearSession, getUserRole } from "@/features/auth/session";
 import { AuthLayout } from "@/features/auth/ui/AuthLayout";
+import { GoogleSignInButton } from "@/features/auth/ui/GoogleSignInButton";
 import {
   isSuspendedError,
   loginErrorMessage,
   UserRole,
+  type AuthResponse,
 } from "@nearcommerce/api";
 import { SupportDialog } from "@/features/support/ui/SupportDialog";
 import { useFormik } from "formik";
@@ -48,6 +50,36 @@ export const LoginForm: React.FC = () => {
       navigate(returnTo, { replace: true });
   }, [navigate, returnTo]);
 
+  // Used by both password and Google sign-in. Store owners continue to the portal; anyone else
+  // is told where to go, and no session is kept for them.
+  const handleSignedIn = (data: AuthResponse) => {
+    if (data.user.role === UserRole.STORE_OWNER) return navigate(returnTo);
+
+    // useLogin keeps admin sessions for the admin app; this portal must not hold one.
+    clearSession();
+    if (data.user.role === UserRole.SYSTEM_ADMIN)
+      setNotice({
+        tone: "info",
+        title: "This is the store portal",
+        body: "Administrator accounts sign in through the admin console, not here.",
+      });
+    else
+      setNotice({
+        tone: "info",
+        title: "This portal is for store owners",
+        body: (
+          <>
+            Your account is a shopper account. Shopping and household lists live
+            in the Near Commerce mobile app. To sell here,{" "}
+            <Link className="font-medium underline" to={AppRoutes.register}>
+              create a store owner account
+            </Link>{" "}
+            with a different email.
+          </>
+        ),
+      });
+  };
+
   const formik = useFormik({
     initialValues: loginInitialValues,
     validate: validateLogin,
@@ -56,35 +88,7 @@ export const LoginForm: React.FC = () => {
       loginMutation.mutate(values, {
         onSuccess: (data) => {
           setSubmitting(false);
-          if (data.user.role === UserRole.STORE_OWNER)
-            return navigate(returnTo);
-
-          // useLogin keeps admin sessions for the admin app; this portal must not hold one.
-          clearSession();
-          if (data.user.role === UserRole.SYSTEM_ADMIN)
-            setNotice({
-              tone: "info",
-              title: "This is the store portal",
-              body: "Administrator accounts sign in through the admin console, not here.",
-            });
-          else
-            setNotice({
-              tone: "info",
-              title: "This portal is for store owners",
-              body: (
-                <>
-                  Your account is a shopper account. Shopping and household
-                  lists live in the Near Commerce mobile app. To sell here,{" "}
-                  <Link
-                    className="font-medium underline"
-                    to={AppRoutes.register}
-                  >
-                    create a store owner account
-                  </Link>{" "}
-                  with a different email.
-                </>
-              ),
-            });
+          handleSignedIn(data);
         },
         onError: (err) => {
           setSubmitting(false);
@@ -162,6 +166,17 @@ export const LoginForm: React.FC = () => {
           <Button type="submit" className="w-full" loading={busy}>
             {busy ? "Logging in…" : "Login"}
           </Button>
+
+          <GoogleSignInButton
+            onSignedIn={handleSignedIn}
+            onError={({ message, suspended }) =>
+              setNotice({
+                tone: "error",
+                body: message,
+                offerSupport: suspended,
+              })
+            }
+          />
 
           <p className="text-center text-sm text-slate-600">
             Don&apos;t have a store account?{" "}

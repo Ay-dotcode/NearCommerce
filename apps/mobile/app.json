@@ -47,6 +47,12 @@
       ],
       "expo-live-activity",
       [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.REPLACE_WITH_IOS_CLIENT_ID"
+        }
+      ],
+      [
         "@use-voltra/android-client",
         {
           "enableNotifications": true

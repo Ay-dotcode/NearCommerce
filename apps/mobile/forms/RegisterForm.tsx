@@ -1,4 +1,5 @@
 import AuthLink from "@/components/auth/AuthLink";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import {
   Button,
   FormError,
@@ -96,6 +97,10 @@ export function RegisterForm() {
           title="Create account"
           loading={formik.isSubmitting}
           onPress={() => formik.handleSubmit()}
+        />
+
+        <GoogleSignInButton
+          onFailure={({ message }) => formik.setStatus({ form: message })}
         />
 
         <AuthLink

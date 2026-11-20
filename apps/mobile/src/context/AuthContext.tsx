@@ -1,3 +1,4 @@
+import { signOutOfGoogle } from "@/helpers/googleSignIn";
 import { apiClient, configureTokenRefresh } from "@nearcommerce/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
     await clearLocal();
+    await signOutOfGoogle();
     if (refreshToken)
       await apiClient
         .post("/auth/logout", { refresh_token: refreshToken })
