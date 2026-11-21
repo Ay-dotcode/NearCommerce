@@ -67,3 +67,16 @@ export function isSuspendedError(error: unknown): boolean {
     (code === ACCOUNT_SUSPENDED_CODE || /suspended/i.test(message))
   );
 }
+
+// Message for a failed "Continue with Google". The server words its own refusals (account
+// exists, suspended, not configured, too many attempts), so those are shown as they are; a
+// missing response means the server could not be reached.
+export function googleSignInErrorMessage(error: unknown): string {
+  const { status, message } = parseApiError(error, "");
+  if (status === undefined)
+    return "Can't reach the server. Check your connection and try again.";
+  if (message && [401, 403, 409, 429, 503].includes(status)) return message;
+  return "Google sign-in failed. Please try again.";
+}
+
+export const EMAIL_EXISTS_CODE = "EMAIL_EXISTS_USE_PASSWORD";

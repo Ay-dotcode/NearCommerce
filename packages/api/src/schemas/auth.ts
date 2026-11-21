@@ -39,12 +39,22 @@ export const LoginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+// Sign in or sign up with a Google ID token (the "credential" the Google button hands the app).
+// `role` only matters when no account exists yet: an existing account keeps its own role.
+export const GoogleAuthSchema = z
+  .object({
+    id_token: z.string().min(1, "Google credential is required"),
+    role: z.enum(["CUSTOMER", "STORE_OWNER"]).default("CUSTOMER"),
+  })
+  .strict();
+
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type VerifyEmailInput = z.infer<typeof VerifyEmailSchema>;
 export type ResendVerificationInput = z.infer<typeof ResendVerificationSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;
+export type GoogleAuthInput = z.infer<typeof GoogleAuthSchema>;
 
 export const RefreshTokenSchema = z.object({
   refresh_token: z.string().min(1, "Refresh token is required"),
