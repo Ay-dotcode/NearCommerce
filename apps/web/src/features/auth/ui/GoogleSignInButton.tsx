@@ -5,7 +5,6 @@ import {
   isSuspendedError,
   type GoogleAuthResponse,
 } from "@nearcommerce/api";
-import { useResolvedTheme } from "@nearcommerce/ui";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import React, { useLayoutEffect, useRef, useState } from "react";
 
@@ -28,8 +27,6 @@ export const GoogleSignInButton: React.FC<{
   onError: (failure: GoogleSignInFailure) => void;
 }> = ({ onSignedIn, onError }) => {
   const signIn = useGoogleSignIn();
-  // Google's variants for a light page and a dark page, switched with the app's theme toggle.
-  const theme = useResolvedTheme() === "dark" ? "filled_black" : "outline";
   // Fit the form's width, so the button lines up with the fields above it.
   const rowRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(FALLBACK_WIDTH);
@@ -70,7 +67,7 @@ export const GoogleSignInButton: React.FC<{
             <GoogleLogin
               text="continue_with"
               shape="rectangular"
-              theme={theme}
+              theme="outline"
               size="large"
               width={width}
               onSuccess={({ credential }) => {
