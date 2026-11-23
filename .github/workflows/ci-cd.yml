@@ -97,6 +97,7 @@ jobs:
         run: pnpm --filter @nearcommerce/${{ matrix.app }} build
         env:
           VITE_API_URL: ${{ vars.API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
       - name: Publish to Cloudflare Pages
         run: npx wrangler pages deploy apps/${{ matrix.app }}/dist --project-name=${{ matrix.project }} --branch=main
         env:
