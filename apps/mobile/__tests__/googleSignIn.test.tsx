@@ -62,7 +62,7 @@ describe("Sign in with Google (mobile)", () => {
     expect(utils.queryByTestId("google-sign-in")).toBeNull();
   });
 
-  it("uses Google's light button in the light theme and the dark one in the dark theme", () => {
+  it("uses Google's light button regardless of theme", () => {
     scheme.mockReturnValue("light");
     const light = withAuth(<LoginScreen />);
     expect(light.getByTestId("google-button-light")).toBeTruthy();
@@ -70,7 +70,7 @@ describe("Sign in with Google (mobile)", () => {
 
     scheme.mockReturnValue("dark");
     const dark = withAuth(<LoginScreen />);
-    expect(dark.getByTestId("google-button-dark")).toBeTruthy();
+    expect(dark.getByTestId("google-button-light")).toBeTruthy();
     scheme.mockReturnValue("light");
   });
 

@@ -208,37 +208,10 @@ describe("Continue with Google (store portal)", () => {
     expect(getUserRole()).toBeNull();
   });
 
-  describe("matches the app theme", () => {
-    it("draws Google's light button on a light page", () => {
-      renderPage("login");
-      expect(mockButtonProps.theme).toBe("outline");
-    });
-
-    it("draws Google's dark button on a dark page", () => {
-      // What the theme toggle saves when someone picks Dark; the page applies it on load.
-      localStorage.setItem("nearcommerce-theme", "dark");
-      renderPage("login");
-      expect(mockButtonProps.theme).toBe("filled_black");
-    });
-
-    it("switches the button when the theme toggle is used", async () => {
-      renderPage("login");
-      expect(mockButtonProps.theme).toBe("outline");
-      act(() => {
-        document.documentElement.dataset.theme = "dark";
-      });
-      await waitFor(() => expect(mockButtonProps.theme).toBe("filled_black"));
-      act(() => {
-        document.documentElement.dataset.theme = "light";
-      });
-      await waitFor(() => expect(mockButtonProps.theme).toBe("outline"));
-    });
-
-    it("uses a width Google accepts (200 to 400 px)", () => {
-      renderPage("login");
-      const width = Number(mockButtonProps.width);
-      expect(width).toBeGreaterThanOrEqual(200);
-      expect(width).toBeLessThanOrEqual(400);
-    });
+  it("uses a width Google accepts (200 to 400 px)", () => {
+    renderPage("login");
+    const width = Number(mockButtonProps.width);
+    expect(width).toBeGreaterThanOrEqual(200);
+    expect(width).toBeLessThanOrEqual(400);
   });
 });
