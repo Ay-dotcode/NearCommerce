@@ -5,8 +5,15 @@ import {
   isSuspendedError,
   type GoogleAuthResponse,
 } from "@nearcommerce/api";
+import { useResolvedTheme } from "@nearcommerce/ui";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
-import React from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
+
+// Google draws its button in an iframe, so the stylesheet cannot restyle it. Google also does not
+// allow custom colours or fonts, only its own variants and a pixel width between 200 and 400.
+const MIN_WIDTH = 200;
+const MAX_WIDTH = 400;
+const FALLBACK_WIDTH = 320;
 
 export interface GoogleSignInFailure {
   message: string;
@@ -21,6 +28,25 @@ export const GoogleSignInButton: React.FC<{
   onError: (failure: GoogleSignInFailure) => void;
 }> = ({ onSignedIn, onError }) => {
   const signIn = useGoogleSignIn();
+  // Google's variants for a light page and a dark page, switched with the app's theme toggle.
+  const theme = useResolvedTheme() === "dark" ? "filled_black" : "outline";
+  // Fit the form's width, so the button lines up with the fields above it.
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(FALLBACK_WIDTH);
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    if (!row) return;
+    const measure = () => {
+      const available = Math.round(row.clientWidth);
+      if (available > 0)
+        setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, available)));
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(row);
+    return () => observer.disconnect();
+  }, []);
   if (!googleClientId) return null;
 
   return (
@@ -31,7 +57,11 @@ export const GoogleSignInButton: React.FC<{
           or
           <span className="h-px flex-1 bg-slate-200" />
         </div>
-        <div className="flex justify-center" aria-busy={signIn.isPending}>
+        <div
+          ref={rowRef}
+          className="flex justify-center"
+          aria-busy={signIn.isPending}
+        >
           {signIn.isPending ? (
             <p role="status" className="py-2.5 text-sm text-slate-600">
               Signing in with Google…
@@ -40,9 +70,9 @@ export const GoogleSignInButton: React.FC<{
             <GoogleLogin
               text="continue_with"
               shape="rectangular"
-              theme="outline"
+              theme={theme}
               size="large"
-              width="320"
+              width={width}
               onSuccess={({ credential }) => {
                 if (!credential)
                   return onError({

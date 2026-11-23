@@ -28,10 +28,11 @@ jest.mock("@/helpers/locationIndicator", () => ({
 jest.mock("@react-native-google-signin/google-signin", () => {
   const React = require("react");
   const { Pressable } = require("react-native");
-  const GoogleSigninButton = ({ onPress, accessibilityLabel }) =>
+  const GoogleSigninButton = ({ onPress, accessibilityLabel, color }) =>
     React.createElement(Pressable, {
       accessibilityRole: "button",
       accessibilityLabel,
+      testID: `google-button-${color}`,
       onPress,
     });
   GoogleSigninButton.Size = { Icon: 2, Standard: 0, Wide: 1 };

@@ -5,6 +5,13 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { useColorScheme } from "react-native";
+
+jest.mock("react-native/Libraries/Utilities/useColorScheme", () => ({
+  __esModule: true,
+  default: jest.fn(() => "light"),
+}));
+const scheme = useColorScheme as unknown as jest.Mock;
 
 jest.mock("@nearcommerce/api", () => {
   const actual = jest.requireActual("@nearcommerce/api");
@@ -53,6 +60,18 @@ describe("Sign in with Google (mobile)", () => {
     const utils = withAuth(<LoginScreen />);
     await waitFor(() => expect(utils.getByTestId("login-button")).toBeTruthy());
     expect(utils.queryByTestId("google-sign-in")).toBeNull();
+  });
+
+  it("uses Google's light button in the light theme and the dark one in the dark theme", () => {
+    scheme.mockReturnValue("light");
+    const light = withAuth(<LoginScreen />);
+    expect(light.getByTestId("google-button-light")).toBeTruthy();
+    light.unmount();
+
+    scheme.mockReturnValue("dark");
+    const dark = withAuth(<LoginScreen />);
+    expect(dark.getByTestId("google-button-dark")).toBeTruthy();
+    scheme.mockReturnValue("light");
   });
 
   it("signs in with the Google token, stores the session and opens the app", async () => {

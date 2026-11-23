@@ -4,7 +4,13 @@ import { LoginForm } from "@/forms/LoginForm";
 import { RegisterForm } from "@/forms/RegisterForm";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 let mockClientId = "web-client.apps.googleusercontent.com";
@@ -14,32 +20,36 @@ jest.mock("@/features/auth/googleClientId", () => ({
   },
 }));
 
-// Google's real button is an iframe; this stand-in lets the test "complete" or "cancel" it.
+// Google's real button is an iframe; this stand-in lets the test "complete" or "cancel" it, and
+// records the look it was asked to draw.
+let mockButtonProps: { theme?: string; width?: number | string } = {};
 jest.mock("@react-oauth/google", () => ({
   GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) =>
     children,
-  GoogleLogin: ({
-    onSuccess,
-    onError,
-  }: {
+  GoogleLogin: (props: {
     onSuccess: (r: { credential?: string }) => void;
     onError: () => void;
-  }) => (
-    <>
-      <button
-        type="button"
-        onClick={() => onSuccess({ credential: "google-id-token" })}
-      >
-        Continue with Google
-      </button>
-      <button type="button" onClick={() => onSuccess({})}>
-        Google returns nothing
-      </button>
-      <button type="button" onClick={() => onError()}>
-        Cancel Google
-      </button>
-    </>
-  ),
+    theme?: string;
+    width?: number | string;
+  }) => {
+    mockButtonProps = { theme: props.theme, width: props.width };
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => props.onSuccess({ credential: "google-id-token" })}
+        >
+          Continue with Google
+        </button>
+        <button type="button" onClick={() => props.onSuccess({})}>
+          Google returns nothing
+        </button>
+        <button type="button" onClick={() => props.onError()}>
+          Cancel Google
+        </button>
+      </>
+    );
+  },
 }));
 
 jest.mock("@nearcommerce/api", () => ({
@@ -82,6 +92,9 @@ describe("Continue with Google (store portal)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     clearSession();
+    localStorage.clear();
+    delete document.documentElement.dataset.theme;
+    mockButtonProps = {};
     mockClientId = "web-client.apps.googleusercontent.com";
   });
 
@@ -193,5 +206,39 @@ describe("Continue with Google (store portal)", () => {
       /shopper account.*store owners/i,
     );
     expect(getUserRole()).toBeNull();
+  });
+
+  describe("matches the app theme", () => {
+    it("draws Google's light button on a light page", () => {
+      renderPage("login");
+      expect(mockButtonProps.theme).toBe("outline");
+    });
+
+    it("draws Google's dark button on a dark page", () => {
+      // What the theme toggle saves when someone picks Dark; the page applies it on load.
+      localStorage.setItem("nearcommerce-theme", "dark");
+      renderPage("login");
+      expect(mockButtonProps.theme).toBe("filled_black");
+    });
+
+    it("switches the button when the theme toggle is used", async () => {
+      renderPage("login");
+      expect(mockButtonProps.theme).toBe("outline");
+      act(() => {
+        document.documentElement.dataset.theme = "dark";
+      });
+      await waitFor(() => expect(mockButtonProps.theme).toBe("filled_black"));
+      act(() => {
+        document.documentElement.dataset.theme = "light";
+      });
+      await waitFor(() => expect(mockButtonProps.theme).toBe("outline"));
+    });
+
+    it("uses a width Google accepts (200 to 400 px)", () => {
+      renderPage("login");
+      const width = Number(mockButtonProps.width);
+      expect(width).toBeGreaterThanOrEqual(200);
+      expect(width).toBeLessThanOrEqual(400);
+    });
   });
 });

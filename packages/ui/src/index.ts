@@ -24,4 +24,5 @@ export * from "./hooks/useBackNavigation";
 export * from "./hooks/useDebouncedValue";
 export * from "./hooks/useDialogBehavior";
 export * from "./helpers/theme";
+export * from "./hooks/useResolvedTheme";
 export * from "./hooks/useThemePreference";
