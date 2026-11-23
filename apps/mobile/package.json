@@ -35,7 +35,7 @@
     "expo-location": "~57.0.22",
     "expo-notifications": "~57.0.24",
     "expo-router": "~57.0.29",
-    "expo-splash-screen": "~57.0.10",
+    "expo-splash-screen": "~58.0.14",
     "expo-status-bar": "~57.0.1",
     "expo-updates": "~57.0.26",
     "formik": "^2.4.6",
