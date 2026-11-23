@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     autoDeploy: false
-    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @nearcommerce/backend db:migrate
     startCommand: pnpm --filter @nearcommerce/backend start
     healthCheckPath: /health
     envVars:
