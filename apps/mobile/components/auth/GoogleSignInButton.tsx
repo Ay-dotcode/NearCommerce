@@ -7,7 +7,7 @@ import {
   type GoogleFailure,
 } from "@/helpers/googleSignIn";
 import { useAuth } from "@/src/context/AuthContext";
-import { useTheme, useThemedStyles, type ThemeColors } from "@/theme";
+import { useThemedStyles, type ThemeColors } from "@/theme";
 import {
   apiClient,
   googleSignInErrorMessage,
@@ -29,9 +29,6 @@ export function GoogleSignInButton({
 }) {
   const { login } = useAuth();
   const styles = useThemedStyles(makeStyles);
-  // Google's dark and light variants, chosen by the app's own theme (which already honours the
-  // Light / Dark / Auto setting), not just the device's.
-  const { isDark } = useTheme();
   const [busy, setBusy] = useState(false);
   if (!googleWebClientId()) return null;
 
@@ -84,7 +81,7 @@ export function GoogleSignInButton({
         <View style={styles.buttonRow}>
           <GoogleSigninButton
             size={GoogleSigninButton.Size.Wide}
-            color={isDark ? "dark" : "light"}
+            color="light"
             onPress={start}
             accessibilityLabel="Sign in with Google"
           />
