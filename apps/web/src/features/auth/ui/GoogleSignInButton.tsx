@@ -6,6 +6,7 @@ import {
   type GoogleAuthResponse,
 } from "@nearcommerce/api";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
+import { Spinner } from "@nearcommerce/ui";
 import React, { useLayoutEffect, useRef, useState } from "react";
 
 // Google draws its button in an iframe, so the stylesheet cannot restyle it. Google also does not
@@ -60,9 +61,14 @@ export const GoogleSignInButton: React.FC<{
           aria-busy={signIn.isPending}
         >
           {signIn.isPending ? (
-            <p role="status" className="py-2.5 text-sm text-slate-600">
-              Signing in with Google…
-            </p>
+            <div
+              role="status"
+              className="flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 py-2.5 px-4 text-sm font-medium text-slate-700 shadow-sm"
+              style={{ width }}
+            >
+              <Spinner className="h-5 w-5 text-brand-600" />
+              <span>Signing in with Google…</span>
+            </div>
           ) : (
             <GoogleLogin
               text="continue_with"

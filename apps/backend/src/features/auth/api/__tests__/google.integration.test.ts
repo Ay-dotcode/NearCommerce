@@ -162,15 +162,15 @@ describe("POST /auth/google", () => {
     expect(res.body.access_token).toBeUndefined();
   });
 
-  it("never lets an administrator sign in with Google", async () => {
+  it("lets an administrator sign in with Google", async () => {
     await signIn();
     await db.query("UPDATE users SET role = 'SYSTEM_ADMIN' WHERE email = $1", [
       EMAIL,
     ]);
     const res = await signIn();
-    expect(res.status).toBe(403);
-    expect(res.body.code).toBe("GOOGLE_NOT_ALLOWED");
-    expect(res.body.access_token).toBeUndefined();
+    expect(res.status).toBe(200);
+    expect(res.body.access_token).toEqual(expect.any(String));
+    expect(res.body.user.role).toBe("SYSTEM_ADMIN");
   });
 
   it("does not let a Google-only account log in with a password", async () => {

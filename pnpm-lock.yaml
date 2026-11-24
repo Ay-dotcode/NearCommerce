@@ -251,6 +251,9 @@ importers:
       '@nearcommerce/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@react-oauth/google':
+        specifier: ^0.13.5
+        version: 0.13.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-query':
         specifier: ^5.0.0
         version: 5.104.4(@types/react@18.3.31)(react@18.3.1)

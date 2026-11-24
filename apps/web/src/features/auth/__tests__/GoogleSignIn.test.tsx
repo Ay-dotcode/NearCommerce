@@ -5,7 +5,6 @@ import { RegisterForm } from "@/forms/RegisterForm";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  act,
   fireEvent,
   render,
   screen,

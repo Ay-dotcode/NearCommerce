@@ -18,12 +18,6 @@ export const googleLogin = async (req: Request, res: Response) => {
     const profile = await verifyGoogleIdToken(id_token);
     const { user, isNewUser } = await signInWithGoogle(profile, role);
 
-    if (user.role === "SYSTEM_ADMIN")
-      throw new GoogleAuthError(
-        403,
-        "Administrator accounts must sign in with a password.",
-        "GOOGLE_NOT_ALLOWED",
-      );
     if (user.is_suspended)
       throw new GoogleAuthError(
         403,
