@@ -234,6 +234,7 @@ Shoppers (mobile app) and store owners (store portal) can use **Continue with Go
 | --- | --- |
 | Backend (Render) | `GOOGLE_CLIENT_IDS=<web client id>` (comma-separate extra ids if needed) |
 | Store portal (Cloudflare Pages build variable) | `VITE_GOOGLE_CLIENT_ID=<web client id>`, then redeploy because Vite bakes it in at build time |
+| Admin console (Cloudflare Pages build variable) | `VITE_GOOGLE_CLIENT_ID=<web client id>`, then redeploy because Vite bakes it in at build time |
 | Mobile app (EAS environment variable or `apps/mobile/.env`) | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<web client id>`, plus `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` for iOS |
 
 For iOS also replace `REPLACE_WITH_IOS_CLIENT_ID` in the `@react-native-google-signin/google-signin` entry of `apps/mobile/app.json` with your iOS client's reversed id (`com.googleusercontent.apps.<id>`). The plugin requires a value even for Android-only builds, so the placeholder is safe to leave while you do not build for iOS.
@@ -245,7 +246,6 @@ The Google sign-in library is a native module, so the mobile app needs a **new n
 - The apps only receive a Google ID token. The API verifies its signature, expiry and that it was issued for one of your client ids, and only accepts accounts whose Google email is verified.
 - First sign-in creates an account without a password (a shopper in the mobile app, a store owner in the portal). Signing in again finds it by Google's stable user id, so a changed email address does not create a second account.
 - If the email already belongs to a **password account, Google is not linked to it**: the person is told to log in with their password. Password sign-ups here are not email-verified, so linking automatically would let someone who registered an address first keep access after its real owner signs in with Google.
-- **Administrator accounts never use Google**; they always sign in with a password.
 - Suspended accounts are refused, exactly as with a password login.
 
 ## Prerequisites
