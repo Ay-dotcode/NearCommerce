@@ -3,8 +3,19 @@
 // React types, and skipLibCheck does not apply to source files, so those node_modules errors
 // are ignored here. Remove this wrapper (use plain `tsc --noEmit`) once that is fixed upstream.
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
-const result = spawnSync("pnpm", ["exec", "tsc", "--noEmit", "--pretty", "false"], {
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const tscBin = resolve(
+  root,
+  "node_modules",
+  ".bin",
+  process.platform === "win32" ? "tsc.cmd" : "tsc",
+);
+
+const result = spawnSync(tscBin, ["--noEmit", "--pretty", "false"], {
+  cwd: root,
   encoding: "utf8",
   shell: process.platform === "win32",
 });

@@ -4,12 +4,7 @@ import { LoginForm } from "@/forms/LoginForm";
 import { RegisterForm } from "@/forms/RegisterForm";
 import { apiClient } from "@nearcommerce/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 let mockClientId = "web-client.apps.googleusercontent.com";
