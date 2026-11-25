@@ -370,7 +370,7 @@ describe("skipUpdate", () => {
 
 describe("openUpdatePage", () => {
   it("opens the release page", async () => {
-    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
     expect(await openUpdatePage(`${RELEASES}/tag/v2.0.0`)).toBe(true);
     expect(open).toHaveBeenCalledWith(`${RELEASES}/tag/v2.0.0`);
   });

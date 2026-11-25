@@ -132,7 +132,7 @@ describe("UpdateScreen: Update with a link that isn't an APK (a store page)", ()
   it.each(["required", "optional"] as const)(
     "just opens the page (%s)",
     async (mode) => {
-      const open = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+      const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
       const { getByTestId, getByText } = setup(mode, PAGE);
       expect(getByText("Update")).toBeTruthy();
       expect(getByText("Opens the update page.")).toBeTruthy();
@@ -154,7 +154,7 @@ describe("UpdateScreen: Update with a link that isn't an APK (a store page)", ()
 
   it("opens an APK link in the browser in a build that can't install inside the app", async () => {
     (canInstallInApp as jest.Mock).mockReturnValue(false);
-    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
     const { getByTestId } = setup("required", APK);
     expect(getByTestId("update-button")).toHaveTextContent("Update");
     fireEvent.press(getByTestId("update-button"));
@@ -277,7 +277,7 @@ describe("UpdateScreen: Download update (an APK, installed inside the app)", () 
     });
 
     it("offers the browser as a last resort", async () => {
-      const open = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+      const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
       const download = controlledDownload();
       const { getByTestId, findByTestId } = setup("required", APK);
       fireEvent.press(getByTestId("update-button"));

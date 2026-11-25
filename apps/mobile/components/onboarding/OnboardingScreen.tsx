@@ -3,7 +3,7 @@ import { motion } from "@/components/ui/motion";
 import { useReduceMotion } from "@/src/hooks/useReduceMotion";
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
 import {
   Animated,
   Easing,
@@ -135,7 +135,7 @@ export default function OnboardingScreen({ onFinish }: Props) {
   const styles = useThemedStyles(makeStyles);
   const { width } = useWindowDimensions();
   const scrollX = useRef(new Animated.Value(0)).current;
-  const pager = useRef<ScrollView>(null);
+  const pager = useRef<ComponentRef<typeof ScrollView>>(null);
   const [index, setIndex] = useState(0);
   const last = index === SLIDES.length - 1;
 

@@ -62,7 +62,9 @@ export function BottomSheet({
 
   if (!mounted) return null;
 
-  const close = () => dismissible && onClose();
+  const close = () => {
+    if (dismissible) onClose();
+  };
 
   return (
     <Modal

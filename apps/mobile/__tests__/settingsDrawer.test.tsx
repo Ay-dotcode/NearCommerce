@@ -142,7 +142,7 @@ describe("sheets opened from settings", () => {
   });
 
   it("support rows open the mail and phone apps", async () => {
-    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
     const { getByText, findByLabelText } = renderApp();
     fireEvent.press(getByText("open-support"));
     fireEvent.press(await findByLabelText("Email: help@near.test"));

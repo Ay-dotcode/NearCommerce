@@ -1,5 +1,5 @@
 import { useColors, useThemedStyles, type ThemeColors } from "@/theme";
-import { forwardRef, type ReactNode } from "react";
+import { forwardRef, type ComponentRef, type ReactNode } from "react";
 import {
   StyleSheet,
   Text,
@@ -24,7 +24,10 @@ export interface TextFieldProps extends TextInputProps {
 
 // Labelled input with an inline error mode. Validation problems appear right under the field
 // (red border + message) instead of in a pop-up, and are announced to screen readers.
-export const TextField = forwardRef<TextInput, TextFieldProps>(
+export const TextField = forwardRef<
+  ComponentRef<typeof TextInput>,
+  TextFieldProps
+>(
   (
     {
       label,

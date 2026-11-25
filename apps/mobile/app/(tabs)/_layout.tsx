@@ -44,7 +44,11 @@ export default function TabLayout() {
             title,
             ...(lazy === undefined ? {} : { lazy }),
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name={icon} size={size} color={color} />
+              <Ionicons
+                name={icon}
+                size={size}
+                color={typeof color === "string" ? color : undefined}
+              />
             ),
           }}
         />

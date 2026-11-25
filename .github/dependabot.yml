@@ -8,6 +8,10 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Expo SDK pins the exact supported React Native version; only upgrade via `npx expo install`.
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-safe-area-context"
   - package-ecosystem: github-actions
     directory: /
     schedule:

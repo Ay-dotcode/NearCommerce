@@ -135,7 +135,7 @@ describe("invite code", () => {
   it("has Copy and Share buttons that copy / share the code", async () => {
     const share = jest
       .spyOn(Share, "share")
-      .mockResolvedValue({ action: "sharedAction" });
+      .mockResolvedValue({ action: "sharedAction", activityType: undefined });
     const { getByTestId, getByText } = render(
       <InviteCodeCard code="AB12CD" listName="Weekly shop" />,
     );

@@ -12,10 +12,9 @@ import { SCREEN_EDGES } from "@/theme/layout";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ComponentRef } from "react";
 import {
   FlatList,
-  InteractionManager,
   Pressable,
   StyleSheet,
   Text,
@@ -35,21 +34,17 @@ export default function SearchScreen() {
 
   const params = useLocalSearchParams<{ q?: string }>();
   const [searchQuery, setSearchQuery] = useState(params.q ?? "");
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
   const searchQueryRef = useRef(searchQuery);
   searchQueryRef.current = searchQuery;
 
   useFocusEffect(
     useCallback(() => {
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const interactions = InteractionManager.runAfterInteractions(() => {
-        timer = setTimeout(() => {
-          if (!searchQueryRef.current) inputRef.current?.focus();
-        }, KEYBOARD_DELAY_MS);
-      });
+      const timer = setTimeout(() => {
+        if (!searchQueryRef.current) inputRef.current?.focus();
+      }, KEYBOARD_DELAY_MS);
       return () => {
-        interactions.cancel();
-        if (timer) clearTimeout(timer);
+        clearTimeout(timer);
         inputRef.current?.blur();
       };
     }, []),

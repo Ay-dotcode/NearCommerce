@@ -31,6 +31,12 @@
         "expo-export/**"
       ]
     },
+    "@nearcommerce/ui#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": []
+    },
     "lint": {
       "dependsOn": [
         "^build"
